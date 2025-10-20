@@ -1,5 +1,41 @@
 # emacs-config
 
-(to be completed)
-   
+This is my _actual_ init.el file, on **Windows**.
+
+I use the _same_ configuration file (stored on cloud) on my different computers.
+
+I make no claim whatsoever that it could serve as a reference. It’s simply the result of several years of personal configuration of Emacs to my needs. Emacs is my everyday main work tool.
+
+It’s probably not forkable as is, since it relies on _(i)_ a few external executables and _(ii)_ personal paths. See the `Paths to directories and files` section in the code.
+
+Some comments in the file have probably become outdated over time.
+
+What I like about my configuration:
+
+**(1)** The loading time is quite short! < 3 s on my (standard) laptop, despite the 7K+ lines of code; loading of many packages is deferred.
+
+**(2)** Just after startup, a dedicated buffer provides a summary of the initialization process, the time spent loading each package, and executing each section of init.el; in case of slowdown, this makes analysis easier. See screenshot below.
+
+**(3)** I’ve tried to create a mode-specific hydra for each mode, which can always be opened _with the same key combination_ (`C-c d`). See `mode-dependent hydra launcher` in the code.
+
+**(4)** A buffer with buttons allows for easy testing of themes. See screenshot below.
+
+**(5)** A buffer with buttons allows for easy testing of fonts. See screenshot below.
+
+**(6)** Specific functions make it easy to work with PDFs or ZIP files within Dired.
+
+**(7)** Based on a tailored function, `C-c c` kills (copies to clipboard) the most relevant current text: word, inline code, org-mode block, etc. depending on the context.
+
+Just below: screenshot corresponding to (2): buffer summarizing the initialization.
+
+![buffer summarizing the initialization](readme-pics/init-statistics.png)
+
+Just below: screenshot corresponding to (4): buffer with buttons to switch themes.
+
+![buffer with buttons to switch themes](readme-pics/themes-chooser.png)
+
+Just below: screenshot corresponding to (5): buffer with buttons to switch fonts.
+
+![buffer with buttons to switch fonts](readme-pics/fonts-chooser.png)
+
 (end of README)
