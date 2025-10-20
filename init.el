@@ -2158,6 +2158,8 @@ M-x keycast-mode: show current key and its meaning on the command line
  (push '("Doom City Lights" (lambda () (load-theme 'doom-city-lights t))) *my-themes*)
  (push '("Doom One Light" (lambda () (load-theme 'doom-one-light t))) *my-themes*) 
  (push '("Doom Challenger Deep" (lambda () (load-theme 'doom-challenger-deep t))) *my-themes*)
+
+ (push '("Modus Vivendi" (lambda () (load-theme 'modus-vivendi t))) *my-themes*)
  
  (use-package moe-theme
    :commands (moe-light)
