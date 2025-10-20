@@ -1,6 +1,6 @@
 # emacs-config
 
-This is my _actual_ init.el file, on **Windows**.
+This is my _actual_ **init.el** file, on **Windows**.
 
 I use the _same_ configuration file (stored on cloud) on my different computers.
 
@@ -12,17 +12,17 @@ Some comments in the file have probably become outdated over time.
 
 What I like about my configuration:
 
-**(1)** The loading time is quite short! < 3 s on my (standard) laptop, despite the 7K+ lines of code; loading of many packages is deferred.
+**(1)** The loading time is quite short: < 3 s on my (standard) laptop, despite the 7K+ lines of code. Loading of many packages is deferred.
 
-**(2)** Just after startup, a dedicated buffer provides a summary of the initialization process, the time spent loading each package, and executing each section of init.el; in case of slowdown, this makes analysis easier. See screenshot below.
+**(2)** Just after startup, a dedicated buffer provides a summary of the initialization process, the time spent loading each package, and executing each section of init.el. In case of initalization slowdown, this makes analysis easier. See screenshot below.
 
-**(3)** I’ve tried to create a mode-specific hydra for each mode, which can always be opened _with the same key combination_ (`C-c d`). See `mode-dependent hydra launcher` in the code.
+**(3)** I’ve tried to create a mode-specific hydra for each mode, which can always be triggered _with the same keystroke_ (`C-c d`). See `mode-dependent hydra launcher` in the code.
 
 **(4)** A buffer with buttons allows for easy testing of themes. See screenshot below.
 
 **(5)** A buffer with buttons allows for easy testing of fonts. See screenshot below.
 
-**(6)** Specific functions make it easy to work with PDFs or ZIP files within Dired.
+**(6)** Specific functions make it easy to work with pdf or zip files within Dired.
 
 **(7)** Based on a tailored function, `C-c c` kills (copies to clipboard) the most relevant current text: word, inline code, org-mode block, etc. depending on the context.
 
