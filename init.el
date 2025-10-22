@@ -5002,6 +5002,62 @@ d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
      ;; (define-key ac-mode-map (kbd "C-M-i") 'ac-complete)
      )) ; end of when nil
 
+ ;;; ===
+ ;;; === (EL) Jump to REPL (IELM) and variants
+ ;;; ===
+
+ (defun my/toggle-ielm ()
+  "If another window shows `*ielm*`, switch to it.
+Otherwise, split vertically and start (or show) ielm in the other window."
+  (interactive)
+  (let* ((ielm-buffer (get-buffer "*ielm*"))
+         (other-win (when (> (count-windows) 1)
+                      (next-window))))
+    (if (and other-win
+             (eq (window-buffer other-win) ielm-buffer))
+        ;; Case 1: ielm is already in the other window
+        (other-window 1)
+      ;; Case 2: no other window with ielm
+      (unless (> (count-windows) 1)
+        (split-window-right))
+      (other-window 1)
+      (if ielm-buffer
+          (switch-to-buffer ielm-buffer)
+        (ielm)))))
+
+(define-key emacs-lisp-mode-map (kbd "C-c C-z")  #'my/toggle-ielm)
+
+(defun my/ielm-insert-defun-name ()
+  "Insert the name of the current defun into the *ielm* buffer."
+  (interactive)
+  (let ((defun-name (add-log-current-defun))
+        (ielm-buffer (get-buffer "*ielm*")))
+    (if (not defun-name)
+        (message "Not inside a defun")
+      (my/toggle-ielm)
+      (goto-char (point-max))
+      (insert "(")
+      (insert defun-name)
+      (insert ")"))))
+
+(define-key emacs-lisp-mode-map (kbd "C-c C-y")  #'my/ielm-insert-defun-name)
+
+(defun my/ielm-insert-defun-name-with-time-measurement ()
+  "Insert the name of the current defun into the *ielm* buffer, with time measurement."
+  (interactive)
+  (let ((defun-name (add-log-current-defun))
+        (ielm-buffer (get-buffer "*ielm*")))
+    (if (not defun-name)
+        (message "Not inside a defun")
+      (my/toggle-ielm)
+      (goto-char (point-max))
+      (insert (format "(let ((start-time (current-time)))
+  (prog1
+      (%s)
+    (print (format \"Elapsed: %s s\" (float-time (time-since start-time))))))" defun-name "%.06f")))))
+
+(define-key emacs-lisp-mode-map (kbd "C-c C-x")  #'my/ielm-insert-defun-name-with-time-measurement)
+
  ;; ===
  ;; === (CL) Slime, including arguments ala eldoc
  ;; ===      C-c C-x pour time monitoring
@@ -5045,7 +5101,7 @@ d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
    (setq slime-auto-start 'ask)
 
    (when nil
-     (setq slime-compilation-finished-hook 'slime-show-compilation-log))
+     (setq slime-compilation-finished-hook 'slime-show-compilation-log)) ; end of when nil
    ;; see https://github.com/slime/slime/blob/master/slime.el
 
    ;; Removing the compilation error prompt
@@ -5575,6 +5631,7 @@ Other sexp commands: M-(              wrap an sexp (paredit)
 Comment: region M-; to comment/uncomment (paredit)
 Macro expander: C-c m ou C-c e || q
 Eval: C-M-x to eval defun (M-x eval-defun) || C-x C-e to eval last sexp || C-c C-k = M-x eval-buffer
+REPL (IELM): C-x C-z (jump to REPL) | C-x C-y (send function to REPL) | C-c C-x (idem with time measurement)
 Debug: (1) unexpected : c(ontinue), e(val), q(uit) (2) edebug: C-u C-M-x --> SPACE, h, f, o i, ? (3) (debug) within code
 {end}"
    ("a" #'outline-show-all)
