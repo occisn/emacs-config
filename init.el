@@ -4888,9 +4888,9 @@ d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
  ;; ===
  ;; === (EL+CL) my occur
 
- (defun my-elisp-occur ()
-   (interactive)
-   (occur "\\s-*(defhydra [^%]\\|\\s-*(use-\\package [^%]\\|\\s-*(defun [^%]\\|\\s-*(cl\\-defun [^%]\\|\\s-*(defvar [^%]\\|\\s-*(defface [^%]\\|\\s-*(defcustom [^%]\\|\\s-*(defmacro [^%]\\|\\s-*(cl-\\defmacro [^%]\\|\\s-*(defparameter [^%]\\|\\s-*(global-set-key[^%]\\|\\s-*;;*\\s-==="))
+(defun my-elisp-occur ()
+  (interactive)
+  (occur "\\s-*(defhydra [^%]\\|\\s-*(use-\\package [^%]\\|\\s-*(defun [^%]\\|\\s-*(cl\\-defun [^%]\\|\\s-*(defvar [^%]\\|\\s-*(defface [^%]\\|\\s-*(defcustom [^%]\\|\\s-*(defmacro [^%]\\|\\s-*(cl-\\defmacro [^%]\\|\\s-*(defparameter [^%]\\|\\s-*(global-set-key[^%]\\|\\s-*;;*\\s-===\\|\\s-*(ert-deftest [^%]"))
  ;; ^ = beginning of line
  ;; \s-* = Zero or more whitespace characters (spaces, tabs, etc.); to be preceded by an additional \
  ;; \s- = one whitespace character; to be preceded by an additional \
