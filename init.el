@@ -5312,12 +5312,12 @@ With Electric Indent Mode enabled, inserts a newline and indents
 
  (defun my-eval-buffer-advice (&rest _args)
    "Print a message when eval-buffer is called."
-   (message "Evaluating buffer: %s" 
+   (message "Buffer %s has been evaluated" 
             (buffer-name)))
  ;; (note: apparently, 'eval-buffer' is also called for the first
  ;; opening of an org-file in the session.)
  
- (advice-add 'eval-buffer :before #'my-eval-buffer-advice)
+ (advice-add 'eval-buffer :after #'my-eval-buffer-advice)
 
  (define-key emacs-lisp-mode-map (kbd "C-c C-k") 'eval-buffer)
 
