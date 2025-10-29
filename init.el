@@ -2810,7 +2810,65 @@ Fallback : current word.
  t
  "org-mode F (copy to clipboard with format conversion)"
 
- (defun my/org-copy-to-clipboard-for-microsoft-word-and-teams ()
+ (defun my/org-copy-region-ready-to-be-pasted-into-Word-Teams-Thunderbird-Gmail ()
+  "Export Org-mode region to Windows CF_HTML clipboard format (including StartHTML, EndHTML, StartFragment, EndFragment markers).
+Clipboard can be pasted into Microsoft Word, Microsoft Teams, Thunderbird and Gmail.
+(v1 as of 2025-10-28, available in occisn/emacs-utils GitHub repository)"
+  (interactive)
+  (if (not (use-region-p))
+      (message "No active region to export")
+    (let* ((region-start (region-beginning))
+           (region-end (region-end))
+           (html-body (org-export-string-as
+                       (buffer-substring region-start region-end)
+                       'html t '(:with-toc nil 
+                                           :html-postamble nil
+                                           :preserve-breaks t))))
+      
+      ;; Extract body content and replace <p> tags with <br>
+      (setq html-body
+            (with-temp-buffer
+              (insert html-body)
+              (goto-char (point-min))
+              (if (re-search-forward "<body[^>]*>\\(\\(.\\|\n\\)*\\)</body>" nil t)
+                  (match-string 1)
+                html-body)))
+      
+      ;; Replace paragraph tags with line breaks
+      (setq html-body
+            (replace-regexp-in-string "<p[^>]*>" "" html-body))
+      (setq html-body
+            (replace-regexp-in-string "</p>" "<br>" html-body))
+      
+      ;; Build CF_HTML format (use \n only, Windows will handle conversion)
+      (let* ((html-fragment (concat "<!--StartFragment-->" html-body "<!--EndFragment-->"))
+             (html-full (concat "<html>\n<body>\n" html-fragment "\n</body>\n</html>"))
+             (header "Version:0.9\nStartHTML:%010d\nEndHTML:%010d\nStartFragment:%010d\nEndFragment:%010d\n")
+             (header-length (length (format header 0 0 0 0)))
+             (start-html header-length)
+             (end-html (+ start-html (string-bytes html-full)))
+             (start-fragment (+ start-html 
+                                (string-bytes (substring html-full 0 (string-match "<!--StartFragment-->" html-full)))
+                                (string-bytes "<!--StartFragment-->")))
+             (end-fragment (+ start-html (string-bytes (substring html-full 0 (string-match "<!--EndFragment-->" html-full)))))
+             (cf-html (concat (format header start-html end-html start-fragment end-fragment)
+                              html-full)))
+        
+        ;; Write to temp file and use PowerShell to set clipboard
+        (let ((temp-file (make-temp-file "cf-html-" nil ".txt")))
+          (with-temp-file temp-file
+            (set-buffer-file-coding-system 'utf-8-unix)
+            (insert cf-html))
+          
+          (call-process "powershell.exe" nil nil nil
+                        "-Command"
+                        (format "$content = Get-Content -Path '%s' -Raw -Encoding UTF8; Add-Type -AssemblyName System.Windows.Forms; $data = New-Object System.Windows.Forms.DataObject; $bytes = [System.Text.Encoding]::UTF8.GetBytes($content); $stream = New-Object System.IO.MemoryStream(,$bytes); $data.SetData('HTML Format', $stream); [System.Windows.Forms.Clipboard]::SetDataObject($data, $true); $stream.Close()"
+                                (replace-regexp-in-string "/" "\\\\" temp-file)))
+          
+          (delete-file temp-file)
+          (message "Region copied as CF_HTML to clipboard"))))))
+ 
+ (defun my/PREVIOUS-org-copy-to-clipboard-for-microsoft-word-and-teams ()
    "Copy buffer to clipboard as HTML.
 Clipboard can then be pasted to Microsoft Word or Microsoft Teams. 
 But pasting to Thunderbird or Gmail does not work.
@@ -2829,7 +2887,7 @@ Requires my/save-region-as-html."
      ;; (message cmd)
      (message "Content of the buffer exported to clipboard as HTML.")))
  
- (defun my/org-export-to-html-page-for-thunderbird-outlook-or-gmail ()
+ (defun my/PREVIOUS-org-export-to-html-page-for-thunderbird-outlook-or-gmail ()
    "Convert buffer to html page and open it.
 Requires my/save-region-as-html."
    (interactive)
@@ -3038,7 +3096,7 @@ Links: C-c C-l to create or edit [ [file:abc][name] ], [ [myimage.png] ]
        C-c C-o to follow
 Abbrev: C-_, C-q SPACE, M-x unexpand-abbrev
 Import: my/org-paste-from-Teams-Word-as-org
-Export: my/org-copy-to-clipboard-for-microsoft-word-and-teams | my/org-export-to-html-page-for-thunderbird | for-gmail
+Export: my/org-copy-region-ready-to-be-pasted-into-Word-Teams-Thunderbird-Gmail
 Table: C-c } to see raw/col # | C-c C-c to update (in TBLFM) |  org-table-export pour exporter une table en CSV | M-S-RIGHT to insert column
 Appearance : _v_ olivetti-mode
 Agenda: C-c a a || C-c a 1 pour custom ; et C-a t pour tasks
