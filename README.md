@@ -26,6 +26,8 @@ What I like about my configuration:
 
 **(7)** Based on a tailored function, `C-c c` kills (copies to clipboard) the most relevant current text: word, inline code, org-mode block, etc. depending on the context.
 
+Any comment? Open an [issue](https://github.com/occisn/emacs-config/issues), or start a discussion [here](https://github.com/occisn/emacs-config/discussions) or [at profile level](https://github.com/occisn/occisn/discussions).
+
 Just below: screenshot corresponding to (2): buffer summarizing the initialization.
 
 ![buffer summarizing the initialization](readme-pics/init-statistics.png)
