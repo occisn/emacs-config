@@ -2871,7 +2871,7 @@ But pasting to Thunderbird or Gmail does not work."
 
 (defun my/html-to-org (html)
   "Convert HTML string to org-mode format.
-(v1 as of 2025-10-29, available in occisn/elisp-utils GitHub repository)"
+(v1 as of 2025-10-29, available in occisn/emacs-utils GitHub repository)"
   (with-temp-buffer
     (insert html)
     ;; Convert common HTML elements to org-mode
