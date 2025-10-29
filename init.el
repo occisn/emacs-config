@@ -2813,7 +2813,8 @@ Fallback : current word.
   (defun my/org-copy-to-clipboard-for-microsoft-word-and-teams ()
    "Copy buffer to clipboard as HTML.
 Clipboard can then be pasted to Microsoft Word or Microsoft Teams. 
-But pasting to Thunderbird or Gmail does not work."
+But pasting to Thunderbird or Gmail does not work.
+Requires my/save-region-as-html."
    (interactive)
    (unless (my-init--directory-exists-p *temp-directory*)
      (error "Temp directory is not valid: %s" *temp-directory*))
@@ -2821,7 +2822,7 @@ But pasting to Thunderbird or Gmail does not work."
 	  (cmd (concat "powershell -Command \"Get-Content '" temp-file-name "' | Set-Clipboard -AsHtml\"")))
 
      ;; (1) Convert to HTML and save in file
-     (my-init--save-as-html temp-file-name)
+     (my/save-region-as-html temp-file-name)
 
      ;; (2) copy temporary file to clipboard as HTML: 
      (call-process-shell-command cmd nil 0)
@@ -2829,7 +2830,8 @@ But pasting to Thunderbird or Gmail does not work."
      (message "Content of the buffer exported to clipboard as HTML.")))
  
  (defun my/org-export-to-html-page-for-thunderbird-outlook-or-gmail ()
-   "Convert buffer to html page and open it."
+   "Convert buffer to html page and open it.
+Requires my/save-region-as-html."
    (interactive)
    (unless (my-init--directory-exists-p *temp-directory*)
      (error "Temp directory is not valid: %s" *temp-directory*))
@@ -2837,12 +2839,10 @@ But pasting to Thunderbird or Gmail does not work."
 	  (cmd (concat "powershell -Command \"& {type '" temp-file-name "' | Set-Clipboard -AsHtml}\"")))
 
      ;; (1) Convert to HTML and save in file
-     (my-init--save-as-html temp-file-name)
+     (my/save-region-as-html temp-file-name)
 
      ;; (2) copy temporary file to clipboard as HTML: 
      ;; (w32-shell-execute 1 temp-file-name)
-     (message "cmd: %s" cmd)
-     (w32-shell-execute "open" cmd)
      ))
 
  ) ; end of init section
@@ -3295,8 +3295,9 @@ reset: M-x calc-reset
      ;; for line above, refer to https://stackoverflow.com/questions/5194294/how-to-remove-all-newlines-from-selected-region-in-emacs
      (goto-char p)))
 
- (defun my-init--save-as-html (temp-file-name)
-   "Export buffer to HTML file."
+ (defun my/save-region-as-html (temp-file-name)
+   "Save region, otherwise buffer to HTML file.
+(v1, available in occisn/emacs-utils GitHub repository)"
    (let* ((regionp (region-active-p))
           (beg (and regionp (region-beginning)))
           (end (and regionp (region-end)))
@@ -3331,10 +3332,8 @@ reset: M-x calc-reset
        (write-file temp-file-name)
        (kill-buffer))))
 
- ;; see my/org-copy-to-clipboard-for-microsoft-word-and-teams
- ;; see my/org-export-to-html-page-for-thunderbird-outlook-or-gmail
+;; https://www.html.am/reference/html-special-characters.cfm
 
- ;; https://www.html.am/reference/html-special-characters.cfm
  ) ; end of init section
 
 
