@@ -2715,46 +2715,11 @@ Version 2019-12-02"
 
  ) ; end of init section
 
-(my-init--with-duration-measured-section 
+(my-init--with-duration-measured-section
  t
- "org-mode E (miscellaneous and hydra)"
+ "org-mode E (copy block)"
 
- ;;; avoid electric indentation:
- (when (fboundp 'electric-indent-mode) (electric-indent-mode -1))
-
- (use-package olivetti
-   :defer t
-   :config (my-init--message-package-loaded "olivetti"))
-
- (defun my-org-occur ()
-   (interactive)
-   (occur ";;;\\s-===\\|^;;;\\s-===")
-   ;; if "^" at the beginning: beginning of line
-   )
-
- (defun my/switch-between-language-org-files ()
-   "When in code buffer, switch between 'en' and 'fr' files. Useful when working on website."
-   (interactive)
-   (let* ((buffer-file-name1 (buffer-file-name)) ; c:/.../abc.org
-          (target
-           (cond ((string-match "/en/" buffer-file-name1)
-                  (replace-regexp-in-string "/en/" "/fr/" buffer-file-name1))
-                 ((string-match "/fr/" buffer-file-name1)
-                  (replace-regexp-in-string "/fr/" "/en/" buffer-file-name1))
-                 (t (error "Neither '/en/' or '/fr/' found in file path: %s" buffer-file-name1)))))
-     (find-file target)))
-
- (defun my-org-fontify-dollar-words ()
-   "Fontify words beginning with $ followed by letters as verbatim in org-mode."
-   (font-lock-add-keywords
-    nil
-    '(("\\$[a-zA-Z]+" 0 'org-verbatim prepend))
-    ;; org-code to be displayed as code
-    ))
-
- (add-hook 'org-mode-hook 'my-org-fontify-dollar-words)
-
- (defun my/org-copy-link-or-inline-code-or-verbatim-or-block ()
+  (defun my/org-copy-link-or-inline-code-or-verbatim-or-block ()
    "Copy link, inline code between = or ~ signs in org-mode, or content of org block.
 Fallback : current word.
 (v2, available in occisn/emacs-utils GitHub repository)"
@@ -2839,7 +2804,13 @@ Fallback : current word.
  (with-eval-after-load 'org
    (define-key org-mode-map (kbd "C-c c") #'my/org-copy-link-or-inline-code-or-verbatim-or-block))
 
- (defun my/org-copy-to-clipboard-for-microsoft-word-and-teams ()
+ ) ; end of init section
+
+(my-init--with-duration-measured-section
+ t
+ "org-mode F (copy to clipboard with format conversion)"
+
+  (defun my/org-copy-to-clipboard-for-microsoft-word-and-teams ()
    "Copy buffer to clipboard as HTML.
 Clipboard can then be pasted to Microsoft Word or Microsoft Teams. 
 But pasting to Thunderbird or Gmail does not work."
@@ -2874,7 +2845,53 @@ But pasting to Thunderbird or Gmail does not work."
      (w32-shell-execute "open" cmd)
      ))
 
-  (defhydra hydra-org-mode (:exit t :hint nil)
+ ) ; end of init section
+
+(my-init--with-duration-measured-section
+ t
+ "org-mode G (copy from clipboard with format conversion)"
+ ) ; end of init section
+
+(my-init--with-duration-measured-section 
+ t
+ "org-mode H (miscellaneous and hydra)"
+
+;;; avoid electric indentation:
+ (when (fboundp 'electric-indent-mode) (electric-indent-mode -1))
+
+ (use-package olivetti
+   :defer t
+   :config (my-init--message-package-loaded "olivetti"))
+
+ (defun my-org-occur ()
+   (interactive)
+   (occur ";;;\\s-===\\|^;;;\\s-===")
+   ;; if "^" at the beginning: beginning of line
+   )
+
+ (defun my/switch-between-language-org-files ()
+   "When in code buffer, switch between 'en' and 'fr' files. Useful when working on website."
+   (interactive)
+   (let* ((buffer-file-name1 (buffer-file-name)) ; c:/.../abc.org
+          (target
+           (cond ((string-match "/en/" buffer-file-name1)
+                  (replace-regexp-in-string "/en/" "/fr/" buffer-file-name1))
+                 ((string-match "/fr/" buffer-file-name1)
+                  (replace-regexp-in-string "/fr/" "/en/" buffer-file-name1))
+                 (t (error "Neither '/en/' or '/fr/' found in file path: %s" buffer-file-name1)))))
+     (find-file target)))
+
+ (defun my-org-fontify-dollar-words ()
+   "Fontify words beginning with $ followed by letters as verbatim in org-mode."
+   (font-lock-add-keywords
+    nil
+    '(("\\$[a-zA-Z]+" 0 'org-verbatim prepend))
+    ;; org-code to be displayed as code
+    ))
+
+ (add-hook 'org-mode-hook 'my-org-fontify-dollar-words)
+
+ (defhydra hydra-org-mode (:exit t :hint nil)
    "
 ^Org-mode hydra:
 ^---------------
