@@ -2556,7 +2556,7 @@ Version 2019-12-02"
 
  ;; disable C-TAB in org-mode so that this key binding could be used
  ;; to change tab
-  (with-eval-after-load 'org
+ (with-eval-after-load 'org
    (define-key org-mode-map [(control tab)] nil)
    ;; https://stackoverflow.com/questions/4333467/override-ctrl-tab-in-emacs-org-mode
    )
@@ -2837,9 +2837,44 @@ Fallback : current word.
        (message "No word, link, inline code, verbatim text or block found at point."))))
 
  (with-eval-after-load 'org
- (define-key org-mode-map (kbd "C-c c") #'my/org-copy-link-or-inline-code-or-verbatim-or-block))
+   (define-key org-mode-map (kbd "C-c c") #'my/org-copy-link-or-inline-code-or-verbatim-or-block))
+
+ (defun my/org-copy-to-clipboard-for-microsoft-word-and-teams ()
+   "Copy buffer to clipboard as HTML.
+Clipboard can then be pasted to Microsoft Word or Microsoft Teams. 
+But pasting to Thunderbird or Gmail does not work."
+   (interactive)
+   (unless (my-init--directory-exists-p *temp-directory*)
+     (error "Temp directory is not valid: %s" *temp-directory*))
+   (let* ((temp-file-name (concat *temp-directory* "org_mode_export_to_outlook_temp.html"))
+	  (cmd (concat "powershell -Command \"Get-Content '" temp-file-name "' | Set-Clipboard -AsHtml\"")))
+
+     ;; (1) Convert to HTML and save in file
+     (my-init--save-as-html temp-file-name)
+
+     ;; (2) copy temporary file to clipboard as HTML: 
+     (call-process-shell-command cmd nil 0)
+     ;; (message cmd)
+     (message "Content of the buffer exported to clipboard as HTML.")))
  
- (defhydra hydra-org-mode (:exit t :hint nil)
+ (defun my/org-export-to-html-page-for-thunderbird-outlook-or-gmail ()
+   "Convert buffer to html page and open it."
+   (interactive)
+   (unless (my-init--directory-exists-p *temp-directory*)
+     (error "Temp directory is not valid: %s" *temp-directory*))
+   (let* ((temp-file-name (concat *temp-directory* "org_mode_export_to_outlook_temp.html"))
+	  (cmd (concat "powershell -Command \"& {type '" temp-file-name "' | Set-Clipboard -AsHtml}\"")))
+
+     ;; (1) Convert to HTML and save in file
+     (my-init--save-as-html temp-file-name)
+
+     ;; (2) copy temporary file to clipboard as HTML: 
+     ;; (w32-shell-execute 1 temp-file-name)
+     (message "cmd: %s" cmd)
+     (w32-shell-execute "open" cmd)
+     ))
+
+  (defhydra hydra-org-mode (:exit t :hint nil)
    "
 ^Org-mode hydra:
 ^---------------
@@ -2864,7 +2899,7 @@ Tree: TAB and Shift-TAB to develop or reduce the current or whole tree
 Links: C-c C-l to create or edit [ [file:abc][name] ], [ [myimage.png] ]
        C-c C-o to follow
 Abbrev: C-_, C-q SPACE, M-x unexpand-abbrev
-Export: my/export-to-clipboard-for-word-only | my/export-to-html-page-for-thunderbird-outlook-or-gmail
+Export: my/org-copy-to-clipboard-for-microsoft-word-and-teams | my/org-export-to-html-page-for-thunderbird | for-gmail
 Table: C-c } to see raw/col # | C-c C-c to update (in TBLFM) |  org-table-export pour exporter une table en CSV | M-S-RIGHT to insert column
 Appearance : _v_ olivetti-mode
 Agenda: C-c a a || C-c a 1 pour custom ; et C-a t pour tasks
@@ -2879,8 +2914,7 @@ Web site: _s_witch between FR and EN org files {end}"
    ("s" #'my/switch-between-language-org-files)
    ("v" #'olivetti-mode)
    ("w" #'widen)
-   ("1" #'my/org-agenda-switch-to-perso-file)
-   )
+   ("1" #'my/org-agenda-switch-to-perso-file)) ; end of hydra
 
  ) ; end of init section
 
@@ -3025,7 +3059,9 @@ reset: M-x calc-reset
 {end}
 " 
    ;; ("e" #'a-function)
-   )
+   ) ; end of hydra
+
+ ) ; end of init section
 
 
 ;;; ===
@@ -3033,6 +3069,10 @@ reset: M-x calc-reset
 ;;; ===== ESHELL =====
 ;;; ==================
 
+(my-init--with-duration-measured-section
+ t
+ "eshell"
+ 
  (with-eval-after-load 'org
    (add-to-list 'org-babel-load-languages '(eshell . t))
    (org-babel-do-load-languages 'org-babel-load-languages org-babel-load-languages))
@@ -3080,109 +3120,83 @@ reset: M-x calc-reset
                     (goto-char (point-max))
                     (forward-line 0)
                     (not (looking-at-p prompt-regexp)))
-             (accept-process-output (get-buffer-process eshell-buffer) 0.1))))))) ; end of init section
+             (accept-process-output (get-buffer-process eshell-buffer) 0.1)))))))
 
- 
+ ) ; end of init section
+
+
 ;;; ===
 ;;; ================
 ;;; ===== HTML =====
 ;;; ================
 
- (my-init--with-duration-measured-section 
-  t 
-  "HTML"
+(my-init--with-duration-measured-section 
+ t 
+ "HTML"
 
-  (defun my-init--replace-regexp (a b)
-    ""
-    (while (re-search-forward a nil t)
-      (replace-match b)))
+ (defun my-init--replace-regexp (a b)
+   ""
+   (while (re-search-forward a nil t)
+     (replace-match b)))
 
-  (defun my-init--html-add-b-u-i-br-tags ()
-    "Within an existing buffer, add <b></b> <u></u> <i></i> and <br/> tags."
-    (let ((p nil))
-      (goto-char 1)
-      (setq p (point))
-      (my-init--replace-regexp "’" "'")
-      (goto-char p)
-      (my-init--replace-regexp "\\*\\(.*?\\)\\*" "<b>\\1</b>")
-      (goto-char p)
-      (my-init--replace-regexp "_\\(.*?\\)_" "<u>\\1</u>")
-      (goto-char p)
-      (my-init--replace-regexp "\\([^<]\\)\\/\\([^ ].*?[^ ]\\)\\/" "\\1<i>\\2</i>")
-      (goto-char p)
-      (while (search-forward "\n" nil t) (replace-match "<br/>" nil t)) ; \r\n
-      ;; for line above, refer to https://stackoverflow.com/questions/5194294/how-to-remove-all-newlines-from-selected-region-in-emacs
-      (goto-char p)))
+ (defun my-init--html-add-b-u-i-br-tags ()
+   "Within an existing buffer, add <b></b> <u></u> <i></i> and <br/> tags."
+   (let ((p nil))
+     (goto-char 1)
+     (setq p (point))
+     (my-init--replace-regexp "’" "'")
+     (goto-char p)
+     (my-init--replace-regexp "\\*\\(.*?\\)\\*" "<b>\\1</b>")
+     (goto-char p)
+     (my-init--replace-regexp "_\\(.*?\\)_" "<u>\\1</u>")
+     (goto-char p)
+     (my-init--replace-regexp "\\([^<]\\)\\/\\([^ ].*?[^ ]\\)\\/" "\\1<i>\\2</i>")
+     (goto-char p)
+     (while (search-forward "\n" nil t) (replace-match "<br/>" nil t)) ; \r\n
+     ;; for line above, refer to https://stackoverflow.com/questions/5194294/how-to-remove-all-newlines-from-selected-region-in-emacs
+     (goto-char p)))
 
-  (defun my-init--save-as-html (temp-file-name)
-    "Export buffer to HTML file."
-    (let* ((regionp (region-active-p))
-           (beg (and regionp (region-beginning)))
-           (end (and regionp (region-end)))
-	   (buf (current-buffer)))
-      (when (file-exists-p temp-file-name) (delete-file temp-file-name))
-      (with-temp-buffer
-        (insert-buffer-substring buf beg end)
-        (my-init--html-add-b-u-i-br-tags)
-        (insert "<?xml version=\"1.0\" encoding=\"utf-8\"?>")
-        (insert "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"
+ (defun my-init--save-as-html (temp-file-name)
+   "Export buffer to HTML file."
+   (let* ((regionp (region-active-p))
+          (beg (and regionp (region-beginning)))
+          (end (and regionp (region-end)))
+	  (buf (current-buffer)))
+     (when (file-exists-p temp-file-name) (delete-file temp-file-name))
+     (with-temp-buffer
+       (insert-buffer-substring buf beg end)
+       (my-init--html-add-b-u-i-br-tags)
+       (insert "<?xml version=\"1.0\" encoding=\"utf-8\"?>")
+       (insert "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"
 \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">")
-        (insert "<html xmlns=\"http://www.w3.org/1999/xhtml\" lang=\"en\" xml:lang=\"en\">")
-        (insert "<html>")
-        (insert "<head>")
-        (insert "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\"/>")
-        (insert "</head>")
-        (insert "<body>")
-        ;;(insert "<pre white-space=\"-moz-pre-wrap\">")
-        (insert "<font face='Calibri'>") ; size=\"-1\" 
-        (insert "<div style=\"white-space: pre-wrap;\">")
-        (insert "<div style=\"font-size:14.5px\">") ; to have Calibri 11
-        (goto-char (point-max))
-        (insert "</div>")               ; font-size
-        (insert "</div>")               ; white-space
-        (insert "</font>")
-        ;;(insert "</pre>")
-        (insert "</body>")
-        (insert "</html>")
-        ;; (set-buffer-file-coding-system 'utf-8)
+       (insert "<html xmlns=\"http://www.w3.org/1999/xhtml\" lang=\"en\" xml:lang=\"en\">")
+       (insert "<html>")
+       (insert "<head>")
+       (insert "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\"/>")
+       (insert "</head>")
+       (insert "<body>")
+       ;;(insert "<pre white-space=\"-moz-pre-wrap\">")
+       (insert "<font face='Calibri'>") ; size=\"-1\" 
+       (insert "<div style=\"white-space: pre-wrap;\">")
+       (insert "<div style=\"font-size:14.5px\">") ; to have Calibri 11
+       (goto-char (point-max))
+       (insert "</div>")               ; font-size
+       (insert "</div>")               ; white-space
+       (insert "</font>")
+       ;;(insert "</pre>")
+       (insert "</body>")
+       (insert "</html>")
+       ;; (set-buffer-file-coding-system 'utf-8)
 
-        ;; (2) Save buffer as temporary HTML file
-        (write-file temp-file-name)
-        (kill-buffer))))
+       ;; (2) Save buffer as temporary HTML file
+       (write-file temp-file-name)
+       (kill-buffer))))
 
-  (defun my/export-to-clipboard-for-word-only ()
-    "Copy buffer to clipboard as HTML.
-Clipboard can then be pasted to Microsoft Word. 
-But pasting to Thunderbird or Gmail does not work."
-    (interactive)
-    (unless (my-init--directory-exists-p *temp-directory*)
-      (error "Temp directory is not valid: %s" *temp-directory*))
-    (let* ((temp-file-name (concat *temp-directory* "org_mode_export_to_outlook_temp.html"))
-	   (cmd (concat "powershell -Command \"Get-Content '" temp-file-name "' | Set-Clipboard -AsHtml\"")))
+ ;; see my/org-copy-to-clipboard-for-microsoft-word-and-teams
+ ;; see my/org-export-to-html-page-for-thunderbird-outlook-or-gmail
 
-      ;; (1) Convert to HTML and save in file
-      (my-init--save-as-html temp-file-name)
-
-      ;; (2) copy temporary file to clipboard as HTML: 
-      (call-process-shell-command cmd nil 0)
-      ;; (message cmd)
-      (message "Content of the buffer exported to clipboard as HTML.")))
-
-  ;; https://www.html.am/reference/html-special-characters.cfm
-
-  (defun my/export-to-html-page-for-thunderbird-outlook-or-gmail ()
-    "Convert buffer to html page and open it."
-    (interactive)
-    (unless (my-init--directory-exists-p *temp-directory*)
-      (error "Temp directory is not valid: %s" *temp-directory*))
-    (let* ((temp-file-name (concat *temp-directory* "org_mode_export_to_outlook_temp.html"))
-	   (_cmd (concat "powershell -Command \"& {type '" temp-file-name "' | Set-Clipboard -AsHtml}\"")))
-
-      ;; (1) Convert to HTML and save in file
-      (my-init--save-as-html temp-file-name)
-
-      ;; (2) copy temporary file to clipboard as HTML: 
-      (w32-shell-execute 1 temp-file-name))))) ; end of init section
+ ;; https://www.html.am/reference/html-special-characters.cfm
+ ) ; end of init section
 
 
 ;;; ===
@@ -4888,9 +4902,9 @@ d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
  ;; ===
  ;; === (EL+CL) my occur
 
-(defun my-elisp-occur ()
-  (interactive)
-  (occur "\\s-*(defhydra [^%]\\|\\s-*(use-\\package [^%]\\|\\s-*(defun [^%]\\|\\s-*(cl\\-defun [^%]\\|\\s-*(defvar [^%]\\|\\s-*(defface [^%]\\|\\s-*(defcustom [^%]\\|\\s-*(defmacro [^%]\\|\\s-*(cl-\\defmacro [^%]\\|\\s-*(defparameter [^%]\\|\\s-*(global-set-key[^%]\\|\\s-*;;*\\s-===\\|\\s-*(ert-deftest [^%]"))
+ (defun my-elisp-occur ()
+   (interactive)
+   (occur "\\s-*(defhydra [^%]\\|\\s-*(use-\\package [^%]\\|\\s-*(defun [^%]\\|\\s-*(cl\\-defun [^%]\\|\\s-*(defvar [^%]\\|\\s-*(defface [^%]\\|\\s-*(defcustom [^%]\\|\\s-*(defmacro [^%]\\|\\s-*(cl-\\defmacro [^%]\\|\\s-*(defparameter [^%]\\|\\s-*(global-set-key[^%]\\|\\s-*;;*\\s-===\\|\\s-*(ert-deftest [^%]"))
  ;; ^ = beginning of line
  ;; \s-* = Zero or more whitespace characters (spaces, tabs, etc.); to be preceded by an additional \
  ;; \s- = one whitespace character; to be preceded by an additional \
@@ -4957,10 +4971,10 @@ d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
          (slime-with-popup-buffer (bufname :package package
 					   :connection t
 					   :select slime-description-autofocus)
-	   (when (string= bufname "*slime-description*")
-	     (with-current-buffer bufname (slime-company-doc-mode)))
-	   (princ string)
-	   (goto-char (point-min))))))
+	                          (when (string= bufname "*slime-description*")
+	                            (with-current-buffer bufname (slime-company-doc-mode)))
+	                          (princ string)
+	                          (goto-char (point-min))))))
    (my-init--message-package-loaded "slime-company"))
 
  ;; and activate slime-company in slime below
@@ -5007,56 +5021,56 @@ d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
  ;;; ===
 
  (defun my/toggle-ielm ()
-  "If another window shows `*ielm*`, switch to it.
+   "If another window shows `*ielm*`, switch to it.
 Otherwise, split vertically and start (or show) ielm in the other window."
-  (interactive)
-  (let* ((ielm-buffer (get-buffer "*ielm*"))
-         (other-win (when (> (count-windows) 1)
-                      (next-window))))
-    (if (and other-win
-             (eq (window-buffer other-win) ielm-buffer))
-        ;; Case 1: ielm is already in the other window
-        (other-window 1)
-      ;; Case 2: no other window with ielm
-      (unless (> (count-windows) 1)
-        (split-window-right))
-      (other-window 1)
-      (if ielm-buffer
-          (switch-to-buffer ielm-buffer)
-        (ielm)))))
+   (interactive)
+   (let* ((ielm-buffer (get-buffer "*ielm*"))
+          (other-win (when (> (count-windows) 1)
+                       (next-window))))
+     (if (and other-win
+              (eq (window-buffer other-win) ielm-buffer))
+         ;; Case 1: ielm is already in the other window
+         (other-window 1)
+       ;; Case 2: no other window with ielm
+       (unless (> (count-windows) 1)
+         (split-window-right))
+       (other-window 1)
+       (if ielm-buffer
+           (switch-to-buffer ielm-buffer)
+         (ielm)))))
 
-(define-key emacs-lisp-mode-map (kbd "C-c C-z")  #'my/toggle-ielm)
+ (define-key emacs-lisp-mode-map (kbd "C-c C-z")  #'my/toggle-ielm)
 
-(defun my/ielm-insert-defun-name ()
-  "Insert the name of the current defun into the *ielm* buffer."
-  (interactive)
-  (let ((defun-name (add-log-current-defun))
-        (ielm-buffer (get-buffer "*ielm*")))
-    (if (not defun-name)
-        (message "Not inside a defun")
-      (my/toggle-ielm)
-      (goto-char (point-max))
-      (insert "(")
-      (insert defun-name)
-      (insert ")"))))
+ (defun my/ielm-insert-defun-name ()
+   "Insert the name of the current defun into the *ielm* buffer."
+   (interactive)
+   (let ((defun-name (add-log-current-defun))
+         (ielm-buffer (get-buffer "*ielm*")))
+     (if (not defun-name)
+         (message "Not inside a defun")
+       (my/toggle-ielm)
+       (goto-char (point-max))
+       (insert "(")
+       (insert defun-name)
+       (insert ")"))))
 
-(define-key emacs-lisp-mode-map (kbd "C-c C-y")  #'my/ielm-insert-defun-name)
+ (define-key emacs-lisp-mode-map (kbd "C-c C-y")  #'my/ielm-insert-defun-name)
 
-(defun my/ielm-insert-defun-name-with-time-measurement ()
-  "Insert the name of the current defun into the *ielm* buffer, with time measurement."
-  (interactive)
-  (let ((defun-name (add-log-current-defun))
-        (ielm-buffer (get-buffer "*ielm*")))
-    (if (not defun-name)
-        (message "Not inside a defun")
-      (my/toggle-ielm)
-      (goto-char (point-max))
-      (insert (format "(let ((start-time (current-time)))
+ (defun my/ielm-insert-defun-name-with-time-measurement ()
+   "Insert the name of the current defun into the *ielm* buffer, with time measurement."
+   (interactive)
+   (let ((defun-name (add-log-current-defun))
+         (ielm-buffer (get-buffer "*ielm*")))
+     (if (not defun-name)
+         (message "Not inside a defun")
+       (my/toggle-ielm)
+       (goto-char (point-max))
+       (insert (format "(let ((start-time (current-time)))
   (prog1
       (%s)
     (print (format \"Elapsed: %s s\" (float-time (time-since start-time))))))" defun-name "%.06f")))))
 
-(define-key emacs-lisp-mode-map (kbd "C-c C-x")  #'my/ielm-insert-defun-name-with-time-measurement)
+ (define-key emacs-lisp-mode-map (kbd "C-c C-x")  #'my/ielm-insert-defun-name-with-time-measurement)
 
  ;; ===
  ;; === (CL) Slime, including arguments ala eldoc
@@ -5164,17 +5178,17 @@ Modified from official 'slime-call-defun'"
          (if (symbolp toplevel)
              (error "Not in a function definition")
            (slime-dcase toplevel
-             (((:defun :defgeneric :defmacro :define-compiler-macro) symbol)
-              (insert-call symbol))
-             ((:defmethod symbol &rest args)
-              ;; (declare (ignore args))
-              (insert-call symbol))
-             (((:defparameter :defvar :defconstant) symbol)
-              (insert-call symbol :function nil))
-             (((:defclass) symbol)
-              (insert-call symbol :defclass t))
-             (t
-              (error "Not in a function definition")))))))
+                        (((:defun :defgeneric :defmacro :define-compiler-macro) symbol)
+                         (insert-call symbol))
+                        ((:defmethod symbol &rest args)
+                         ;; (declare (ignore args))
+                         (insert-call symbol))
+                        (((:defparameter :defvar :defconstant) symbol)
+                         (insert-call symbol :function nil))
+                        (((:defclass) symbol)
+                         (insert-call symbol :defclass t))
+                        (t
+                         (error "Not in a function definition")))))))
 
    (define-key slime-mode-map (kbd "C-c C-x")  #'my/slime-call-defun--with-time-monitoring)
 
@@ -6581,11 +6595,11 @@ Alt-F4 and Alt-TAB
  ;;    use ‘inferior-ess-r-program’ instead.
  (setq inferior-ess-r-program *Rterm-executable*)
 
-;; Syntax highlighting for R mode, in particular in src blocks:
+ ;; Syntax highlighting for R mode, in particular in src blocks:
 
-(setq R--keywords
-      '("%in%"
-        ))
+ (setq R--keywords
+       '("%in%"
+         ))
 
  (setq R--types '("tobefilled12345"))
 
