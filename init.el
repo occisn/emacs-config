@@ -2948,7 +2948,7 @@ Requires my/save-region-as-html."
      
      (string-trim (buffer-string))))
 
- (defun my/paste-from-Teams-Word-as-org ()
+ (defun my/org-paste-from-Teams-Word-as-org ()
    "Paste from clipboard and convert to org-mode format.
 Content of the clipboard may come from Microsoft Teams or Word.
 Does not work as such from Thunderbird. Not tested from Gmail.
@@ -3037,7 +3037,7 @@ Tree: TAB and Shift-TAB to develop or reduce the current or whole tree
 Links: C-c C-l to create or edit [ [file:abc][name] ], [ [myimage.png] ]
        C-c C-o to follow
 Abbrev: C-_, C-q SPACE, M-x unexpand-abbrev
-Import: my/paste-from-Teams-Word-as-org
+Import: my/org-paste-from-Teams-Word-as-org
 Export: my/org-copy-to-clipboard-for-microsoft-word-and-teams | my/org-export-to-html-page-for-thunderbird | for-gmail
 Table: C-c } to see raw/col # | C-c C-c to update (in TBLFM) |  org-table-export pour exporter une table en CSV | M-S-RIGHT to insert column
 Appearance : _v_ olivetti-mode
