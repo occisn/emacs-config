@@ -2719,7 +2719,7 @@ Version 2019-12-02"
  t
  "org-mode E (copy block)"
 
-  (defun my/org-copy-link-or-inline-code-or-verbatim-or-block ()
+ (defun my/org-copy-link-or-inline-code-or-verbatim-or-block ()
    "Copy link, inline code between = or ~ signs in org-mode, or content of org block.
 Fallback : current word.
 (v2, available in occisn/emacs-utils GitHub repository)"
@@ -2810,7 +2810,7 @@ Fallback : current word.
  t
  "org-mode F (copy to clipboard with format conversion)"
 
-  (defun my/org-copy-to-clipboard-for-microsoft-word-and-teams ()
+ (defun my/org-copy-to-clipboard-for-microsoft-word-and-teams ()
    "Copy buffer to clipboard as HTML.
 Clipboard can then be pasted to Microsoft Word or Microsoft Teams. 
 But pasting to Thunderbird or Gmail does not work.
@@ -2852,124 +2852,124 @@ Requires my/save-region-as-html."
  "org-mode G (paste from clipboard with format conversion)"
 
  (defun my/paste-clipboard-as-raw-html ()
-  "Insert raw HTML from the Windows clipboard (CF_HTML) into current buffer, with visible tags.
+   "Insert raw HTML from the Windows clipboard (CF_HTML) into current buffer, with visible tags.
 (v1 as of 2025-10-28, available in occisn/emacs-utils GitHub repository)"
-  (interactive)
-  (let* ((html-raw
-          (with-temp-buffer
-            (call-process
-             "powershell.exe" nil t nil
-             "-NoProfile" "-Command"
-             "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.Clipboard]::GetText([System.Windows.Forms.TextDataFormat]::Html)")
-            (buffer-string)))
-         ;; Extract fragment between <!--StartFragment--> and <!--EndFragment-->
-         (fragment
-          (if (string-match "<!--StartFragment-->(.*)<!--EndFragment-->" html-raw)
-              (match-string 1 html-raw)
-            html-raw)))
-    (insert fragment)))
+   (interactive)
+   (let* ((html-raw
+           (with-temp-buffer
+             (call-process
+              "powershell.exe" nil t nil
+              "-NoProfile" "-Command"
+              "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.Clipboard]::GetText([System.Windows.Forms.TextDataFormat]::Html)")
+             (buffer-string)))
+          ;; Extract fragment between <!--StartFragment--> and <!--EndFragment-->
+          (fragment
+           (if (string-match "<!--StartFragment-->(.*)<!--EndFragment-->" html-raw)
+               (match-string 1 html-raw)
+             html-raw)))
+     (insert fragment)))
 
-(defun my/html-to-org (html)
-  "Convert HTML string to org-mode format.
+ (defun my/html-to-org (html)
+   "Convert HTML string to org-mode format.
 (v1 as of 2025-10-29, available in occisn/emacs-utils GitHub repository)"
-  (with-temp-buffer
-    (insert html)
-    ;; Convert common HTML elements to org-mode
-    (goto-char (point-min))
-    
-    ;; Headers (h1-h6)
-    (dolist (level '(6 5 4 3 2 1))
-      (goto-char (point-min))
-      (let ((stars (make-string level ?*)))
-        (while (re-search-forward (format "<h%d[^>]*>\\(.*?\\)</h%d>" level level) nil t)
-          (replace-match (format "%s \\1" stars)))))
-    
-    ;; Bold
-    (goto-char (point-min))
-    (while (re-search-forward "<\\(b\\|strong\\)[^>]*>\\(.*?\\)</\\(b\\|strong\\)>" nil t)
-      (replace-match "*\\2*"))
-    
-    ;; Italic
-    (goto-char (point-min))
-    (while (re-search-forward "<\\(i\\|em\\)[^>]*>\\(.*?\\)</\\(i\\|em\\)>" nil t)
-      (replace-match "/\\2/"))
-    
-    ;; Code
-    (goto-char (point-min))
-    (while (re-search-forward "<code[^>]*>\\(.*?\\)</code>" nil t)
-      (replace-match "~\\1~"))
-    
-    ;; Links
-    (goto-char (point-min))
-    (while (re-search-forward "<a[^>]*href=\"\\([^\"]+\\)\"[^>]*>\\(.*?\\)</a>" nil t)
-      (replace-match "[[\\1][\\2]]"))
-    
-    ;; Unordered lists
-    (goto-char (point-min))
-    (while (re-search-forward "<li[^>]*>\\(.*?\\)</li>" nil t)
-      (replace-match "- \\1"))
-    
-    ;; Paragraphs (add newlines)
-    (goto-char (point-min))
-    (while (re-search-forward "<p[^>]*>\\(.*?\\)</p>" nil t)
-      (replace-match "\\1\n"))
-    
-    ;; Line breaks
-    (goto-char (point-min))
-    (while (re-search-forward "<br[^>]*>" nil t)
-      (replace-match "\n"))
-    
-    ;; Remove remaining HTML tags
-    (goto-char (point-min))
-    (while (re-search-forward "<[^>]+>" nil t)
-      (replace-match ""))
-    
-    ;; Decode HTML entities
-    (goto-char (point-min))
-    (while (re-search-forward "&nbsp;" nil t)
-      (replace-match " "))
-    (goto-char (point-min))
-    (while (re-search-forward "&amp;" nil t)
-      (replace-match "&"))
-    (goto-char (point-min))
-    (while (re-search-forward "&lt;" nil t)
-      (replace-match "<"))
-    (goto-char (point-min))
-    (while (re-search-forward "&gt;" nil t)
-      (replace-match ">"))
-    (goto-char (point-min))
-    (while (re-search-forward "&quot;" nil t)
-      (replace-match "\""))
-    
-    ;; Clean up extra whitespace
-    (goto-char (point-min))
-    (while (re-search-forward "\n\n\n+" nil t)
-      (replace-match "\n\n"))
-    
-    (string-trim (buffer-string))))
+   (with-temp-buffer
+     (insert html)
+     ;; Convert common HTML elements to org-mode
+     (goto-char (point-min))
+     
+     ;; Headers (h1-h6)
+     (dolist (level '(6 5 4 3 2 1))
+       (goto-char (point-min))
+       (let ((stars (make-string level ?*)))
+         (while (re-search-forward (format "<h%d[^>]*>\\(.*?\\)</h%d>" level level) nil t)
+           (replace-match (format "%s \\1" stars)))))
+     
+     ;; Bold
+     (goto-char (point-min))
+     (while (re-search-forward "<\\(b\\|strong\\)[^>]*>\\(.*?\\)</\\(b\\|strong\\)>" nil t)
+       (replace-match "*\\2*"))
+     
+     ;; Italic
+     (goto-char (point-min))
+     (while (re-search-forward "<\\(i\\|em\\)[^>]*>\\(.*?\\)</\\(i\\|em\\)>" nil t)
+       (replace-match "/\\2/"))
+     
+     ;; Code
+     (goto-char (point-min))
+     (while (re-search-forward "<code[^>]*>\\(.*?\\)</code>" nil t)
+       (replace-match "~\\1~"))
+     
+     ;; Links
+     (goto-char (point-min))
+     (while (re-search-forward "<a[^>]*href=\"\\([^\"]+\\)\"[^>]*>\\(.*?\\)</a>" nil t)
+       (replace-match "[[\\1][\\2]]"))
+     
+     ;; Unordered lists
+     (goto-char (point-min))
+     (while (re-search-forward "<li[^>]*>\\(.*?\\)</li>" nil t)
+       (replace-match "- \\1"))
+     
+     ;; Paragraphs (add newlines)
+     (goto-char (point-min))
+     (while (re-search-forward "<p[^>]*>\\(.*?\\)</p>" nil t)
+       (replace-match "\\1\n"))
+     
+     ;; Line breaks
+     (goto-char (point-min))
+     (while (re-search-forward "<br[^>]*>" nil t)
+       (replace-match "\n"))
+     
+     ;; Remove remaining HTML tags
+     (goto-char (point-min))
+     (while (re-search-forward "<[^>]+>" nil t)
+       (replace-match ""))
+     
+     ;; Decode HTML entities
+     (goto-char (point-min))
+     (while (re-search-forward "&nbsp;" nil t)
+       (replace-match " "))
+     (goto-char (point-min))
+     (while (re-search-forward "&amp;" nil t)
+       (replace-match "&"))
+     (goto-char (point-min))
+     (while (re-search-forward "&lt;" nil t)
+       (replace-match "<"))
+     (goto-char (point-min))
+     (while (re-search-forward "&gt;" nil t)
+       (replace-match ">"))
+     (goto-char (point-min))
+     (while (re-search-forward "&quot;" nil t)
+       (replace-match "\""))
+     
+     ;; Clean up extra whitespace
+     (goto-char (point-min))
+     (while (re-search-forward "\n\n\n+" nil t)
+       (replace-match "\n\n"))
+     
+     (string-trim (buffer-string))))
 
-(defun my/paste-from-Teams-Word-as-org ()
-  "Paste from clipboard and convert to org-mode format.
+ (defun my/paste-from-Teams-Word-as-org ()
+   "Paste from clipboard and convert to org-mode format.
 Content of the clipboard may come from Microsoft Teams or Word.
 Does not work as such from Thunderbird. Not tested from Gmail.
 Requires my/html-to-org.
 (v1 as of 2025-10-29, available in occisn/emacs-utils GitHub repository)"
-  (interactive)
-  (let* ((powershell-cmd "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.Clipboard]::GetText([System.Windows.Forms.TextDataFormat]::Html)")
-         (html-content (shell-command-to-string 
-                        (format "powershell.exe -Command \"%s\"" powershell-cmd))))
-    (if (string-empty-p (string-trim html-content))
-        (message "No HTML content in clipboard")
-      ;; Extract the actual HTML fragment (Windows clipboard includes metadata)
-      (let* ((fragment-start (string-match "<!--StartFragment-->" html-content))
-             (fragment-end (string-match "<!--EndFragment-->" html-content))
-             (html (if (and fragment-start fragment-end)
-                       (substring html-content 
-                                  (+ fragment-start (length "<!--StartFragment-->"))
-                                  fragment-end)
-                     html-content))
-             (org-content (my/html-to-org html)))
-        (insert org-content)))))
+   (interactive)
+   (let* ((powershell-cmd "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.Clipboard]::GetText([System.Windows.Forms.TextDataFormat]::Html)")
+          (html-content (shell-command-to-string 
+                         (format "powershell.exe -Command \"%s\"" powershell-cmd))))
+     (if (string-empty-p (string-trim html-content))
+         (message "No HTML content in clipboard")
+       ;; Extract the actual HTML fragment (Windows clipboard includes metadata)
+       (let* ((fragment-start (string-match "<!--StartFragment-->" html-content))
+              (fragment-end (string-match "<!--EndFragment-->" html-content))
+              (html (if (and fragment-start fragment-end)
+                        (substring html-content 
+                                   (+ fragment-start (length "<!--StartFragment-->"))
+                                   fragment-end)
+                      html-content))
+              (org-content (my/html-to-org html)))
+         (insert org-content)))))
 
  ) ; end of init section
 
@@ -3273,66 +3273,66 @@ reset: M-x calc-reset
  t 
  "HTML"
 
- (defun my-init--replace-regexp (a b)
-   ""
-   (while (re-search-forward a nil t)
-     (replace-match b)))
-
- (defun my-init--html-add-b-u-i-br-tags ()
-   "Within an existing buffer, add <b></b> <u></u> <i></i> and <br/> tags."
-   (let ((p nil))
-     (goto-char 1)
-     (setq p (point))
-     (my-init--replace-regexp "’" "'")
-     (goto-char p)
-     (my-init--replace-regexp "\\*\\(.*?\\)\\*" "<b>\\1</b>")
-     (goto-char p)
-     (my-init--replace-regexp "_\\(.*?\\)_" "<u>\\1</u>")
-     (goto-char p)
-     (my-init--replace-regexp "\\([^<]\\)\\/\\([^ ].*?[^ ]\\)\\/" "\\1<i>\\2</i>")
-     (goto-char p)
-     (while (search-forward "\n" nil t) (replace-match "<br/>" nil t)) ; \r\n
-     ;; for line above, refer to https://stackoverflow.com/questions/5194294/how-to-remove-all-newlines-from-selected-region-in-emacs
-     (goto-char p)))
-
  (defun my/save-region-as-html (temp-file-name)
    "Save region, otherwise buffer to HTML file.
 (v1, available in occisn/emacs-utils GitHub repository)"
-   (let* ((regionp (region-active-p))
-          (beg (and regionp (region-beginning)))
-          (end (and regionp (region-end)))
-	  (buf (current-buffer)))
-     (when (file-exists-p temp-file-name) (delete-file temp-file-name))
-     (with-temp-buffer
-       (insert-buffer-substring buf beg end)
-       (my-init--html-add-b-u-i-br-tags)
-       (insert "<?xml version=\"1.0\" encoding=\"utf-8\"?>")
-       (insert "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"
+   (cl-labels ((replace-regexp (a b)
+                 ""
+                 (while (re-search-forward a nil t)
+                   (replace-match b)))
+
+               (html-add-b-u-i-br-tags ()
+                 "Within an existing buffer, add <b></b> <u></u> <i></i> and <br/> tags."
+                 (let ((p nil))
+                   (goto-char 1)
+                   (setq p (point))
+                   (replace-regexp "’" "'")
+                   (goto-char p)
+                   (replace-regexp "\\*\\(.*?\\)\\*" "<b>\\1</b>")
+                   (goto-char p)
+                   (replace-regexp "_\\(.*?\\)_" "<u>\\1</u>")
+                   (goto-char p)
+                   (replace-regexp "\\([^<]\\)\\/\\([^ ].*?[^ ]\\)\\/" "\\1<i>\\2</i>")
+                   (goto-char p)
+                   (while (search-forward "\n" nil t) (replace-match "<br/>" nil t)) ; \r\n
+                   ;; for line above, refer to https://stackoverflow.com/questions/5194294/how-to-remove-all-newlines-from-selected-region-in-emacs
+                   (goto-char p)))) ; end of labels definitions
+     
+     (let* ((regionp (region-active-p))
+            (beg (and regionp (region-beginning)))
+            (end (and regionp (region-end)))
+	    (buf (current-buffer)))
+       (when (file-exists-p temp-file-name) (delete-file temp-file-name))
+       (with-temp-buffer
+         (insert-buffer-substring buf beg end)
+         (html-add-b-u-i-br-tags)
+         (insert "<?xml version=\"1.0\" encoding=\"utf-8\"?>")
+         (insert "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"
 \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">")
-       (insert "<html xmlns=\"http://www.w3.org/1999/xhtml\" lang=\"en\" xml:lang=\"en\">")
-       (insert "<html>")
-       (insert "<head>")
-       (insert "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\"/>")
-       (insert "</head>")
-       (insert "<body>")
-       ;;(insert "<pre white-space=\"-moz-pre-wrap\">")
-       (insert "<font face='Calibri'>") ; size=\"-1\" 
-       (insert "<div style=\"white-space: pre-wrap;\">")
-       (insert "<div style=\"font-size:14.5px\">") ; to have Calibri 11
-       (goto-char (point-max))
-       (insert "</div>")               ; font-size
-       (insert "</div>")               ; white-space
-       (insert "</font>")
-       ;;(insert "</pre>")
-       (insert "</body>")
-       (insert "</html>")
-       ;; (set-buffer-file-coding-system 'utf-8)
+         (insert "<html xmlns=\"http://www.w3.org/1999/xhtml\" lang=\"en\" xml:lang=\"en\">")
+         (insert "<html>")
+         (insert "<head>")
+         (insert "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\"/>")
+         (insert "</head>")
+         (insert "<body>")
+         ;;(insert "<pre white-space=\"-moz-pre-wrap\">")
+         (insert "<font face='Calibri'>") ; size=\"-1\" 
+         (insert "<div style=\"white-space: pre-wrap;\">")
+         (insert "<div style=\"font-size:14.5px\">") ; to have Calibri 11
+         (goto-char (point-max))
+         (insert "</div>")            ; font-size
+         (insert "</div>")            ; white-space
+         (insert "</font>")
+         ;;(insert "</pre>")
+         (insert "</body>")
+         (insert "</html>")
+         ;; (set-buffer-file-coding-system 'utf-8)
 
-       ;; (2) Save buffer as temporary HTML file
-       (write-file temp-file-name)
-       (kill-buffer))))
+         ;; (2) Save buffer as temporary HTML file
+         (write-file temp-file-name)
+         (kill-buffer)))))
 
-;; https://www.html.am/reference/html-special-characters.cfm
+ ;; https://www.html.am/reference/html-special-characters.cfm
 
  ) ; end of init section
 
