@@ -5411,7 +5411,7 @@ For instance: 'aa bb cc' --> ('aa' 'bb cc')
                            "parachute:test "
                            "'"
                            package-name
-                           "::"
+                           "-tests::test-"
                            defun-name
                            ")"
                            )))
@@ -5740,16 +5740,21 @@ With a prefix argument, perform `macroexpand-all' instead."
    (interactive)
    (let* ((buffer-file-name1 (buffer-file-name)) ; c:/.../abc.lisp
           (directory (file-name-directory buffer-file-name1))
+          (file-name (file-name-nondirectory buffer-file-name1)) ; abc.lisp
           (file-name-base1 (file-name-base buffer-file-name1)) ; abc
           (len (length file-name-base1))
           (test-file-p
            (and (> len 6)
                 (string= "-tests" (substring file-name-base1 (- len 6) (- len 0)))))
-          (target ""))
-     (if test-file-p
-         (setq target (concat directory "../src/" (substring file-name-base1 0 (- len 6)) ".lisp"))
-       (setq target (concat directory "../tests/" file-name-base1 "-tests.lisp")))
-     (find-file target)))
+          (target
+           (if test-file-p
+               (concat directory "../src/" (substring file-name-base1 0 (- len 6)) ".lisp")
+             (concat directory "../tests/" file-name-base1 "-tests.lisp"))))
+     (if (file-exists-p target)
+         (progn
+           (message "Switching to %s file" (if test-file-p "source" "test"))
+           (find-file target))
+       (message "No %s file for %s" (if test-file-p "source" "test") file-name))))
 
  (defun my/go-to-asd ()
    "Open unique .asd file in parent directory."
@@ -5757,8 +5762,13 @@ With a prefix argument, perform `macroexpand-all' instead."
    (let* ((directory (file-name-directory (buffer-file-name)))
           (asd-files (directory-files (concat directory "../") nil "\\.asd$")))
      (when (null asd-files) (error "No .asd file in parent directory"))
-     (when (> (length asd-files) 1) (error "More than one .asd file in parent directory"))
-     (find-file (concat directory "../" (car asd-files)))))
+     (if (> (length asd-files) 1)
+         (progn
+           (message "More than one .asd file in parent directory, jumping to directory")
+           (dired (concat directory "../")))
+       (progn
+         (message "Opening asd file")
+         (find-file (concat directory "../" (car asd-files)))))))
 
  (defun my/go-to-package ()
    "Open unique package file in current directory."
