@@ -5981,7 +5981,7 @@ Other sexp commands: M-(              wrap an sexp (paredit)
                      C-RIGHT or C-)   slurp in next sexp (paredit) ; (a b|c) d --> (a b c d)
                      C-M-t            transpose sexps or make them circulate
 Comment: region M-; to comment/uncomment (paredit)
-Macro expander: C-c RETURN || C-c C-m
+Macro expander: C-c RETURN || C-c C-m || C-c M-m to fully expand
 REPL: C-c C-z to jump in REPL || C-c C-j to execute in REPL || M-n || M-p || *,** || /,// || (foo M-p
 Eval: C-c C-c compile defun || C-M-x eval defun || C-x C-e to eval last sexp || C-c C-k || C-c C-y to send to REPL || C-c C-x idem with (time...)
 Test in REPL: C-c SPC || _j_ump to slime compilation report || delete fasl (from dired): M-x my/delete-fasl-files
