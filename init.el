@@ -5846,6 +5846,68 @@ With a prefix argument, perform `macroexpand-all' instead."
               (message "%s deletions performed" nb-deletions))))))
 
  ;; ===
+ ;; === (CL) ASDF
+
+ (defun my/asdf-system-name-from-buffer ()
+  "Return the ASDF system name associated with the current buffer (file or dired).
+Ignores any .asd files whose names contain 'test' (case-insensitive).
+Return NIL if no system found.
+(v1, as of 2025-11-02)"
+  (interactive)
+  (let* ((start-dir
+          (cond
+           ((derived-mode-p 'dired-mode)
+            (dired-current-directory))
+           ((buffer-file-name)
+            (file-name-directory (buffer-file-name)))
+           (t nil)))
+         (asdf-system-name nil))
+    (when start-dir
+      (when-let* ((dir
+                   (locate-dominating-file
+                    start-dir
+                    (lambda (d)
+                      (seq-some
+                       (lambda (f)
+                         (and (string-match-p "\\.asd\\'" f)
+                              (let ((case-fold-search t))
+                                (not (string-match-p "test" f)))))
+                       (directory-files d))))))
+        (when-let ((asd
+                    (car (seq-filter
+                          (lambda (f)
+                            (and (string-match-p "\\.asd\\'" f)
+                                 (let ((case-fold-search t))
+                                   (not (string-match-p "test" f)))))
+                          (directory-files dir t)))))
+          
+          (setq asdf-system-name (file-name-base asd)))))
+    asdf-system-name))
+
+(defun my/asdf-force-reload-system-corresponding-to-current-buffer ()
+  "Force reload current ASDF system.
+(v1, as of 2025-11-02)"
+  (interactive)
+  (let ((asdf-system-name (my/asdf-system-name-from-buffer)))
+    (if (null asdf-system-name)
+        (message "No ASDF system found.")
+      (slime-eval-async `(asdf:load-system ,asdf-system-name :force t)
+        (lambda (_result)
+          (message "System %s has been force-reloaded" asdf-system-name))))))
+
+(defun my/asdf-force-test-system-corresponding-to-current-buffer ()
+  "Force test current ASDF system.
+(v1, as of 2025-11-02)
+"
+  (interactive)
+  (let ((asdf-system-name (my/asdf-system-name-from-buffer)))
+    (if (null asdf-system-name)
+        (message "No ASDF system found.")
+      (slime-eval-async `(asdf:test-system ,asdf-system-name :force t)
+        (lambda (_result)
+          (message "System %s has been force-tested" asdf-system-name))))))
+
+ ;; ===
  ;; === abbrev
 
  ;; see abbrev
@@ -5955,7 +6017,7 @@ Files: _s_witch between src and tests | go to _a_sd | go to _p_ackage
 Documentation: docstring global var: C-c C-d d, (describe var) || fields (inspect var), q || hyperspec C-c C-d h || (apropos 'ts-get') || C-h m [l to go back]
 Clear screen: C-c M-o              ||   q to hide compilation window
 References: who calls a fn : C-c < ; who is called C-c > ; who refers global var C-c C-w r 
-Slime: _l_ : slime || M-x slime || ,quit
+Slime: _e_ : slime || M-x slime || ,quit
 Indent: C-M-q on current sexp || _i_: _i_ndent-buffer (M-x my/indent-buffer)
 Navigate top-level sexp : C-UP and C-DOWN to move within top-level sexps
                           C-M-a/e to move to beginning/end of current or preceding defun (beginning-of-defun, end-of-defun)
@@ -5966,7 +6028,7 @@ Navigate sexp: M-LEFT ou -RIGHT navigate
                C-M-down         go to inner (...)
 Navigate code: _m_: i_m_enu || M-x occur (M-s o) ||  _c_ : my occur ; [selective display: https://stackoverflow.com/questions/1085170/]
                M-. and M-, to navigate to definition and come back
-               _o_utline-hide-body vs outline-show-all ; collapse/expand: _h_ide vs hs-show-all
+               _o_utline-hide-body vs outline-show-all ; collapse/expand: _h_ide vs hs-show-all | hs-toggle-hiding
 Select: C-= to expand region (expand-region) || C-M-h to put region around whole current or following defun (mark-defun)
 Abbrev: M-x unexpand-abbrev
 Complete: C-:     counsel-company (mini-buffer)
@@ -5984,21 +6046,28 @@ Comment: region M-; to comment/uncomment (paredit)
 Macro expander: C-c RETURN || C-c C-m || C-c M-m to fully expand
 REPL: C-c C-z to jump in REPL || C-c C-j to execute in REPL || M-n || M-p || *,** || /,// || (foo M-p
 Eval: C-c C-c compile defun || C-M-x eval defun || C-x C-e to eval last sexp || C-c C-k || C-c C-y to send to REPL || C-c C-x idem with (time...)
+ASDF : _f_l force load | _f_t force test
 Test in REPL: C-c SPC || _j_ump to slime compilation report || delete fasl (from dired): M-x my/delete-fasl-files
 Debug: q || v to jump into code, RETURN, M-., i, e, r
 Disassemble : C-c M-d | Inspect : C-c I 'foo ; l to go back   | Trace: C-c C-t on the symbol | Navigate within warnings/errors: M-n, M-p
 {end}"
    ("a" #'my/go-to-asd)
    ("c" #'my-cl-occur)
+   ("e" #'slime)
+   ("f" (lambda () 
+         (interactive)
+         (let ((key (read-char "l or t: ")))
+           (cond 
+            ((eq key ?l) (my/asdf-force-reload-system-corresponding-to-current-buffer))
+            ((eq key ?t) (my/asdf-force-test-system-corresponding-to-current-buffer)))))
+    "submenu f")
    ("h" #'hs-hide-all)
    ("i" #'my/indent-buffer)
    ("j" #'my/jump-to-slime-compilation)
    ("m" #'imenu)
    ("o" #'outline-hide-body)
    ("p" #'my/go-to-package)
-   ("l" #'slime)
-   ("s" #'my/switch-between-src-and-tests)
-   ("t" #'hs-toggle-hiding))            ; end of hydra
+   ("s" #'my/switch-between-src-and-tests))            ; end of hydra
 
  ;; ===
  ;; === Hydra REPL

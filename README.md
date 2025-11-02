@@ -26,7 +26,7 @@ What I like about my configuration:
 
 **(7)** Based on a tailored function, `C-c c` kills (copies to clipboard) the most relevant current text: word, inline code, org-mode block, etc. depending on the context.
 
-**(8)** Fine-tuning of Emacs as Emacs Lisp and Common Lisp IDE
+**(8)** Fine-tuning of Emacs as Emacs Lisp and Common Lisp IDE --> see [cl-utils repository] for examples of development workflow
 
 **(9)** Easy copy/paste with formatting from/to external applications
 
