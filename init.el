@@ -4912,7 +4912,7 @@ d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
    (xah-find-text 
     (read-string "Searched string: ")
     default-directory
-    (read-string "Files: " "[.*]\\(org\\|el\\|sql\\|txt\\)$") ; "[.*][org\|el\|sql\|txt]$"
+    (read-string "Files: " "[.*]\\(org\\|lisp\\|el\\|sql\\|txt\\)$") ; "[.*][org\|el\|sql\|txt]$"
     nil t))
 
  (defun xah-grep-in-projectile-project ()
@@ -4921,7 +4921,7 @@ d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
    (xah-find-text
     (read-string "Searched string: ")
     (projectile-acquire-root)
-    (read-string "Files: " "[.*]\\(org\\|el\\|sql\\|txt\\)$")
+    (read-string "Files: " "[.*]\\(org\\|lisp\\|el\\|sql\\|txt\\)$")
     nil t))
  
  ;; (use-package xah-find
