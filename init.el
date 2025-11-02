@@ -2810,62 +2810,62 @@ Fallback : current word.
  "org-mode F (copy to clipboard with format conversion)"
 
  (defun my/org-copy-region-ready-to-be-pasted-into-Word-Teams-Thunderbird-Gmail ()
-  "Export Org-mode region to Windows CF_HTML clipboard format (including StartHTML, EndHTML, StartFragment, EndFragment markers).
+   "Export Org-mode region to Windows CF_HTML clipboard format (including StartHTML, EndHTML, StartFragment, EndFragment markers).
 Clipboard can be pasted into Microsoft Word, Microsoft Teams, Thunderbird and Gmail.
 (v1 as of 2025-10-28, available in occisn/emacs-utils GitHub repository)"
-  (interactive)
-  (if (not (use-region-p))
-      (message "No active region to export")
-    (let* ((region-start (region-beginning))
-           (region-end (region-end))
-           (html-body (org-export-string-as
-                       (buffer-substring region-start region-end)
-                       'html t '(:with-toc nil 
-                                           :html-postamble nil
-                                           :preserve-breaks t))))
-      
-      ;; Extract body content and replace <p> tags with <br>
-      (setq html-body
-            (with-temp-buffer
-              (insert html-body)
-              (goto-char (point-min))
-              (if (re-search-forward "<body[^>]*>\\(\\(.\\|\n\\)*\\)</body>" nil t)
-                  (match-string 1)
-                html-body)))
-      
-      ;; Replace paragraph tags with line breaks
-      (setq html-body
-            (replace-regexp-in-string "<p[^>]*>" "" html-body))
-      (setq html-body
-            (replace-regexp-in-string "</p>" "<br>" html-body))
-      
-      ;; Build CF_HTML format (use \n only, Windows will handle conversion)
-      (let* ((html-fragment (concat "<!--StartFragment-->" html-body "<!--EndFragment-->"))
-             (html-full (concat "<html>\n<body>\n" html-fragment "\n</body>\n</html>"))
-             (header "Version:0.9\nStartHTML:%010d\nEndHTML:%010d\nStartFragment:%010d\nEndFragment:%010d\n")
-             (header-length (length (format header 0 0 0 0)))
-             (start-html header-length)
-             (end-html (+ start-html (string-bytes html-full)))
-             (start-fragment (+ start-html 
-                                (string-bytes (substring html-full 0 (string-match "<!--StartFragment-->" html-full)))
-                                (string-bytes "<!--StartFragment-->")))
-             (end-fragment (+ start-html (string-bytes (substring html-full 0 (string-match "<!--EndFragment-->" html-full)))))
-             (cf-html (concat (format header start-html end-html start-fragment end-fragment)
-                              html-full)))
-        
-        ;; Write to temp file and use PowerShell to set clipboard
-        (let ((temp-file (make-temp-file "cf-html-" nil ".txt")))
-          (with-temp-file temp-file
-            (set-buffer-file-coding-system 'utf-8-unix)
-            (insert cf-html))
-          
-          (call-process "powershell.exe" nil nil nil
-                        "-Command"
-                        (format "$content = Get-Content -Path '%s' -Raw -Encoding UTF8; Add-Type -AssemblyName System.Windows.Forms; $data = New-Object System.Windows.Forms.DataObject; $bytes = [System.Text.Encoding]::UTF8.GetBytes($content); $stream = New-Object System.IO.MemoryStream(,$bytes); $data.SetData('HTML Format', $stream); [System.Windows.Forms.Clipboard]::SetDataObject($data, $true); $stream.Close()"
-                                (replace-regexp-in-string "/" "\\\\" temp-file)))
-          
-          (delete-file temp-file)
-          (message "Region copied as CF_HTML to clipboard"))))))
+   (interactive)
+   (if (not (use-region-p))
+       (message "No active region to export")
+     (let* ((region-start (region-beginning))
+            (region-end (region-end))
+            (html-body (org-export-string-as
+                        (buffer-substring region-start region-end)
+                        'html t '(:with-toc nil 
+                                            :html-postamble nil
+                                            :preserve-breaks t))))
+       
+       ;; Extract body content and replace <p> tags with <br>
+       (setq html-body
+             (with-temp-buffer
+               (insert html-body)
+               (goto-char (point-min))
+               (if (re-search-forward "<body[^>]*>\\(\\(.\\|\n\\)*\\)</body>" nil t)
+                   (match-string 1)
+                 html-body)))
+       
+       ;; Replace paragraph tags with line breaks
+       (setq html-body
+             (replace-regexp-in-string "<p[^>]*>" "" html-body))
+       (setq html-body
+             (replace-regexp-in-string "</p>" "<br>" html-body))
+       
+       ;; Build CF_HTML format (use \n only, Windows will handle conversion)
+       (let* ((html-fragment (concat "<!--StartFragment-->" html-body "<!--EndFragment-->"))
+              (html-full (concat "<html>\n<body>\n" html-fragment "\n</body>\n</html>"))
+              (header "Version:0.9\nStartHTML:%010d\nEndHTML:%010d\nStartFragment:%010d\nEndFragment:%010d\n")
+              (header-length (length (format header 0 0 0 0)))
+              (start-html header-length)
+              (end-html (+ start-html (string-bytes html-full)))
+              (start-fragment (+ start-html 
+                                 (string-bytes (substring html-full 0 (string-match "<!--StartFragment-->" html-full)))
+                                 (string-bytes "<!--StartFragment-->")))
+              (end-fragment (+ start-html (string-bytes (substring html-full 0 (string-match "<!--EndFragment-->" html-full)))))
+              (cf-html (concat (format header start-html end-html start-fragment end-fragment)
+                               html-full)))
+         
+         ;; Write to temp file and use PowerShell to set clipboard
+         (let ((temp-file (make-temp-file "cf-html-" nil ".txt")))
+           (with-temp-file temp-file
+             (set-buffer-file-coding-system 'utf-8-unix)
+             (insert cf-html))
+           
+           (call-process "powershell.exe" nil nil nil
+                         "-Command"
+                         (format "$content = Get-Content -Path '%s' -Raw -Encoding UTF8; Add-Type -AssemblyName System.Windows.Forms; $data = New-Object System.Windows.Forms.DataObject; $bytes = [System.Text.Encoding]::UTF8.GetBytes($content); $stream = New-Object System.IO.MemoryStream(,$bytes); $data.SetData('HTML Format', $stream); [System.Windows.Forms.Clipboard]::SetDataObject($data, $true); $stream.Close()"
+                                 (replace-regexp-in-string "/" "\\\\" temp-file)))
+           
+           (delete-file temp-file)
+           (message "Region copied as CF_HTML to clipboard"))))))
  
  (defun my/PREVIOUS-org-copy-to-clipboard-for-microsoft-word-and-teams ()
    "Copy buffer to clipboard as HTML.
@@ -5166,10 +5166,10 @@ d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
          (slime-with-popup-buffer (bufname :package package
 					   :connection t
 					   :select slime-description-autofocus)
-	                          (when (string= bufname "*slime-description*")
-	                            (with-current-buffer bufname (slime-company-doc-mode)))
-	                          (princ string)
-	                          (goto-char (point-min))))))
+	   (when (string= bufname "*slime-description*")
+	     (with-current-buffer bufname (slime-company-doc-mode)))
+	   (princ string)
+	   (goto-char (point-min))))))
    (my-init--message-package-loaded "slime-company"))
 
  ;; and activate slime-company in slime below
@@ -5373,17 +5373,17 @@ Modified from official 'slime-call-defun'"
          (if (symbolp toplevel)
              (error "Not in a function definition")
            (slime-dcase toplevel
-                        (((:defun :defgeneric :defmacro :define-compiler-macro) symbol)
-                         (insert-call symbol))
-                        ((:defmethod symbol &rest args)
-                         ;; (declare (ignore args))
-                         (insert-call symbol))
-                        (((:defparameter :defvar :defconstant) symbol)
-                         (insert-call symbol :function nil))
-                        (((:defclass) symbol)
-                         (insert-call symbol :defclass t))
-                        (t
-                         (error "Not in a function definition")))))))
+             (((:defun :defgeneric :defmacro :define-compiler-macro) symbol)
+              (insert-call symbol))
+             ((:defmethod symbol &rest args)
+              ;; (declare (ignore args))
+              (insert-call symbol))
+             (((:defparameter :defvar :defconstant) symbol)
+              (insert-call symbol :function nil))
+             (((:defclass) symbol)
+              (insert-call symbol :defclass t))
+             (t
+              (error "Not in a function definition")))))))
 
    (define-key slime-mode-map (kbd "C-c C-x")  #'my/slime-call-defun--with-time-monitoring)
 
@@ -5778,21 +5778,61 @@ With a prefix argument, perform `macroexpand-all' instead."
      (when (> (length package-files) 1) (error "More than one package file in current directory"))
      (find-file (concat directory (car package-files)))))
 
- ;;; ===
- ;;; === (CL) delete fasl files
+ ;; ===
+ ;; === (CL) delete fasl files
 
  (defun my/delete-fasl-files ()
-  "Delete all FASL files in the current dired directory.
+   "Delete all FASL files in the current dired directory.
 (v1 as of 2025-10-31)"
-  (interactive)
-  (let ((files (directory-files default-directory t "\\.\\(fasl\\|fasl\\)$")))
-    (if files
-      (progn
-        (dolist (file files)
-          (delete-file file))
-        (revert-buffer)
-        (message "Deleted %d fasl file(s)" (length files)))
-      (message "No fasl file identfied."))))
+   (interactive)
+   (let ((files (directory-files default-directory t "\\.\\(fasl\\|fasl\\)$")))
+     (if files
+         (progn
+           (dolist (file files)
+             (delete-file file))
+           (revert-buffer)
+           (message "Deleted %d fasl file(s)" (length files)))
+       (message "No fasl file identfied."))))
+
+ ;; ===
+ ;; === (CL) filter compilation report
+
+ (defun my/slime-compilation-delete-float-coercion-notes ()
+   "Remove sections containing 'float to pointer coercion' from *slime-compilation* buffer.
+(v1 as of 2025-11-01)"
+   (interactive)
+   (with-current-buffer "*slime-compilation*"
+     (let ((inhibit-read-only t)
+           (filter-string "float to pointer coercion")
+           (nb-deletions 0))
+       (save-excursion
+         (goto-char (point-min))
+         (while (re-search-forward (regexp-quote filter-string) nil t)
+           (setq nb-deletions (1+ nb-deletions))
+           ;; Find the start of this warning/note section
+           (let ((end (line-end-position)))
+             (beginning-of-line)
+             ;; Search backward for the section start (typically a blank line or buffer start)
+             (while (and (not (bobp))
+                         (not (looking-at "^$"))
+                         (looking-at "^[; ]"))
+               (forward-line -1))
+             (when (looking-at "^$")
+               (forward-line 1))
+             (let ((start (point)))
+               ;; Search forward for section end (blank line or end of buffer)
+               (goto-char end)
+               (while (and (not (eobp))
+                           (not (looking-at "^$")))
+                 (forward-line 1))
+               (delete-region start (point))))))
+         (beginning-of-buffer)
+         (cond ((= 0 nb-deletions)
+              (message "No deletion performed."))
+             ((= 1 nb-deletions)
+              (message "1 deletion performed."))
+             (t
+              (message "%s deletions performed" nb-deletions))))))
 
  ;; ===
  ;; === abbrev
@@ -5829,6 +5869,21 @@ With a prefix argument, perform `macroexpand-all' instead."
  ;; === profiler
 
  ;; ...
+
+ ;; ===
+ ;; === Hydra compilation
+
+ (defhydra hydra-compilation (:exit t :hint nil)
+   "
+^Compilation hydra:
+^------------------
+
+_f_ilter 'float to pointer coercion' notes
+
+{end}
+"
+
+   ("f" #'my/slime-compilation-delete-float-coercion-notes))
 
  ;; ===
  ;; === Hydra Emacs Lisp
@@ -7693,6 +7748,7 @@ Undo : C-j to cut undo chain? {end}
    (cond
     ((eql major-mode 'c-mode) (hydra-c/body))
     ((eql major-mode 'calc-mode) (hydra-calc/body))
+    ((eql major-mode 'compilation-mode) (hydra-compilation/body))
     ((eql major-mode 'csv-mode) (hydra-csv/body))
     ((eql major-mode 'dired-mode) (hydra-dired/body))
     ((eql major-mode 'doc-view-mode) (hydra-docview/body))
