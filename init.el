@@ -5778,6 +5778,22 @@ With a prefix argument, perform `macroexpand-all' instead."
      (when (> (length package-files) 1) (error "More than one package file in current directory"))
      (find-file (concat directory (car package-files)))))
 
+ ;;; ===
+ ;;; === (CL) delete fasl files
+
+ (defun my/delete-fasl-files ()
+  "Delete all FASL files in the current dired directory.
+(v1 as of 2025-10-31)"
+  (interactive)
+  (let ((files (directory-files default-directory t "\\.\\(fasl\\|fasl\\)$")))
+    (if files
+      (progn
+        (dolist (file files)
+          (delete-file file))
+        (revert-buffer)
+        (message "Deleted %d fasl file(s)" (length files)))
+      (message "No fasl file identfied."))))
+
  ;; ===
  ;; === abbrev
 
@@ -5902,7 +5918,7 @@ Comment: region M-; to comment/uncomment (paredit)
 Macro expander: C-c RETURN || C-c C-m
 REPL: C-c C-z to jump in REPL || C-c C-j to execute in REPL || M-n || M-p || *,** || /,// || (foo M-p
 Eval: C-c C-c compile defun || C-M-x eval defun || C-x C-e to eval last sexp || C-c C-k || C-c C-y to send to REPL || C-c C-x idem with (time...)
-Test in REPL: C-c SPC 
+Test in REPL: C-c SPC                  || delete fasl (from dired): M-x my/delete-fasl-files
 Debug: q || v to jump into code, RETURN, M-., i, e, r
 Disassemble : C-c M-d | Inspect : C-c I 'foo ; l to go back   | Trace: C-c C-t on the symbol | Navigate within warnings/errors: M-n, M-p
 {end}"
