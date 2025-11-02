@@ -5519,14 +5519,25 @@ With Electric Indent Mode enabled, inserts a newline and indents
 
  ;; C-c C-k to eval buffer
 
- (defun my-eval-buffer-advice (&rest _args)
+(defun my-save-buffer-if-modified ()
+  "Propose to save the current buffer if it has been modified."
+  (interactive)
+  (when (buffer-modified-p)
+    (if (y-or-n-p (format "Buffer %s modified; save it? " (buffer-name)))
+        (save-buffer)
+      (message "Buffer not saved"))))
+
+ (advice-add 'eval-buffer :before #'my-save-buffer-if-modified)
+ ;; to have similar behaviour with C-c C-k for Common Lisp
+ 
+ (defun my-eval-buffer-advice2 (&rest _args)
    "Print a message when eval-buffer is called."
    (message "Buffer %s has been evaluated" 
             (buffer-name)))
  ;; (note: apparently, 'eval-buffer' is also called for the first
  ;; opening of an org-file in the session.)
  
- (advice-add 'eval-buffer :after #'my-eval-buffer-advice)
+ (advice-add 'eval-buffer :after #'my-eval-buffer-advice2)
 
  (define-key emacs-lisp-mode-map (kbd "C-c C-k") 'eval-buffer)
 
