@@ -5795,6 +5795,17 @@ With a prefix argument, perform `macroexpand-all' instead."
        (message "No fasl file identfied."))))
 
  ;; ===
+ ;; === (CL) show to *slime-compilation* buffer
+
+ (defun my/jump-to-slime-compilation ()
+  "Jump to *slime-compilation* buffer in other window if it exists, otherwise show error. (2025-11-02)"
+  (interactive)
+  (let ((buffer (get-buffer "*slime-compilation*")))
+    (if buffer
+        (switch-to-buffer-other-window buffer)
+      (message "Buffer *slime-compilation* does not exist"))))
+
+ ;; ===
  ;; === (CL) filter compilation report
 
  (defun my/slime-compilation-delete-float-coercion-notes ()
@@ -5826,8 +5837,8 @@ With a prefix argument, perform `macroexpand-all' instead."
                            (not (looking-at "^$")))
                  (forward-line 1))
                (delete-region start (point))))))
-         (beginning-of-buffer)
-         (cond ((= 0 nb-deletions)
+       (beginning-of-buffer)
+       (cond ((= 0 nb-deletions)
               (message "No deletion performed."))
              ((= 1 nb-deletions)
               (message "1 deletion performed."))
@@ -5973,7 +5984,7 @@ Comment: region M-; to comment/uncomment (paredit)
 Macro expander: C-c RETURN || C-c C-m
 REPL: C-c C-z to jump in REPL || C-c C-j to execute in REPL || M-n || M-p || *,** || /,// || (foo M-p
 Eval: C-c C-c compile defun || C-M-x eval defun || C-x C-e to eval last sexp || C-c C-k || C-c C-y to send to REPL || C-c C-x idem with (time...)
-Test in REPL: C-c SPC                  || delete fasl (from dired): M-x my/delete-fasl-files
+Test in REPL: C-c SPC || _j_ump to slime compilation report || delete fasl (from dired): M-x my/delete-fasl-files
 Debug: q || v to jump into code, RETURN, M-., i, e, r
 Disassemble : C-c M-d | Inspect : C-c I 'foo ; l to go back   | Trace: C-c C-t on the symbol | Navigate within warnings/errors: M-n, M-p
 {end}"
@@ -5981,6 +5992,7 @@ Disassemble : C-c M-d | Inspect : C-c I 'foo ; l to go back   | Trace: C-c C-t o
    ("c" #'my-cl-occur)
    ("h" #'hs-hide-all)
    ("i" #'my/indent-buffer)
+   ("j" #'my/jump-to-slime-compilation)
    ("m" #'imenu)
    ("o" #'outline-hide-body)
    ("p" #'my/go-to-package)
