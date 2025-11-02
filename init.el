@@ -2058,13 +2058,6 @@ M-x keycast-mode: show current key and its meaning on the command line
  t 
  "Themes"
 
- ;; see also Modus Vivendi, built-in in Emacs
- ;; (require 'modus-themes)
- ;; (load-theme 'modus-vivendi t)
- ;;
- ;; M-x load-theme RET modus-vivendi
- ;; (add-to-list 'org-emphasis-alist '("*" (bold :foreground "yellow")))
-
  (defun my-init--set-transparency (level)
    "Set frame transparency at ( LEVEL . LEVEL )"
    (set-frame-parameter (selected-frame) 'alpha (cons level level))
@@ -2160,6 +2153,11 @@ M-x keycast-mode: show current key and its meaning on the command line
  (push '("Doom Challenger Deep" (lambda () (load-theme 'doom-challenger-deep t))) *my-themes*)
 
  (push '("Modus Vivendi" (lambda () (load-theme 'modus-vivendi t))) *my-themes*)
+ (defun my/load-modus-vivendi-customized ()
+   (load-theme 'modus-vivendi t)
+   ;; (add-to-list 'org-emphasis-alist '("*" (bold :foreground "yellow")))
+   (custom-set-faces '(org-level-1 ((t (:foreground "#da70d6" :weight bold))))))
+ (push '("Modus Vivendi (customized)" #'my/load-modus-vivendi-customized)        *my-themes*)
  
  (use-package moe-theme
    :commands (moe-light)
@@ -2268,11 +2266,12 @@ M-x keycast-mode: show current key and its meaning on the command line
  ;; - green-is-the-new-black-theme
 
  ;; The theme which is chosen:
- (load-theme 'modus-vivendi t)
+ (my/load-modus-vivendi-customized)
  ;; I like also:
  (when nil
    (load-theme 'shades-of-purple t) ; <-- preferred
-   (load-theme 'modus-vivendi t) ; with: (add-to-list 'org-emphasis-alist '("*" (bold :foreground "yellow")))
+   (load-theme 'modus-vivendi t) 
+   (my/load-modus-vivendi-customized)
    (load-theme 'leuven t) ; perhaps to be repeated at the end of init file
                                         ; otherwise effects are missing: note titles, color or =xxx=, etc.
    ;; standard light tinted
