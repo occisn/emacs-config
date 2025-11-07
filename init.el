@@ -7729,7 +7729,10 @@ M-x my/md-convert-region-to-anchor-and-kill
  t
  "server"
 
- (server-start)
+ ;; Start Emacs server if not already running
+ (require 'server)
+ (unless (server-running-p)
+   (server-start))
 
  ) ; end of init section
 
