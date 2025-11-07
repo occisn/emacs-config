@@ -2872,7 +2872,6 @@ Clipboard can be pasted into Microsoft Word, Microsoft Teams, Thunderbird and Gm
 Clipboard can then be pasted to Microsoft Word or Microsoft Teams. 
 But pasting to Thunderbird or Gmail does not work.
 Requires my/save-region-as-html."
-   (interactive)
    (unless (my-init--directory-exists-p *temp-directory*)
      (error "Temp directory is not valid: %s" *temp-directory*))
    (let* ((temp-file-name (concat *temp-directory* "org_mode_export_to_outlook_temp.html"))
@@ -2889,7 +2888,6 @@ Requires my/save-region-as-html."
  (defun my/PREVIOUS-org-export-to-html-page-for-thunderbird-outlook-or-gmail ()
    "Convert buffer to html page and open it.
 Requires my/save-region-as-html."
-   (interactive)
    (unless (my-init--directory-exists-p *temp-directory*)
      (error "Temp directory is not valid: %s" *temp-directory*))
    (let* ((temp-file-name (concat *temp-directory* "org_mode_export_to_outlook_temp.html"))
@@ -5519,16 +5517,21 @@ With Electric Indent Mode enabled, inserts a newline and indents
 
  ;; C-c C-k to eval buffer
 
-(defun my-save-buffer-if-modified ()
-  "Propose to save the current buffer if it has been modified."
-  (interactive)
-  (when (buffer-modified-p)
-    (if (y-or-n-p (format "Buffer %s modified; save it? " (buffer-name)))
-        (save-buffer)
-      (message "Buffer not saved"))))
+ (when nil
+
+    (defun my-save-buffer-if-modified ()
+   "Propose to save the current buffer if it has been modified."
+   (interactive)
+   (when (buffer-modified-p)
+     (if (y-or-n-p (format "Buffer %s modified; save it? " (buffer-name)))
+         (save-buffer)
+       (message "Buffer not saved"))))
 
  (advice-add 'eval-buffer :before #'my-save-buffer-if-modified)
  ;; to have similar behaviour with C-c C-k for Common Lisp
+ 
+   )
+
  
  (defun my-eval-buffer-advice2 (&rest _args)
    "Print a message when eval-buffer is called."
