@@ -5164,10 +5164,10 @@ d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
          (slime-with-popup-buffer (bufname :package package
 					   :connection t
 					   :select slime-description-autofocus)
-	   (when (string= bufname "*slime-description*")
-	     (with-current-buffer bufname (slime-company-doc-mode)))
-	   (princ string)
-	   (goto-char (point-min))))))
+	                          (when (string= bufname "*slime-description*")
+	                            (with-current-buffer bufname (slime-company-doc-mode)))
+	                          (princ string)
+	                          (goto-char (point-min))))))
    (my-init--message-package-loaded "slime-company"))
 
  ;; and activate slime-company in slime below
@@ -5371,17 +5371,17 @@ Modified from official 'slime-call-defun'"
          (if (symbolp toplevel)
              (error "Not in a function definition")
            (slime-dcase toplevel
-             (((:defun :defgeneric :defmacro :define-compiler-macro) symbol)
-              (insert-call symbol))
-             ((:defmethod symbol &rest args)
-              ;; (declare (ignore args))
-              (insert-call symbol))
-             (((:defparameter :defvar :defconstant) symbol)
-              (insert-call symbol :function nil))
-             (((:defclass) symbol)
-              (insert-call symbol :defclass t))
-             (t
-              (error "Not in a function definition")))))))
+                        (((:defun :defgeneric :defmacro :define-compiler-macro) symbol)
+                         (insert-call symbol))
+                        ((:defmethod symbol &rest args)
+                         ;; (declare (ignore args))
+                         (insert-call symbol))
+                        (((:defparameter :defvar :defconstant) symbol)
+                         (insert-call symbol :function nil))
+                        (((:defclass) symbol)
+                         (insert-call symbol :defclass t))
+                        (t
+                         (error "Not in a function definition")))))))
 
    (define-key slime-mode-map (kbd "C-c C-x")  #'my/slime-call-defun--with-time-monitoring)
 
@@ -5517,9 +5517,7 @@ With Electric Indent Mode enabled, inserts a newline and indents
 
  ;; C-c C-k to eval buffer
 
- (when nil
-
-    (defun my-save-buffer-if-modified ()
+ (defun my-save-buffer-if-modified (&rest _args)
    "Propose to save the current buffer if it has been modified."
    (interactive)
    (when (buffer-modified-p)
@@ -5529,9 +5527,6 @@ With Electric Indent Mode enabled, inserts a newline and indents
 
  (advice-add 'eval-buffer :before #'my-save-buffer-if-modified)
  ;; to have similar behaviour with C-c C-k for Common Lisp
- 
-   )
-
  
  (defun my-eval-buffer-advice2 (&rest _args)
    "Print a message when eval-buffer is called."
@@ -5812,12 +5807,12 @@ With a prefix argument, perform `macroexpand-all' instead."
  ;; === (CL) show to *slime-compilation* buffer
 
  (defun my/jump-to-slime-compilation ()
-  "Jump to *slime-compilation* buffer in other window if it exists, otherwise show error. (2025-11-02)"
-  (interactive)
-  (let ((buffer (get-buffer "*slime-compilation*")))
-    (if buffer
-        (switch-to-buffer-other-window buffer)
-      (message "Buffer *slime-compilation* does not exist"))))
+   "Jump to *slime-compilation* buffer in other window if it exists, otherwise show error. (2025-11-02)"
+   (interactive)
+   (let ((buffer (get-buffer "*slime-compilation*")))
+     (if buffer
+         (switch-to-buffer-other-window buffer)
+       (message "Buffer *slime-compilation* does not exist"))))
 
  ;; ===
  ;; === (CL) filter compilation report
@@ -5863,63 +5858,63 @@ With a prefix argument, perform `macroexpand-all' instead."
  ;; === (CL) ASDF
 
  (defun my/asdf-system-name-from-buffer ()
-  "Return the ASDF system name associated with the current buffer (file or dired).
+   "Return the ASDF system name associated with the current buffer (file or dired).
 Ignores any .asd files whose names contain 'test' (case-insensitive).
 Return NIL if no system found.
 (v1, as of 2025-11-02)"
-  (interactive)
-  (let* ((start-dir
-          (cond
-           ((derived-mode-p 'dired-mode)
-            (dired-current-directory))
-           ((buffer-file-name)
-            (file-name-directory (buffer-file-name)))
-           (t nil)))
-         (asdf-system-name nil))
-    (when start-dir
-      (when-let* ((dir
-                   (locate-dominating-file
-                    start-dir
-                    (lambda (d)
-                      (seq-some
-                       (lambda (f)
-                         (and (string-match-p "\\.asd\\'" f)
-                              (let ((case-fold-search t))
-                                (not (string-match-p "test" f)))))
-                       (directory-files d))))))
-        (when-let ((asd
-                    (car (seq-filter
-                          (lambda (f)
-                            (and (string-match-p "\\.asd\\'" f)
-                                 (let ((case-fold-search t))
-                                   (not (string-match-p "test" f)))))
-                          (directory-files dir t)))))
-          
-          (setq asdf-system-name (file-name-base asd)))))
-    asdf-system-name))
+   (interactive)
+   (let* ((start-dir
+           (cond
+            ((derived-mode-p 'dired-mode)
+             (dired-current-directory))
+            ((buffer-file-name)
+             (file-name-directory (buffer-file-name)))
+            (t nil)))
+          (asdf-system-name nil))
+     (when start-dir
+       (when-let* ((dir
+                    (locate-dominating-file
+                     start-dir
+                     (lambda (d)
+                       (seq-some
+                        (lambda (f)
+                          (and (string-match-p "\\.asd\\'" f)
+                               (let ((case-fold-search t))
+                                 (not (string-match-p "test" f)))))
+                        (directory-files d))))))
+         (when-let ((asd
+                     (car (seq-filter
+                           (lambda (f)
+                             (and (string-match-p "\\.asd\\'" f)
+                                  (let ((case-fold-search t))
+                                    (not (string-match-p "test" f)))))
+                           (directory-files dir t)))))
+           
+           (setq asdf-system-name (file-name-base asd)))))
+     asdf-system-name))
 
-(defun my/asdf-force-reload-system-corresponding-to-current-buffer ()
-  "Force reload current ASDF system.
+ (defun my/asdf-force-reload-system-corresponding-to-current-buffer ()
+   "Force reload current ASDF system.
 (v1, as of 2025-11-02)"
-  (interactive)
-  (let ((asdf-system-name (my/asdf-system-name-from-buffer)))
-    (if (null asdf-system-name)
-        (message "No ASDF system found.")
-      (slime-eval-async `(asdf:load-system ,asdf-system-name :force t)
-        (lambda (_result)
-          (message "System %s has been force-reloaded" asdf-system-name))))))
+   (interactive)
+   (let ((asdf-system-name (my/asdf-system-name-from-buffer)))
+     (if (null asdf-system-name)
+         (message "No ASDF system found.")
+       (slime-eval-async `(asdf:load-system ,asdf-system-name :force t)
+                         (lambda (_result)
+                           (message "System %s has been force-reloaded" asdf-system-name))))))
 
-(defun my/asdf-force-test-system-corresponding-to-current-buffer ()
-  "Force test current ASDF system.
+ (defun my/asdf-force-test-system-corresponding-to-current-buffer ()
+   "Force test current ASDF system.
 (v1, as of 2025-11-02)
 "
-  (interactive)
-  (let ((asdf-system-name (my/asdf-system-name-from-buffer)))
-    (if (null asdf-system-name)
-        (message "No ASDF system found.")
-      (slime-eval-async `(asdf:test-system ,asdf-system-name :force t)
-        (lambda (_result)
-          (message "System %s has been force-tested" asdf-system-name))))))
+   (interactive)
+   (let ((asdf-system-name (my/asdf-system-name-from-buffer)))
+     (if (null asdf-system-name)
+         (message "No ASDF system found.")
+       (slime-eval-async `(asdf:test-system ,asdf-system-name :force t)
+                         (lambda (_result)
+                           (message "System %s has been force-tested" asdf-system-name))))))
 
  ;; ===
  ;; === abbrev
@@ -6069,11 +6064,11 @@ Disassemble : C-c M-d | Inspect : C-c I 'foo ; l to go back   | Trace: C-c C-t o
    ("c" #'my-cl-occur)
    ("e" #'slime)
    ("f" (lambda () 
-         (interactive)
-         (let ((key (read-char "l or t: ")))
-           (cond 
-            ((eq key ?l) (my/asdf-force-reload-system-corresponding-to-current-buffer))
-            ((eq key ?t) (my/asdf-force-test-system-corresponding-to-current-buffer)))))
+          (interactive)
+          (let ((key (read-char "l or t: ")))
+            (cond 
+             ((eq key ?l) (my/asdf-force-reload-system-corresponding-to-current-buffer))
+             ((eq key ?t) (my/asdf-force-test-system-corresponding-to-current-buffer)))))
     "submenu f")
    ("h" #'hs-hide-all)
    ("i" #'my/indent-buffer)
