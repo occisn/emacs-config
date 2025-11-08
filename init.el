@@ -2266,19 +2266,23 @@ M-x keycast-mode: show current key and its meaning on the command line
  ;; - green-is-the-new-black-theme
 
  ;; The theme which is chosen:
- (my/load-modus-vivendi-customized)
+ (load-theme 'shades-of-purple t)
  ;; I like also:
  (when nil
-   (load-theme 'shades-of-purple t) ; <-- preferred
-   (load-theme 'modus-vivendi t) 
-   (my/load-modus-vivendi-customized)
+
+   ;; LIGHT:
    (load-theme 'leuven t) ; perhaps to be repeated at the end of init file
                                         ; otherwise effects are missing: note titles, color or =xxx=, etc.
    ;; standard light tinted
+   (moe-light)
+   
+   ;; DARK:
+   (load-theme 'shades-of-purple t) ;
+   (load-theme 'modus-vivendi t) 
+   (my/load-modus-vivendi-customized) ; <-- preferred dark
    ;; tomorrow deep blue
    ;; dracula
    (load-theme 'doom-challenger-deep t)
-   (moe-light)
    (my/dark-theme)
    (load-theme 'shades-of-purple t)
    ) ; end of when nil
