@@ -7737,7 +7737,6 @@ M-x my/md-convert-region-to-anchor-and-kill
  (require 'server)
  (unless (server-running-p)
    (server-start))
-
  ) ; end of init section
 
 
