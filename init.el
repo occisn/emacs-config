@@ -5269,6 +5269,29 @@ Otherwise, split vertically and start (or show) ielm in the other window."
 
  (define-key emacs-lisp-mode-map (kbd "C-c C-x")  #'my/ielm-insert-defun-name-with-time-measurement)
 
+ (defun my/elisp-execute-defun ()
+  "Execute the defun at point."
+  (interactive)
+  (save-excursion
+    ;; Move to the beginning of the defun
+    (beginning-of-defun)
+    ;; Evaluate the defun
+    ;; (eval-defun nil)
+    ;; Get the function name by parsing the defun form
+    (let ((func-name (save-excursion
+                       (down-list)
+                       (forward-sexp)
+                       (skip-chars-forward " \t\n")
+                       (thing-at-point 'symbol t))))
+      (if func-name
+          (progn
+            (message "Executing: %s" func-name)
+            ;; Execute the function interactively
+            (call-interactively (intern func-name)))
+        (error "Could not determine function name: %s" func-name)))))
+
+ (define-key emacs-lisp-mode-map (kbd "C-c M-x")  #'my/elisp-execute-defun)
+
  ;; ===
  ;; === (CL) Slime, including arguments ala eldoc
  ;; ===      C-c C-x pour time monitoring
@@ -6007,7 +6030,7 @@ Other sexp commands: M-(              wrap an sexp (paredit)
 Comment: region M-; to comment/uncomment (paredit)
 Macro expander: C-c m ou C-c e || q
 Eval: C-M-x to eval defun (M-x eval-defun) || C-x C-e to eval last sexp || C-c C-k = M-x eval-buffer
-REPL (IELM): C-x C-z (jump to REPL) | C-x C-y (send function to REPL) | C-c C-x (idem with time measurement)
+REPL (IELM): C-x C-z (jump to REPL) | C-x C-y (send function to REPL) | C-c C-x (idem with time measurement) | C-c M-x to execute (M-x)
 Debug: (1) unexpected : c(ontinue), e(val), q(uit) (2) edebug: C-u C-M-x --> SPACE, h, f, o i, ? (3) (debug) within code
 {end}"
    ("a" #'outline-show-all)
