@@ -5272,25 +5272,25 @@ Otherwise, split vertically and start (or show) ielm in the other window."
  (define-key emacs-lisp-mode-map (kbd "C-c C-x")  #'my/ielm-insert-defun-name-with-time-measurement)
 
  (defun my/elisp-execute-defun ()
-  "Execute the defun at point."
-  (interactive)
-  (save-excursion
-    ;; Move to the beginning of the defun
-    (beginning-of-defun)
-    ;; Evaluate the defun
-    ;; (eval-defun nil)
-    ;; Get the function name by parsing the defun form
-    (let ((func-name (save-excursion
-                       (down-list)
-                       (forward-sexp)
-                       (skip-chars-forward " \t\n")
-                       (thing-at-point 'symbol t))))
-      (if func-name
-          (progn
-            (message "Executing: %s" func-name)
-            ;; Execute the function interactively
-            (call-interactively (intern func-name)))
-        (error "Could not determine function name: %s" func-name)))))
+   "Execute the defun at point."
+   (interactive)
+   (save-excursion
+     ;; Move to the beginning of the defun
+     (beginning-of-defun)
+     ;; Evaluate the defun
+     ;; (eval-defun nil)
+     ;; Get the function name by parsing the defun form
+     (let ((func-name (save-excursion
+                        (down-list)
+                        (forward-sexp)
+                        (skip-chars-forward " \t\n")
+                        (thing-at-point 'symbol t))))
+       (if func-name
+           (progn
+             (message "Executing: %s" func-name)
+             ;; Execute the function interactively
+             (call-interactively (intern func-name)))
+         (error "Could not determine function name: %s" func-name)))))
 
  (define-key emacs-lisp-mode-map (kbd "C-c M-x")  #'my/elisp-execute-defun)
 
