@@ -7945,7 +7945,7 @@ Text: _k_: show kill ring (xah-show-kill-ring) | To search and insert Unicode: C
 Repeat command: M-x M-p | C-x z | C-x M-:     History of commands: C-h l
 Macros : F3 and F4 | M-x kmacro-name-last-macro gives a name to the last defined macro | M-x insert-kbd-macro inserts its definition at point
          repeat macro until error (M-0 C-x e) = my/repeat-macro-until-error | register store C-x C-k x r (kmacro-to-register) | call C-x r j r
-Packages: M-x package-install
+Packages: M-x package-install                 | C-x M-: repeat last M-x
 Tests: ERT _t_ests associated with init files (my/launch-tests)
 Other hydras: _A_ppearance, _F_onts, _T_hemes, _H_elp & documentation, _M_ode-dependent (C-c d), _P_roject (C-c p h), _W_indows (C-c w), Mails (C-c m)
 Undo : C-j to cut undo chain? {end}
