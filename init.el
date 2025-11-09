@@ -5423,10 +5423,10 @@ d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
          (slime-with-popup-buffer (bufname :package package
 					   :connection t
 					   :select slime-description-autofocus)
-	   (when (string= bufname "*slime-description*")
-	     (with-current-buffer bufname (slime-company-doc-mode)))
-	   (princ string)
-	   (goto-char (point-min))))))
+	                          (when (string= bufname "*slime-description*")
+	                            (with-current-buffer bufname (slime-company-doc-mode)))
+	                          (princ string)
+	                          (goto-char (point-min))))))
    (my-init--message-package-loaded "slime-company"))
 
  ;; and activate slime-company in slime below
@@ -5653,17 +5653,17 @@ Modified from official 'slime-call-defun'"
          (if (symbolp toplevel)
              (error "Not in a function definition")
            (slime-dcase toplevel
-             (((:defun :defgeneric :defmacro :define-compiler-macro) symbol)
-              (insert-call symbol))
-             ((:defmethod symbol &rest args)
-              ;; (declare (ignore args))
-              (insert-call symbol))
-             (((:defparameter :defvar :defconstant) symbol)
-              (insert-call symbol :function nil))
-             (((:defclass) symbol)
-              (insert-call symbol :defclass t))
-             (t
-              (error "Not in a function definition")))))))
+                        (((:defun :defgeneric :defmacro :define-compiler-macro) symbol)
+                         (insert-call symbol))
+                        ((:defmethod symbol &rest args)
+                         ;; (declare (ignore args))
+                         (insert-call symbol))
+                        (((:defparameter :defvar :defconstant) symbol)
+                         (insert-call symbol :function nil))
+                        (((:defclass) symbol)
+                         (insert-call symbol :defclass t))
+                        (t
+                         (error "Not in a function definition")))))))
 
    (define-key slime-mode-map (kbd "C-c C-x")  #'my/slime-call-defun--with-time-monitoring)
 
@@ -6183,8 +6183,8 @@ Return NIL if no system found.
      (if (null asdf-system-name)
          (message "No ASDF system found.")
        (slime-eval-async `(asdf:load-system ,asdf-system-name :force t)
-         (lambda (_result)
-           (message "System %s has been force-reloaded" asdf-system-name))))))
+                         (lambda (_result)
+                           (message "System %s has been force-reloaded" asdf-system-name))))))
 
  (defun my/asdf-force-test-system-corresponding-to-current-buffer ()
    "Force test current ASDF system.
@@ -6195,8 +6195,8 @@ Return NIL if no system found.
      (if (null asdf-system-name)
          (message "No ASDF system found.")
        (slime-eval-async `(asdf:test-system ,asdf-system-name :force t)
-         (lambda (_result)
-           (message "System %s has been force-tested" asdf-system-name))))))
+                         (lambda (_result)
+                           (message "System %s has been force-tested" asdf-system-name))))))
 
  ;; ===
  ;; === abbrev
@@ -8135,14 +8135,13 @@ Recent files : C-x C-r | recent directories : C-u C-x C-r | frequent files with 
 Frame: C-x 5 c to clone current frame in another | C-x 5 2 or 'M-x make-frame' for new frame | C-x 5 0 to close frame
 Window: C-x + to equalize windows | C-x - to swap 
 Buffers: _f_: (_f_rom) open dired buffer corresponding to Windows path copied to clipboard
-         C-x 3 | C-x o 
+         C-x 3 | C-x o                      C-l to center buffer
          C-x C-j: dired-jump (dired-x) | C-x C-h: kill buffer and dired jump
          C-x m: kill buffer on other window    |||   C-x LEFT et C-x RIGHT to cycle among buffers
          C-h e displays *Messages* buffer      |||   C-x C-b then d and x to close some
          my/kill-all-file-buffers ; my/kill-all-buffers-except-stars
 Find and grep --> dired hydra or _P_roject hydra
 Mini-buffer : C-q C-j to go to a new line | ivy : ~C-M-j~ to force
-C-l to center buffer
 Text: _k_: show kill ring (xah-show-kill-ring) | To search and insert Unicode: C-x 8 RET or M-x counsel-unicode-char
       M-LEFT et M-RIGHT to move by word (except in org-mode : C-LEFT et C-RIGHT) | C-DEL (M-d) et C-BACKSPACE (M-DEL) to delete words
       C-c C-SPACE ace jump         | M-< ou M-> [shift] to go to beginning/end of buffer
