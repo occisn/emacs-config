@@ -7871,9 +7871,17 @@ M-x my/md-convert-region-to-anchor-and-kill
  "server"
 
  ;; Start Emacs server if not already running
- (require 'server)
- (unless (server-running-p)
-   (server-start))
+ (when nil
+   (require 'server)
+   (unless (server-running-p)
+     (server-start)))
+
+ ;; Actually I have not managed to open an .org file from Windows Explorer by double-click.
+ ;; Some tricks allows managing spaces in filename, but not accents.
+ ;; So server is not really needed.
+
+ ;; However, we can open an .org file from Windows Explorer by drag-and-drop into Emacs.
+ 
  ) ; end of init section
 
 
