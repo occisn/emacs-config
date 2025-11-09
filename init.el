@@ -743,6 +743,7 @@ d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
        *teams-path* "C:/.../Teams.exe"
        *firefox-path* "C:/../firefox.exe"
        *thunderbird-executable* "C:/.../Thunderbird.exe"
+       *chrome-executable "C:/.../chrome.exe"
        
        ) ; end of setq
  
@@ -6849,6 +6850,7 @@ _e_: Microsoft Excel
 _p_: Microsoft Powerpoint
 _b_: Thunderbird
 _f_: Firefox
+_c_: Chrome
 _i_: Irfan
 
 Win-1 et Win-t launch applications from task bar
@@ -6865,6 +6867,7 @@ Alt-F4 and Alt-TAB
 
 (end)"
    ("b" (my-init--open-windows-executable "Thunderbird" *thunderbird-executable*))
+   ("c" (my-init--open-windows-executable "Chrome" *chrome-executable*))
    ("e" (my-init--open-windows-executable "Microsoft Excel" *excel-path*))
    ("f" (my-init--open-windows-executable "Firefox" *firefox-path*))
    ("i" #'my/launch-irfan)
