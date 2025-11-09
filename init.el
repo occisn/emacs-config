@@ -744,6 +744,8 @@ d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
        *firefox-path* "C:/../firefox.exe"
        *thunderbird-executable* "C:/.../Thunderbird.exe"
        *chrome-executable "C:/.../chrome.exe"
+
+       *git-bash-executable* "C:/.../Git/bin/bash.exe"
        
        ) ; end of setq
  
@@ -3305,12 +3307,14 @@ reset: M-x calc-reset
 
 ;;; ===
 ;;; ==================
-;;; ===== ESHELL =====
+;;; ===== SHELLS =====
 ;;; ==================
 
 (my-init--with-duration-measured-section
  t
- "eshell"
+ "shells"
+
+ ;; === eshell
  
  (with-eval-after-load 'org
    (add-to-list 'org-babel-load-languages '(eshell . t))
@@ -3360,6 +3364,218 @@ reset: M-x calc-reset
                     (forward-line 0)
                     (not (looking-at-p prompt-regexp)))
              (accept-process-output (get-buffer-process eshell-buffer) 0.1)))))))
+
+ ;; === cmd shell
+
+ (defun my/open-cmd-shell-external ()
+   "Open cmd in a native window, within the directory of current buffer (if it is a dired or a file)."
+   (interactive)
+   (if (or (buffer-file-name) (derived-mode-p 'dired-mode))
+       (let ((proc (start-process "cmd" nil "cmd.exe" "/C" "start" "cmd.exe" "/K" "cd" default-directory)))
+         (set-process-query-on-exit-flag proc nil)
+         (message "Native cms window opened in %s" default-directory))
+     (let ((proc (start-process "powershell" nil "cmd.exe" "/C" "start" "cmd.exe")))
+       (set-process-query-on-exit-flag proc nil)
+       (message "No directory identified. Native cmd window opened."))))
+
+ (defun my/open-cmd-shell-in-emacs ()
+   "Open a Windows cmd.exe shell inside an Emacs buffer, using UTF-8 encoding and starting in the current buffer's directory (if any)."
+   (interactive)
+   (let* ((default-dir (if (or (buffer-file-name) (derived-mode-p 'dired-mode))
+                           (file-name-directory (or (buffer-file-name) default-directory))
+                         (expand-file-name "~")))
+          (buffer-name (generate-new-buffer-name "*cmd*"))
+          (coding-system-for-read 'utf-8)
+          (coding-system-for-write 'utf-8))
+     (with-current-buffer (get-buffer-create buffer-name)
+       (setq default-directory default-dir)
+       ;; Start cmd in UTF-8 mode (codepage 65001) and set to correct directory
+       (apply #'make-comint-in-buffer "cmd" (current-buffer)
+              "cmd.exe" nil
+              (list "/K" (format "chcp 65001 > nul && cd /d \"%s\"" default-dir)))
+       (pop-to-buffer (current-buffer))
+       (message "cmd.exe started in %s (UTF-8 mode)" default-dir))))
+
+ ;; === powershell
+
+ (defun my/open-powershell-external ()
+   "Open Powershell in a native window, within the directory of current buffer (if it is a dired or a file)."
+   (interactive)
+   (if (or (buffer-file-name) (derived-mode-p 'dired-mode))
+       (let ((proc (start-process "powershell" nil "cmd.exe" "/C" "start" "powershell.exe" "-NoExit" "-Command" (format "Set-Location '%s'" default-directory))))
+         (set-process-query-on-exit-flag proc nil)
+         (message "Native Powershell window opened in %s" default-directory))
+     (let ((proc (start-process "powershell" nil "cmd.exe" "/C" "start" "powershell.exe" "-NoExit")))
+       (set-process-query-on-exit-flag proc nil)
+       (message "No directory identified. Native Powershell window opened."))))
+
+ (defun my/open-powershell-in-emacs ()
+   "Open PowerShell inside an Emacs buffer, using UTF-8 encoding,
+and starting in the current buffer's directory (if any)."
+   (interactive)
+   (let* ((default-dir (if (or (buffer-file-name) (derived-mode-p 'dired-mode))
+                           (file-name-directory (or (buffer-file-name) default-directory))
+                         (expand-file-name "~")))
+          (buffer-name (generate-new-buffer-name "*PowerShell*"))
+          (process-environment (cons "CHCP=65001" process-environment))
+          (coding-system-for-read 'utf-8)
+          (coding-system-for-write 'utf-8))
+     (with-current-buffer (get-buffer-create buffer-name)
+       (setq default-directory default-dir)
+       ;; Use UTF-8 mode and set console codepage to 65001 inside PowerShell
+       (apply #'make-comint-in-buffer "PowerShell" (current-buffer)
+              "powershell.exe" nil
+              '("-NoExit" "-Command" "chcp 65001; [Console]::OutputEncoding = [Text.Encoding]::UTF8"))
+       (pop-to-buffer (current-buffer))
+       (message "PowerShell started in %s (UTF-8 mode)" default-dir))))
+
+ ;; === git bash
+
+ (defun my/open-git-bash-external ()
+   "Open Git Bash in a native window, within the directory of current buffer (if it is a dired or a file)."
+   (interactive)
+   (if (or (buffer-file-name) (derived-mode-p 'dired-mode))
+       (let ((proc (start-process "git-bash" nil "cmd.exe" "/C" 
+                                  "cd" "/d" default-directory "&&"
+                                  "start" "" *git-bash-executable* "--login" "-i")))
+         (set-process-query-on-exit-flag proc nil)
+         (message "Native Git Bash window opened in %s" default-directory))
+     (let ((proc (start-process "git-bash" nil "cmd.exe" "/C" "start" "" 
+                                *git-bash-executable* "--login" "-i")))
+       (set-process-query-on-exit-flag proc nil)
+       (message "No directory identified. Native Git Bash window opened."))))
+
+ (defun my/open-git-bash-in-emacs ()
+   "Open Git Bash inside an Emacs buffer, using UTF-8 encoding
+and starting in the current buffer's directory (if any)."
+   (interactive)
+   (let* ((default-dir (if (or (buffer-file-name) (derived-mode-p 'dired-mode))
+                           (file-name-directory (or (buffer-file-name) default-directory))
+                         (expand-file-name "~")))
+          ;; Adjust the path if Git is installed elsewhere:
+          (bash-path *git-bash-executable*)
+          (buffer-name (generate-new-buffer-name "*Git Bash*"))
+          (coding-system-for-read 'utf-8)
+          (coding-system-for-write 'utf-8))
+     (unless (file-exists-p bash-path)
+       (user-error "Could not find Git Bash executable (bash.exe)"))
+     (let ((process-environment (cons "MSYS_NO_PATHCONV=1" process-environment)))
+       (with-current-buffer (get-buffer-create buffer-name)
+         (setq default-directory default-dir)
+         ;; Use --login to load ~/.bashrc and -i for interactivity
+         (apply #'make-comint-in-buffer "Git Bash" (current-buffer)
+                bash-path nil '("--login" "-i"))
+         ;; Send cd command to ensure directory is correct
+         (comint-send-string (get-buffer-process (current-buffer))
+                             (format "cd '%s'\n" default-dir))
+         (pop-to-buffer (current-buffer))
+         (message "Git Bash started in %s (UTF-8 mode)" default-dir)))))
+
+ ;; === wsl bash
+
+ ;; to install WSL on Windows :
+ ;;   [cmd] wsl.exe --install
+ ;; then, to know available distributions:
+ ;;   [cmd] wsl.exe --list --online
+ ;; and to install one:
+ ;;   [cmd] wsl.exe --install Ubuntu
+ ;; then to update it:
+ ;;   [wsl] sudo apt update && sudo apt full-upgrade
+
+ (defun my/open-wsl-shell-external ()
+   "Open a visible WSL terminal (bash) window in the directory of the current buffer."
+   (interactive)
+   (let* ((dir (if (or (buffer-file-name) (derived-mode-p 'dired-mode))
+                   (file-name-directory (or (buffer-file-name) default-directory))
+                 (expand-file-name "~")))
+          ;; Convert Windows path to WSL path (/mnt/c/Users/...)
+          (wsl-dir (string-trim
+                    (shell-command-to-string
+                     (format "wsl wslpath '%s'" dir)))))
+     (message "wsl-dir = %s" wsl-dir)
+     (if (and wsl-dir (not (string-empty-p wsl-dir)))
+         ;; Use `cmd /C start` to open a visible terminal window
+         (let ((proc (start-process
+                      "wsl" nil
+                      "cmd.exe" "/C" "start" "wsl.exe" "~"
+                      "-e" "bash" "-c"
+                      (format "cd '%s' && exec bash" wsl-dir))))
+           (set-process-query-on-exit-flag proc nil)
+           (message "Opened WSL shell in %s" wsl-dir))
+       (let ((proc (start-process "wsl" nil "cmd.exe" "/C" "start" "wsl.exe")))
+         (set-process-query-on-exit-flag proc nil)
+         (message "Opened WSL shell in home directory.")))))
+
+ (defun my--wsl-comint-preoutput-filter (output)
+   "Filter to handle WSL output."
+   (replace-regexp-in-string "\r" "" output))
+
+ (defun my/open-wsl-shell-in-emacs ()
+   "Open WSL Bash inside an Emacs comint buffer with UTF-8 encoding, starting in the current buffer's directory, and avoiding CR issues.
+The prompt is 'fake' and is not updated with successive 'cd'."
+   (interactive)
+
+   (let* ((win-dir (if (or (buffer-file-name) (derived-mode-p 'dired-mode))
+                       (file-name-directory (or (buffer-file-name) default-directory))
+                     (expand-file-name "~")))
+          ;; Convert Windows path to WSL path
+          (wsl-dir (string-trim
+                    (shell-command-to-string
+                     (format "wsl wslpath '%s'" (expand-file-name win-dir)))))
+          (buffer-name (generate-new-buffer-name "*WSL*"))
+          (coding-system-for-read 'utf-8-unix)
+          (coding-system-for-write 'utf-8-unix)
+          (wsl-path (or (executable-find "wsl.exe")
+                        (user-error "Could not find wsl.exe"))))
+
+     (with-current-buffer (get-buffer-create buffer-name)
+       (setq default-directory win-dir)
+       (comint-mode)
+       (add-hook 'comint-preoutput-filter-functions 
+                 'my--wsl-comint-preoutput-filter nil t)
+       (let ((proc (make-process
+                    :name "WSL"
+                    :buffer (current-buffer)
+                    :command (list wsl-path "bash" "-i")
+                    :coding 'utf-8-unix
+                    :connection-type 'pipe
+                    :filter 'comint-output-filter)))
+         (set-process-query-on-exit-flag proc nil)
+         (when (and proc wsl-dir)
+           (sit-for 1)
+           (process-send-string proc (format "cd '%s'\n" wsl-dir))
+           (sit-for 0.3)
+           ;; Configure bash to always show prompt
+           (process-send-string proc "export PROMPT_COMMAND='echo -n \"[WSL:$(pwd)]$ \"'\n")
+           (sit-for 0.2)
+           (process-send-string proc "\n")))
+       (pop-to-buffer (current-buffer))
+       (goto-char (point-max))
+       (message "WSL (comint) started in %s" win-dir))))
+
+ ;; === hydra
+
+ (defhydra hydra-shells (:exit t :hint nil)
+   "
+^Shells hydra:
+^-------------
+
+eshell :     _e_ in buffer
+cmd shell :  _c_ external or _m_ in buffer
+powershell : _p_ external or _o_ in buffer
+git bash :   _g_ external or _i_ in buffer (Windows native equivalents)
+wsl shell :  _w_ external or _s_ in buffer
+"
+   ("c" #'my/open-cmd-shell-external)
+   ("e" #'eshell)
+   ("i" #'my/open-git-bash-in-emacs)
+   ("g" #'my/open-git-bash-external)
+   ("m" #'my/open-cmd-shell-in-emacs)
+   ("o" #'my/open-powershell-in-emacs)
+   ("p" #'my/open-powershell-external)
+   ("s" #'my/open-wsl-shell-in-emacs)
+   ("w" #'my/open-wsl-shell-external)
+   )
 
  ) ; end of init section
 
@@ -4007,7 +4223,6 @@ M-w, C-w and C-y to copy/paste files (dired-ranger)
 i to include content of subdirectory (C-u k to remove display) | o to open file or subdirectory in other window
 _c_: _c_opy file here (M-x my/copy-file-here)
 _h_: paste image from clipboard to _h_ere (M-x my/paste-image-from-clipboard-to-here)
-_s_: _s_tart cmd in current directory (M-x my/start-cmd)
 / and g to narrow | P and q to peep-dired (M-x doc-view-dired-cache, M-x doc-view-clear-cache)
 
 Open with:
@@ -4038,7 +4253,6 @@ Attach file to mail: C-c RET C-a (gnus-dired-attach) {end}"
    ("g" #'my/ag-grep-in-current-dired-directory)
    ("l" #'my/list-zip-content)
    ("p" #'my/pt-grep-in-current-dired-directory)
-   ("s" #'my/start-cmd)
    ("u" #'my/unzip)
    ("w" #'my/open-current-dired-directory-in-windows-explorer)
    ("x" #'xah-grep-in-current-dired-directory)
@@ -6951,13 +7165,6 @@ Alt-F4 and Alt-TAB
 
 ;;; ===
 ;;; =================
-;;; ===== SHELL =====
-;;; =================
-
-;;; void
-
-;;; ===
-;;; =================
 ;;; ===== DITAA =====
 ;;; =================
 
@@ -7947,7 +8154,7 @@ Macros : F3 and F4 | M-x kmacro-name-last-macro gives a name to the last defined
          repeat macro until error (M-0 C-x e) = my/repeat-macro-until-error | register store C-x C-k x r (kmacro-to-register) | call C-x r j r
 Packages: M-x package-install                 | C-x M-: repeat last M-x
 Tests: ERT _t_ests associated with init files (my/launch-tests)
-Other hydras: _A_ppearance, _F_onts, _T_hemes, _H_elp & documentation, _M_ode-dependent (C-c d), _P_roject (C-c p h), _W_indows (C-c w), Mails (C-c m)
+Other hydras: _A_ppearance, _F_onts, _T_hemes, _H_elp & documentation, _M_ode-dependent (C-c d), _P_roject (C-c p h), _W_indows (C-c w), _S_hells, Mails (C-c m)
 Undo : C-j to cut undo chain? {end}
 "
    ;; ("c" #'my/ready-to-calc) ;; to remove
@@ -7968,6 +8175,7 @@ Undo : C-j to cut undo chain? {end}
    ("H" #'hydra-help/body)
    ("M" #'context-hydra-launcher)
    ("P" #'hydra-project/body)
+   ("S" #'hydra-shells/body)
    ("T" #'my/generate-personal-theme-buffer)
    ("W" #'hydra-windows-executables/body))
 
