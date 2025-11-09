@@ -635,13 +635,13 @@ d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
 
 
 ;;; ===
-;;; =====================================
-;;; === PATH TO DIRECTORIES AND FILES ===
-;;; =====================================
+;;; =========================================================
+;;; === PATH TO DIRECTORIES AND FILES, AND SOME CONSTANTS ===
+;;; =========================================================
 
 (my-init--with-duration-measured-section 
  t
- "Paths to directories and files"
+ "Paths to directories and files, and some constants"
 
  ;; the following 'nil' shall be replaced,
  ;; within 'personal--directories-and-files.el'
@@ -732,10 +732,12 @@ d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
 
        *pandoc-directory* "c:/.../pandoc-3.1.11.1"
        *pandoc-executable-name* "pandoc.exe"
+
+       *my-signature* "(my signature for mail)"
        
        ) ; end of setq
  
- (my-init--load-additional-init-file "personal--directories-and-files.el")
+ (my-init--load-additional-init-file "personal--directories-and-files-and-constants.el")
 
  ) ; end of init section
 
@@ -7678,6 +7680,49 @@ From here, you can also copy images from the book with the C keyboard shortcut
  "Some personal functions"
 
  (my-init--load-additional-init-file "personal--some-functions.el")
+
+ ) ; end of init section
+
+;;; ===
+;;; ======================
+;;; === WORK FUNCTIONS ===
+;;; ======================
+
+(my-init--with-duration-measured-section 
+ t
+ "Some work functions"
+
+ (defun my/signature ()
+   (interactive)
+   "Copy my signature in clipboard."
+   
+   (cl-labels ((insert-string-in-clipboard (str)
+                 "Insert STR (a string) in clipboard.
+(v1, available in occisn/emacs-utils GitHub repository)"
+                 (with-temp-buffer
+                   (insert str)
+                   (clipboard-kill-region (point-min) (point-max)))))
+
+     (insert-string-in-clipboard *my-signature*)
+     (message "IMT Signature available in clipboard")))
+
+ (defun pro1/open-app1 ()
+   "Open APP1, provided that frmservletXXX.jnlp exists in DOWNLOAD directory"
+   (interactive)
+   (let ((possible-files (directory-files *downloads-directory* nil "frmservlet.*" nil)))
+     (when (null possible-files)
+       (error "No file beginning with 'frmservlet' in downloads directory"))
+     (let* ((target-file1
+             (if (= 1 (length possible-files))
+                 (car possible-files)
+               (cadr (reverse possible-files))))
+            (target-file2 (concat *downloads-directory*
+                                  target-file1))
+            (cmd (concat "\"" target-file2 "\"")))
+       (message "Opening %s..." target-file2)
+       (call-process-shell-command cmd nil t))))
+
+
 
  ) ; end of init section
 
