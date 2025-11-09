@@ -1509,6 +1509,33 @@ This advice changes the encoding of the argument given to w32explore function in
  t
  "Fonts"
 
+ ;; Note: interesting fonts which could be tried in Powershell parameters:
+ ;;    Consolas
+ ;;    Cascadia Mono
+ ;; ... and ...
+ ;;    Anonymous Pro
+ ;;    Cousine
+ ;;    D2Coding
+ ;;    DejaVu Sans Mono
+ ;;    DM Mono
+ ;;    DM Mono Medium
+ ;;    Droid Sans Mono
+ ;;    Fantasque Sans Mono
+ ;;    Fira Code
+ ;;    Fira Code Medium
+ ;;    Fira Code Retina
+ ;;    Fira Mono
+ ;;    Fira Mono Medium
+ ;;    Hack
+ ;;    Hasklig
+ ;;    Hasklig Medium
+ ;;    Iosevka
+ ;;    JetBrains Mono
+ ;;    JetBrains Mono Medium
+ ;;    Menlo
+ ;;    Menlo LG S DZ
+ ;;    Office Code Pro
+ 
  (defun my-init--default-font ()
    "Return default font as a string."  
    (let* ((tmp1 (face-attribute 'default :font))
@@ -2149,6 +2176,7 @@ M-x keycast-mode: show current key and its meaning on the command line
      (my/disable-all-themes))
    (when (my-init--light-background-p)
      (invert-face 'default))
+   ;; Note: Powershell colors are light gray 1 36 86 on dark blue background 238 237 240
    )
  (push '("_My dark" #'my/dark-theme) *my-themes*)
 
@@ -5181,10 +5209,10 @@ d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
          (slime-with-popup-buffer (bufname :package package
 					   :connection t
 					   :select slime-description-autofocus)
-	                          (when (string= bufname "*slime-description*")
-	                            (with-current-buffer bufname (slime-company-doc-mode)))
-	                          (princ string)
-	                          (goto-char (point-min))))))
+	   (when (string= bufname "*slime-description*")
+	     (with-current-buffer bufname (slime-company-doc-mode)))
+	   (princ string)
+	   (goto-char (point-min))))))
    (my-init--message-package-loaded "slime-company"))
 
  ;; and activate slime-company in slime below
@@ -5411,17 +5439,17 @@ Modified from official 'slime-call-defun'"
          (if (symbolp toplevel)
              (error "Not in a function definition")
            (slime-dcase toplevel
-                        (((:defun :defgeneric :defmacro :define-compiler-macro) symbol)
-                         (insert-call symbol))
-                        ((:defmethod symbol &rest args)
-                         ;; (declare (ignore args))
-                         (insert-call symbol))
-                        (((:defparameter :defvar :defconstant) symbol)
-                         (insert-call symbol :function nil))
-                        (((:defclass) symbol)
-                         (insert-call symbol :defclass t))
-                        (t
-                         (error "Not in a function definition")))))))
+             (((:defun :defgeneric :defmacro :define-compiler-macro) symbol)
+              (insert-call symbol))
+             ((:defmethod symbol &rest args)
+              ;; (declare (ignore args))
+              (insert-call symbol))
+             (((:defparameter :defvar :defconstant) symbol)
+              (insert-call symbol :function nil))
+             (((:defclass) symbol)
+              (insert-call symbol :defclass t))
+             (t
+              (error "Not in a function definition")))))))
 
    (define-key slime-mode-map (kbd "C-c C-x")  #'my/slime-call-defun--with-time-monitoring)
 
@@ -5941,8 +5969,8 @@ Return NIL if no system found.
      (if (null asdf-system-name)
          (message "No ASDF system found.")
        (slime-eval-async `(asdf:load-system ,asdf-system-name :force t)
-                         (lambda (_result)
-                           (message "System %s has been force-reloaded" asdf-system-name))))))
+         (lambda (_result)
+           (message "System %s has been force-reloaded" asdf-system-name))))))
 
  (defun my/asdf-force-test-system-corresponding-to-current-buffer ()
    "Force test current ASDF system.
@@ -5953,8 +5981,8 @@ Return NIL if no system found.
      (if (null asdf-system-name)
          (message "No ASDF system found.")
        (slime-eval-async `(asdf:test-system ,asdf-system-name :force t)
-                         (lambda (_result)
-                           (message "System %s has been force-tested" asdf-system-name))))))
+         (lambda (_result)
+           (message "System %s has been force-tested" asdf-system-name))))))
 
  ;; ===
  ;; === abbrev
