@@ -736,6 +736,13 @@ d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
        *my-signature* "(my signature for mail)"
 
        *my-commun-directory* "c:/.../"
+
+       *word-path* "C:/.../WINWORD.EXE"
+       *excel-path* "C:/.../EXCEL.EXE"
+       *powerpoint-path* "C://.../POWERPNT.EXE"
+       *teams-path* "C:/.../Teams.exe"
+       *firefox-path* "C:/../firefox.exe"
+       *thunderbird-executable* "C:/.../Thunderbird.exe"
        
        ) ; end of setq
  
@@ -1016,7 +1023,8 @@ DIRECTORY may have a final slash"
  "Utilities for Windows"
 
  (defun my-init--open-windows-executable (exe-name exe-path)
-   "Open Windows executable EXE-NAME located at EXE-PATH."
+   "Open Windows executable EXE-NAME located at EXE-PATH.
+First check that the path is correct."
    (unless (my-init--file-exists-p exe-path)
      (error (concat "Impossible to open " exe-name " from Emacs, since no path is known")))
    (message (concat "Opening " exe-name " from Emacs"))
@@ -6823,13 +6831,25 @@ To be called from hydra."
    (interactive)
    (my-init--dired-open-directory-if-valid "Dropbox" *dropbox-directory*))
 
+ (when nil
+   (defun my/open-shared-drives ()
+     "Open shared drives M: and S:"
+     (interactive)
+     (message "Opening shared network drives M: and S: from Emacs")
+     (call-process-shell-command "explorer M:" nil 0)
+     (call-process-shell-command "explorer S:" nil 0)))
+
  (defhydra hydra-windows-executables (:exit t :hint nil) ;  :columns 1)
    "
 ^Windows executables:
 ^--------------------
+
+_w_: Microsoft Word
+_e_: Microsoft Excel
+_p_: Microsoft Powerpoint
+_b_: Thunderbird
+_f_: Firefox
 _i_: Irfan
-_k_: Common Lisp as a buffer (alternative: M-x ielm)
-_l_: external Common Lisp
 
 Win-1 et Win-t launch applications from task bar
 Win-S-s        screenshot (or W-^-S or W-fn-Impr)
@@ -6841,13 +6861,17 @@ Win-w          news
 
 Firefox: C-w, C-S-t (?)
 F11 full screen
-my/start-SBCL-as-a-buffer
 Alt-F4 and Alt-TAB
 
 (end)"
+   ("b" (my-init--open-windows-executable "Thunderbird" *thunderbird-executable*))
+   ("e" (my-init--open-windows-executable "Microsoft Excel" *excel-path*))
+   ("f" (my-init--open-windows-executable "Firefox" *firefox-path*))
    ("i" #'my/launch-irfan)
-   ("k" #'my/start-common-lisp-as-buffer)
-   ("l" #'my/start-external-common-lisp))
+   ("p" (my-init--open-windows-executable "Microsoft Powerpoint" *powerpoint-path*))
+   ("t" (my-init--open-windows-executable "Microsoft Teams" *teams-path*))
+   ("w" (my-init--open-windows-executable "Microsoft Word" *word-path*))
+   ) ; end of hydra
 
  (global-set-key (kbd "C-c w") #'hydra-windows-executables/body)
  
