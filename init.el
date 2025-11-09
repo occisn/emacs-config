@@ -734,6 +734,8 @@ d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
        *pandoc-executable-name* "pandoc.exe"
 
        *my-signature* "(my signature for mail)"
+
+       *my-commun-directory* "c:/.../"
        
        ) ; end of setq
  
@@ -7679,7 +7681,18 @@ From here, you can also copy images from the book with the C keyboard shortcut
  t
  "Some personal functions"
 
- (my-init--load-additional-init-file "personal--some-functions.el")
+ (defun my/activate-Commun-projectile ()
+   "Activate 'Commun' directory with projectile."
+   (interactive)
+   (if (not (my-init--directory-exists-p *my-commun-directory*))
+       (message "Unable to locate Commun directory: %s" *my-commun-directory*)
+     (let ((projectile-file (concat *my-commun-directory* ".projectile")))
+       (if (not (my-init--file-exists-p projectile-file))
+           (message "Unable to find Commun projectile file: %s" projectile-file)
+         (progn
+           (find-file projectile-file)
+           (kill-buffer (current-buffer))
+           (dired *my-commun-directory*))))))
 
  ) ; end of init section
 
