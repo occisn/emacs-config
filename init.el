@@ -2148,7 +2148,7 @@ M-x keycast-mode: show current key and its meaning on the command line
    (when (my-init--dark-background-p)
      (invert-face 'default))
    (when nil (set-frame-font "Courier New 10" nil t)))
- (push '("_Raw light" #'my/raw-light-theme) *my-themes*)
+ (push '("_Raw light" #'my/raw-light-theme "light") *my-themes*) ; azerty
 
  (defun my/raw-dark-theme ()
    "Set raw dark theme."
@@ -2194,7 +2194,7 @@ M-x keycast-mode: show current key and its meaning on the command line
  (push '("Doom City Lights" (lambda () (load-theme 'doom-city-lights t))) *my-themes*)
  (push '("Doom One Light" (lambda () (load-theme 'doom-one-light t))) *my-themes*) 
  (push '("Doom Challenger Deep" (lambda () (load-theme 'doom-challenger-deep t))) *my-themes*)
-
+ 
  (push '("Modus Vivendi" (lambda () (load-theme 'modus-vivendi t))) *my-themes*)
  (defun my/load-modus-vivendi-customized ()
    (load-theme 'modus-vivendi t)
@@ -2236,6 +2236,8 @@ M-x keycast-mode: show current key and its meaning on the command line
  (push '("Gruvbox dark medium" (lambda () (load-theme 'gruvbox-dark-medium t))) *my-themes*)
  (push '("Gruvbox light soft" (lambda () (load-theme 'gruvbox-light-soft t))) *my-themes*)
  (push '("Gruvbox light medium" (lambda () (load-theme 'gruvbox-light-medium t))) *my-themes*)
+
+ (push '("Leuven" (lambda () (load-theme 'leuven t))) *my-themes*)
  
  (use-package zenburn-theme
    :defer t
@@ -2263,6 +2265,35 @@ M-x keycast-mode: show current key and its meaning on the command line
  ;; #494685 dark violet
  ;; #B362FF light violet
  (push '("Shades of purple" (lambda () (load-theme 'shades-of-purple t))) *my-themes*)
+ (defun my/load-shade-of-purple-customized ()
+   (load-theme 'shades-of-purple t)
+   (add-hook 'org-mode-hook
+             (lambda ()
+
+               ;; (1) org-mode level 1 headers:
+               (custom-set-faces
+                '(org-level-1 ((t (:foreground "violet" :height 1.25 :weight bold)))))
+               ;; possible alternative:
+               (when nil
+                 (set-face-attribute 'org-level-1 nil
+                                     :foreground "violet"
+                                     :height 1.25
+                                     :weight 'bold))
+
+
+               ;; (2) org-mode quote blocks
+               (setq org-fontify-quote-and-verse-blocks t)
+               (set-face-attribute 'org-quote nil
+                                   :foreground "#FFFFFF" ; white
+                                   :background "#3a3a3a")  ; light gray
+
+               ;; (3) org-mode source blocks:
+               (set-face-attribute 'org-block nil
+                                   :foreground "#FFFFFF" ; white
+                                   :background "#3a3a3a") ; light gray
+               
+               )))
+ (push '("Shades of purple (customized)" #'my/load-shade-of-purple-customized) *my-themes*)
  
  (use-package flatland-theme
    :defer t
@@ -2301,6 +2332,13 @@ M-x keycast-mode: show current key and its meaning on the command line
    :config (my-init--message-package-loaded "vscode-dark-plus-theme"))
  (push '("VScode dark plus" (lambda () (load-theme 'vscode-dark-plus t))) *my-themes*)
 
+ (defun my--load-theme-by-name (theme-name)
+   "Load theme identified by THEME-NAME in *my-themes*"
+   (let ((theme-fn (cadr (assoc theme-name *my-themes*))))
+     (if (null theme-fn)
+         (message "No theme associated with this name: %s" theme-name)
+       (funcall (eval theme-fn)))))
+
  ;; and also:
  ;; - Dracula theme
  ;; - Tomorrow deep blue
@@ -2309,25 +2347,25 @@ M-x keycast-mode: show current key and its meaning on the command line
  ;; - green-is-the-new-black-theme
 
  ;; The theme which is chosen:
- (load-theme 'shades-of-purple t)
+ (my/load-shade-of-purple-customized)
  ;; I like also:
  (when nil
 
    ;; LIGHT:
-   (load-theme 'leuven t) ; perhaps to be repeated at the end of init file
+   (my--load-theme-by-name "Leuven") ; perhaps to be repeated at the end of init file
                                         ; otherwise effects are missing: note titles, color or =xxx=, etc.
    ;; standard light tinted
-   (moe-light)
+   (my--load-theme-by-name "Moe Light") 
    
    ;; DARK:
-   (load-theme 'shades-of-purple t) ;
-   (load-theme 'modus-vivendi t) 
-   (my/load-modus-vivendi-customized) ; <-- preferred dark
+   (my--load-theme-by-name "Shades of purple")
+   (my--load-theme-by-name "Shades of purple (customized)")
+   (my--load-theme-by-name "Modus Vivendi")
+   (my--load-theme-by-name "Modus Vivendi (customized)") ; <-- preferred dark
    ;; tomorrow deep blue
    ;; dracula
-   (load-theme 'doom-challenger-deep t)
-   (my/dark-theme)
-   (load-theme 'shades-of-purple t)
+   (my--load-theme-by-name "Doom Challenger Deep")
+   (my--load-theme-by-name "_My dark")
    ) ; end of when nil
 
  (defun my/generate-personal-theme-buffer () 
