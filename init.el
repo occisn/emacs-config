@@ -1973,7 +1973,7 @@ This advice changes the encoding of the argument given to w32explore function in
 ;;; ===============
 
 (my-init--with-duration-measured-section
- t
+ 
  "Buffers"
  ;; Better-looking list of buffers:
  (defalias 'list-buffers 'ibuffer) ; make ibuffer default
@@ -2140,36 +2140,80 @@ M-x keycast-mode: show current key and its meaning on the command line
      (disable-theme (car custom-enabled-themes)))
    (message "All themes disabled."))
 
- (defun my/raw-light-theme ()
-   "Set raw light theme."
-   (interactive)
-   (when (not (null custom-enabled-themes))
-     (my/disable-all-themes))
-   (when (my-init--dark-background-p)
-     (invert-face 'default))
-   (when nil (set-frame-font "Courier New 10" nil t)))
- (push '("_Raw light" #'my/raw-light-theme "light") *my-themes*) ; azerty
+ ;; == Afternoon theme
 
- (defun my/raw-dark-theme ()
-   "Set raw dark theme."
-   (interactive)
-   (when (not (null custom-enabled-themes))
-     (my/disable-all-themes))
-   (when (my-init--light-background-p)
-     (invert-face 'default))
-   (when nil (set-frame-font "Courier New 10" nil t)))
- (push '("_Raw dark" #'my/raw-dark-theme) *my-themes*)
+ (use-package afternoon-theme
+   :defer t
+   :config (my-init--message-package-loaded "afternoon-theme"))
+ (push '("Afternoon" (lambda () (load-theme 'afternoon t)) "dark") *my-themes*)
 
- (defun my/light-theme ()
-   "Set my light theme."
-   (interactive)
-   (when (not (null custom-enabled-themes))
-     (my/disable-all-themes))
-   (when (my-init--dark-background-p)
-     (invert-face 'default))
-   (set-background-color "antique white") ; "honey dew"
-   )
- (push '("_My light" #'my/light-theme) *my-themes*)
+ ;; == Alect theme
+
+ (use-package alect-themes
+   :defer t
+   :config (my-init--message-package-loaded "alect-themes"))
+ (push '("Alect dark" (lambda () (load-theme 'alect-dark t)) "dark") *my-themes*)
+ (push '("Alect light" (lambda () (load-theme 'alect-light t)) "light") *my-themes*)
+
+ ;; === Doom themes
+
+ (use-package doom-themes
+   :defer t
+   :config
+   (setq doom-themes-enable-bold t ; if nil, bold is universally disabled
+         doom-themes-enable-italic t) ; if nil, italics is universally disabled
+   (my-init--message-package-loaded "doom-themes"))
+ (push '("Doom Pale Night" (lambda () (load-theme 'doom-palenight t)) "dark") *my-themes*)
+ (push '("Doom One" (lambda () (load-theme 'doom-one t)) "dark") *my-themes*)
+ (push '("Doom Vibrant" (lambda () (load-theme 'doom-vibrant t)) "dark") *my-themes*)
+ (push '("Doom City Lights" (lambda () (load-theme 'doom-city-lights t)) "dark") *my-themes*)
+ (push '("Doom One Light" (lambda () (load-theme 'doom-one-light t)) "light") *my-themes*) 
+ (push '("Doom Challenger Deep" (lambda () (load-theme 'doom-challenger-deep t)) "dark") *my-themes*)
+
+ ;; === Flatland theme
+
+ (use-package flatland-theme
+   :defer t
+   :config (my-init--message-package-loaded "flatland-theme"))
+ (push '("Flatland" (lambda () (load-theme 'flatland t)) "dark") *my-themes*)
+ 
+ ;; === Gruvbox theme
+
+ (use-package gruvbox-theme
+   :defer t
+   :config (my-init--message-package-loaded "gruvbox-theme"))
+ (push '("Gruvbox dark medium" (lambda () (load-theme 'gruvbox-dark-medium t)) "dark") *my-themes*)
+ (push '("Gruvbox light soft" (lambda () (load-theme 'gruvbox-light-soft t)) "light") *my-themes*)
+ (push '("Gruvbox light medium" (lambda () (load-theme 'gruvbox-light-medium t)) "light") *my-themes*)
+
+ ;; === Leuven theme
+
+ (push '("Leuven" (lambda () (load-theme 'leuven t)) "light") *my-themes*)
+
+ ;; === Modus Vivendi
+
+ (push '("Modus Vivendi" (lambda () (load-theme 'modus-vivendi t)) "dark") *my-themes*)
+ (defun my/load-modus-vivendi-customized ()
+   (load-theme 'modus-vivendi t)
+   ;; (add-to-list 'org-emphasis-alist '("*" (bold :foreground "yellow")))
+   (custom-set-faces '(org-level-1 ((t (:foreground "#da70d6" :weight bold))))))
+ (push '("Modus Vivendi (customized)" #'my/load-modus-vivendi-customized "dark") *my-themes*)
+
+ ;; === Moe theme
+
+ (use-package moe-theme
+   :commands (moe-light)
+   :config (my-init--message-package-loaded "moe-theme"))
+ (push '("Moe Light" #'moe-light "light") *my-themes*)
+
+ ;; === Monokai theme
+
+ (use-package monokai-theme
+   :defer t
+   :config (my-init--message-package-loaded "monokai-theme"))
+ (push '("Monokai" (lambda () (load-theme 'monokai t)) "dark") *my-themes*)
+
+ ;; === My dark theme
 
  (defun my/dark-theme ()
    "Set my dark theme."
@@ -2180,80 +2224,77 @@ M-x keycast-mode: show current key and its meaning on the command line
      (invert-face 'default))
    ;; Note: Powershell colors are light gray 1 36 86 on dark blue background 238 237 240
    )
- (push '("_My dark" #'my/dark-theme) *my-themes*)
+ (push '("_My dark" #'my/dark-theme "dark") *my-themes*)
 
- (use-package doom-themes
+ ;; === My light theme
+
+ (defun my/light-theme ()
+   "Set my light theme."
+   (interactive)
+   (when (not (null custom-enabled-themes))
+     (my/disable-all-themes))
+   (when (my-init--dark-background-p)
+     (invert-face 'default))
+   (set-background-color "antique white") ; "honey dew"
+   )
+ (push '("_My light" #'my/light-theme "light") *my-themes*)
+
+ ;; === Nimbus theme
+
+ (use-package nimbus-theme
    :defer t
-   :config
-   (setq doom-themes-enable-bold t ; if nil, bold is universally disabled
-         doom-themes-enable-italic t) ; if nil, italics is universally disabled
-   (my-init--message-package-loaded "doom-themes"))
- (push '("Doom Pale Night" (lambda () (load-theme 'doom-palenight t))) *my-themes*)
- (push '("Doom One" (lambda () (load-theme 'doom-one t))) *my-themes*)
- (push '("Doom Vibrant" (lambda () (load-theme 'doom-vibrant t))) *my-themes*)
- (push '("Doom City Lights" (lambda () (load-theme 'doom-city-lights t))) *my-themes*)
- (push '("Doom One Light" (lambda () (load-theme 'doom-one-light t))) *my-themes*) 
- (push '("Doom Challenger Deep" (lambda () (load-theme 'doom-challenger-deep t))) *my-themes*)
+   :config (my-init--message-package-loaded "nimbus-theme"))
+ (push '("Nimbus" (lambda () (load-theme 'nimbus t)) "dark") *my-themes*)
  
- (push '("Modus Vivendi" (lambda () (load-theme 'modus-vivendi t))) *my-themes*)
- (defun my/load-modus-vivendi-customized ()
-   (load-theme 'modus-vivendi t)
-   ;; (add-to-list 'org-emphasis-alist '("*" (bold :foreground "yellow")))
-   (custom-set-faces '(org-level-1 ((t (:foreground "#da70d6" :weight bold))))))
- (push '("Modus Vivendi (customized)" #'my/load-modus-vivendi-customized)        *my-themes*)
- 
- (use-package moe-theme
-   :commands (moe-light)
-   :config (my-init--message-package-loaded "moe-theme"))
- (push '("Moe Light" #'moe-light) *my-themes*)
+ ;; === Nord theme
 
  (use-package nord-theme
    :defer t
    :config
    (add-to-list 'custom-theme-load-path (expand-file-name "~/.emacs.d/themes/"))
    (my-init--message-package-loaded "nord-theme"))
- (push '("Nord" (lambda () (load-theme 'nord t))) *my-themes*)
- 
+ (push '("Nord" (lambda () (load-theme 'nord t)) "dark") *my-themes*)
+
+ ;; === Poet theme
+
+ (use-package poet-theme
+   :defer t
+   :config (my-init--message-package-loaded "poet-theme"))
+ (push '("Poet" (lambda () (load-theme 'poet t)) "light") *my-themes*)
+
+ ;; === Purple haze theme
+
  (use-package purple-haze-theme
    :defer t
    :config
    (my-init--message-package-loaded "purple-haze-theme"))
- (push '("Purple Haze" (lambda () (load-theme 'purple-haze t))) *my-themes*)
- 
- (use-package soothe-theme
-   :defer t
-   :config (my-init--message-package-loaded "soothe-theme"))
- (push '("Soothe" (lambda () (load-theme 'soothe t))) *my-themes*)
- 
- (use-package poet-theme
-   :defer t
-   :config (my-init--message-package-loaded "poet-theme"))
- (push '("Poet" (lambda () (load-theme 'poet t))) *my-themes*)
+ (push '("Purple Haze" (lambda () (load-theme 'purple-haze t)) "dark") *my-themes*)
 
- (use-package gruvbox-theme
-   :defer t
-   :config (my-init--message-package-loaded "gruvbox-theme"))
- (push '("Gruvbox dark medium" (lambda () (load-theme 'gruvbox-dark-medium t))) *my-themes*)
- (push '("Gruvbox light soft" (lambda () (load-theme 'gruvbox-light-soft t))) *my-themes*)
- (push '("Gruvbox light medium" (lambda () (load-theme 'gruvbox-light-medium t))) *my-themes*)
+ ;; === Raw dark theme
 
- (push '("Leuven" (lambda () (load-theme 'leuven t))) *my-themes*)
- 
- (use-package zenburn-theme
-   :defer t
-   :config (my-init--message-package-loaded "zenburn-theme"))
- (push '("Zenburn" (lambda () (load-theme 'zenburn t))) *my-themes*)
- 
- (use-package solarized-theme
-   :defer t
-   :config (my-init--message-package-loaded "solarized-theme"))
- (push '("Solarized light" (lambda () (load-theme 'solarized-light t))) *my-themes*)
- (push '("Solarized dark" (lambda () (load-theme 'solarized-dark t))) *my-themes*)
+ (defun my/raw-dark-theme ()
+   "Set raw dark theme."
+   (interactive)
+   (when (not (null custom-enabled-themes))
+     (my/disable-all-themes))
+   (when (my-init--light-background-p)
+     (invert-face 'default))
+   (when nil (set-frame-font "Courier New 10" nil t)))
+ (push '("_Raw dark" #'my/raw-dark-theme "dark") *my-themes*)
 
- (use-package tron-legacy-theme
-   :defer t
-   :config (my-init--message-package-loaded "tron-legacy-theme"))
- (push '("Tron Legacy" (lambda () (load-theme 'tron-legacy t))) *my-themes*)
+ ;; === Raw light theme
+
+ (defun my/raw-light-theme ()
+   "Set raw light theme."
+   (interactive)
+   (when (not (null custom-enabled-themes))
+     (my/disable-all-themes))
+   (when (my-init--dark-background-p)
+     (invert-face 'default))
+   (when nil (set-frame-font "Courier New 10" nil t)))
+ (push '("_Raw light" #'my/raw-light-theme "light") *my-themes*)
+
+ ;; === Shades of purple theme
 
  (use-package shades-of-purple-theme
    :defer t
@@ -2264,7 +2305,7 @@ M-x keycast-mode: show current key and its meaning on the command line
     '(org-block ((t (:foreground "#B362FF"))))))
  ;; #494685 dark violet
  ;; #B362FF light violet
- (push '("Shades of purple" (lambda () (load-theme 'shades-of-purple t))) *my-themes*)
+ (push '("Shades of purple" (lambda () (load-theme 'shades-of-purple t)) "dark") *my-themes*)
  (defun my/load-shade-of-purple-customized ()
    (load-theme 'shades-of-purple t)
    (add-hook 'org-mode-hook
@@ -2293,51 +2334,67 @@ M-x keycast-mode: show current key and its meaning on the command line
                                    :background "#3a3a3a") ; light gray
                
                )))
- (push '("Shades of purple (customized)" #'my/load-shade-of-purple-customized) *my-themes*)
+ (push '("Shades of purple (customized)" #'my/load-shade-of-purple-customized "dark") *my-themes*)
  
- (use-package flatland-theme
+ ;; === Solarized theme
+
+ (use-package solarized-theme
    :defer t
-   :config (my-init--message-package-loaded "flatland-theme"))
- (push '("Flatland" (lambda () (load-theme 'flatland t))) *my-themes*)
- 
- (use-package afternoon-theme
+   :config (my-init--message-package-loaded "solarized-theme"))
+ (push '("Solarized light" (lambda () (load-theme 'solarized-light t)) "light") *my-themes*)
+ (push '("Solarized dark" (lambda () (load-theme 'solarized-dark t)) "dark") *my-themes*)
+
+ ;; === Soothe theme
+
+ (use-package soothe-theme
    :defer t
-   :config (my-init--message-package-loaded "afternoon-theme"))
- (push '("Afternoon" (lambda () (load-theme 'afternoon t))) *my-themes*)
- 
- (use-package monokai-theme
-   :defer t
-   :config (my-init--message-package-loaded "monokai-theme"))
- (push '("Monokai" (lambda () (load-theme 'monokai t))) *my-themes*)
+   :config (my-init--message-package-loaded "soothe-theme"))
+ (push '("Soothe" (lambda () (load-theme 'soothe t)) "dark") *my-themes*)
+
+ ;; === Spacemacs theme
 
  (use-package spacemacs-theme
    :defer t
    :config (my-init--message-package-loaded "spacemacs-theme"))
- (push '("Spacemacs dark" (lambda () (load-theme 'spacemacs-dark t))) *my-themes*)
- (push '("Spacemacs light" (lambda () (load-theme 'spacemacs-light t))) *my-themes*)
+ (push '("Spacemacs dark" (lambda () (load-theme 'spacemacs-dark t)) "dark") *my-themes*)
+ (push '("Spacemacs light" (lambda () (load-theme 'spacemacs-light t)) "light") *my-themes*)
 
- (use-package alect-themes
-   :defer t
-   :config (my-init--message-package-loaded "alect-themes"))
- (push '("Alect dark" (lambda () (load-theme 'alect-dark t))) *my-themes*)
- (push '("Alect light" (lambda () (load-theme 'alect-light t))) *my-themes*)
+ ;; === Tron legacy theme
 
- (use-package nimbus-theme
+ (use-package tron-legacy-theme
    :defer t
-   :config (my-init--message-package-loaded "nimbus-theme"))
- (push '("Nimbus" (lambda () (load-theme 'nimbus t))) *my-themes*)
- 
+   :config (my-init--message-package-loaded "tron-legacy-theme"))
+ (push '("Tron Legacy" (lambda () (load-theme 'tron-legacy t)) "dark") *my-themes*)
+
+ ;; === Vscode theme
+
  (use-package vscode-dark-plus-theme
    :defer t
    :config (my-init--message-package-loaded "vscode-dark-plus-theme"))
- (push '("VScode dark plus" (lambda () (load-theme 'vscode-dark-plus t))) *my-themes*)
+ (push '("VScode dark plus" (lambda () (load-theme 'vscode-dark-plus t)) "dark") *my-themes*)
 
+ ;; === Zenburn theme
+
+ (use-package zenburn-theme
+   :defer t
+   :config (my-init--message-package-loaded "zenburn-theme"))
+ (push '("Zenburn" (lambda () (load-theme 'zenburn t)) "dark") *my-themes*)
+
+ ;; ===
+
+ (dolist (theme *my-themes*)
+   (let ((light-or-dark (caddr theme)))
+     (unless (or (string= "light" light-or-dark) (string= "dark" light-or-dark))
+       (my-init--warning "Unrecognized light/dark parameter for theme %s: %s" (car theme) light-or-dark))))
+ 
  (defun my--load-theme-by-name (theme-name)
    "Load theme identified by THEME-NAME in *my-themes*"
    (let ((theme-fn (cadr (assoc theme-name *my-themes*))))
      (if (null theme-fn)
          (message "No theme associated with this name: %s" theme-name)
        (funcall (eval theme-fn)))))
+
+ 
 
  ;; and also:
  ;; - Dracula theme
@@ -2398,8 +2455,37 @@ M-x keycast-mode: show current key and its meaning on the command line
        (insert "   my/get-transparency\n")
        (newline)
        (insert "Click on any button to change theme ;)\n")
+
+       (insert "\n(1) Light themes:\n")
        
-       (dolist (theme1 *my-themes*)
+       (dolist (theme1 (seq-filter (lambda (item)
+                                     (string= (nth 2 item) "light"))
+                                   *my-themes*))
+         (let* ((theme-name (car theme1))
+                (theme-fn (cadr theme1))
+                (string2 (format (format "%%-%ds" max-length-of-theme-name) theme-name)))
+           (let ((start (point)))
+             (insert (format "%s " string2))
+             (make-text-button start (point)
+                               'action (lambda (_button)
+                                         (funcall (eval theme-fn))) 
+                               'follow-link t
+                               'face '(:box (:line-width 2 :color "gray50" :style released-button)
+                                            :background "lightgray"
+                                            :foreground "black"
+                                            :weight bold)
+                               'mouse-face '(:box (:line-width 2 :color "gray30" :style pressed-button)
+                                                  :background "darkgray"
+                                                  :foreground "black"
+                                                  :weight bold)
+                               'help-echo "Click this button"))
+           (insert "\n")))
+
+       (insert "\n(2) Dark themes:\n")
+       
+       (dolist (theme1 (seq-filter (lambda (item)
+                                     (string= (nth 2 item) "dark"))
+                                   *my-themes*))
          (let* ((theme-name (car theme1))
                 (theme-fn (cadr theme1))
                 (string2 (format (format "%%-%ds" max-length-of-theme-name) theme-name)))
@@ -5842,7 +5928,7 @@ With Electric Indent Mode enabled, inserts a newline and indents
    (interactive)
    (when (eq (buffer-local-value 'major-mode (current-buffer)) 'emacs-lisp-mode)
      (when (buffer-modified-p)
-       (if (y-or-n-p (format "Buffer %s modified; save it? " (buffer-name)))
+       (if (y-or-n-p (format "Emacs Lisp buffer %s modified; save it? " (buffer-name)))
            (save-buffer)
          (message "Buffer not saved")))))
 
