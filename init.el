@@ -5840,10 +5840,11 @@ With Electric Indent Mode enabled, inserts a newline and indents
  (defun my-save-buffer-if-modified (&rest _args)
    "Propose to save the current buffer if it has been modified."
    (interactive)
-   (when (buffer-modified-p)
-     (if (y-or-n-p (format "Buffer %s modified; save it? " (buffer-name)))
-         (save-buffer)
-       (message "Buffer not saved"))))
+   (when (eq (buffer-local-value 'major-mode (current-buffer)) 'emacs-lisp-mode)
+     (when (buffer-modified-p)
+       (if (y-or-n-p (format "Buffer %s modified; save it? " (buffer-name)))
+           (save-buffer)
+         (message "Buffer not saved")))))
 
  (advice-add 'eval-buffer :before #'my-save-buffer-if-modified)
  ;; to have similar behaviour with C-c C-k for Common Lisp
