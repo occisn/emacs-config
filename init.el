@@ -3420,7 +3420,7 @@ Paste:
  ;; https://news.ycombinator.com/item?id=15939165
  ;; https://www.gnu.org/software/emacs/manual/html_node/calc/index.html#Top
 
- (defvar org-babel-load-languages) ; to avoid compilation warning
+ (defvar org-babel-load-languages)      ; to avoid compilation warning
  (with-eval-after-load 'org
    (add-to-list 'org-babel-load-languages '(calc . t))
    (org-babel-do-load-languages 'org-babel-load-languages org-babel-load-languages))
@@ -3494,7 +3494,7 @@ Paste:
 
  
 
- (declare-function calc-push "calc") ; to avoid compilation warning
+ (declare-function calc-push "calc")    ; to avoid compilation warning
  (with-eval-after-load 'calc
    (defun calc-push-time-in-milliseconds ()
      "Push time expressed in milliseconds into Calc stack."
@@ -3541,7 +3541,7 @@ reset: M-x calc-reset
 {end}
 " 
    ;; ("e" #'a-function)
-   ) ; end of hydra
+   )                                    ; end of hydra
 
  ) ; end of init section
 
@@ -6044,8 +6044,8 @@ With Electric Indent Mode enabled, inserts a newline and indents
    "Propose to save the current buffer if it has been modified."
    (interactive)
    (when (and (buffer-file-name)
-             (string-suffix-p ".el" (buffer-file-name))
-             (buffer-modified-p))
+              (string-suffix-p ".el" (buffer-file-name))
+              (buffer-modified-p))
      (if (y-or-n-p (format "Emacs Lisp buffer %s modified; save it? " (buffer-name)))
          (save-buffer)
        (message "Buffer not saved"))))
