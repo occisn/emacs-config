@@ -3075,7 +3075,7 @@ Requires my/save-region-as-html."
 
 (my-init--with-duration-measured-section
  t
- "org-mode G (paste from clipboard with format conversion)"
+ "org-mode G (copy/paste from clipboard with format conversion)"
 
  (defun my/paste-clipboard-as-raw-html ()
    "Insert raw HTML from the Windows clipboard (CF_HTML) into current buffer, with visible tags.
@@ -3197,6 +3197,102 @@ Requires my/html-to-org.
               (org-content (my/html-to-org html)))
          (insert org-content)))))
 
+ (cl-defun my/org-region-to-markdown-clipboard ()
+   "Convert Org-mode region to Markdown and copy to clipboard.
+With prefix argument NO-TOC, suppress table of contents."
+   (interactive)
+   (if (use-region-p)
+       (let* ((region-start (region-beginning))
+              (region-end (region-end))
+              (org-content (buffer-substring-no-properties region-start region-end))
+              (no-toc t)
+              (markdown-content
+               (with-temp-buffer
+                 (insert org-content)
+                 (org-mode)
+                 (let ((org-export-with-toc (not no-toc))
+                       (org-export-preserve-breaks t)
+                       (org-export-show-temporary-export-buffer nil))
+                   (org-md-export-as-markdown))
+                 (with-current-buffer "*Org MD Export*"
+                   (prog1 (buffer-string)
+                     (kill-buffer))))))
+         (kill-new markdown-content)
+         (message "Region converted to Markdown and copied to clipboard%s"
+                  (if no-toc " (no TOC)" "")))
+     (message "No region selected")))
+
+ (defun my/markdown-region-to-org-clipboard ()
+   "Convert Markdown region to Org-mode and copy to clipboard."
+   (interactive)
+   (if (use-region-p)
+       (let* ((region-start (region-beginning))
+              (region-end (region-end))
+              (markdown-content (buffer-substring-no-properties region-start region-end))
+              (mode1 "manually")
+              (org-content
+               (with-temp-buffer
+                 (insert markdown-content)
+                 ;; Use pandoc if available, otherwise basic conversion
+                 (if (executable-find "pandoc2")
+                     
+                     (progn
+                       (setq mode1 "with pandoc")
+                       (shell-command-on-region (point-min) (point-max)
+                                                "pandoc -f markdown -t org 2>NUL"
+                                                (current-buffer) t)
+                       ;; 2>NUL to avoid the warning:
+                       ;;    [WARNING] input is not UTF-8 encoded: falling back to latin1.
+
+                       ;; Remove trailing backslashes
+                       (goto-char (point-min))
+                       (while (re-search-forward "\\\\\\\\$" nil t)
+                         (replace-match ""))
+                       (buffer-string)) ; end of Pandoc branch
+
+                   
+                   ;; Fallback: basic manual conversion
+
+
+                   (goto-char (point-min))
+                   ;; Convert headers
+                   (while (re-search-forward "^\\(#+\\) \\(.*\\)$" nil t)
+                     (replace-match (concat (make-string (length (match-string 1)) ?*) 
+                                            " " (match-string 2))))
+                   ;; Convert bold **text** to temporary marker first
+                   (goto-char (point-min))
+                   (while (re-search-forward "\\*\\*\\([^*]+\\)\\*\\*" nil t)
+                     (replace-match "⟨BOLD⟩\\1⟨/BOLD⟩"))
+                   ;; Convert italic *text* to /text/
+                   (goto-char (point-min))
+                   (while (re-search-forward "\\*\\([^*]+\\)\\*" nil t)
+                     (replace-match "/\\1/"))
+                   ;; Convert italic _text_ to /text/
+                   (goto-char (point-min))
+                   (while (re-search-forward "_\\([^_]+\\)_" nil t)
+                     (replace-match "/\\1/"))
+                   ;; Now convert bold markers to org format
+                   (goto-char (point-min))
+                   (while (re-search-forward "⟨BOLD⟩\\([^⟨]+\\)⟨/BOLD⟩" nil t)
+                     (replace-match "*\\1*"))
+                   ;; Convert code `text` to =text=
+                   (goto-char (point-min))
+                   (while (re-search-forward "`\\([^`]+\\)`" nil t)
+                     (replace-match "=\\1="))
+                   ;; Convert links [text](url) to [[url][text]]
+                   (goto-char (point-min))
+                   (while (re-search-forward "\\[\\([^]]+\\)\\](\\([^)]+\\))" nil t)
+                     (replace-match "[[\\2][\\1]]"))
+                   (buffer-string)
+
+                   
+                   
+                   
+                   ))))
+         (kill-new org-content)
+         (message "Region converted to Org-mode (%s) and copied to clipboard" mode1))
+     (message "No region selected")))
+
  ) ; end of init section
 
 (my-init--with-duration-measured-section 
@@ -3263,15 +3359,15 @@ Tree: TAB and Shift-TAB to develop or reduce the current or whole tree
 Links: C-c C-l to create or edit [ [file:abc][name] ], [ [myimage.png] ]
        C-c C-o to follow
 Abbrev: C-_, C-q SPACE, M-x unexpand-abbrev
-Import: my/org-paste-from-Teams-Word-as-org
-Export: my/org-copy-region-ready-to-be-pasted-into-Word-Teams-Thunderbird-Gmail
 Table: C-c } to see raw/col # | C-c C-c to update (in TBLFM) |  org-table-export pour exporter une table en CSV | M-S-RIGHT to insert column
 Appearance : _v_ olivetti-mode
+_e_ : import/export
 Agenda: C-c a a || C-c a 1 pour custom ; et C-a t pour tasks
 LaTeX fragments: C-c C-x C-l (org-toggle-latex-fragment)
 Web site: _s_witch between FR and EN org files {end}"
    ("b" #'my/copy-block)
    ("c" #'my-org-occur)
+   ("e" #'hydra-org-export/body)
    ;; ("d" #'my/ispell-show-personal-directories)
    ("h" #'my/org-occur-and-hide-content)
    ("n" #'org-narrow-to-subtree)
@@ -3281,6 +3377,27 @@ Web site: _s_witch between FR and EN org files {end}"
    ("w" #'widen)
    ("1" #'my/org-agenda-switch-to-perso-file)) ; end of hydra
 
+
+ (defhydra hydra-org-export (:exit t :hint nil)
+   "
+^Org-mode import/export hydra:
+^-----------------------------
+
+Copy from org: 
+   _1_ to Word / Teams / Thunderbird / Gmail
+   _2_ to markdown
+
+Copy from markdown
+   _3_ to org
+
+Paste:
+   _4_ from Word / Teams to org"
+   ("1" #'my/org-copy-region-ready-to-be-pasted-into-Word-Teams-Thunderbird-Gmail)
+   ("2" #'my/org-region-to-markdown-clipboard)
+   ("3" #'my/markdown-region-to-org-clipboard)
+   ("4" #'my/org-paste-from-Teams-Word-as-org)
+   ) ; end of hydra
+ 
  ) ; end of init section
 
 
