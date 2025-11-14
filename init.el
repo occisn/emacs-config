@@ -5664,10 +5664,10 @@ d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
          (slime-with-popup-buffer (bufname :package package
 					   :connection t
 					   :select slime-description-autofocus)
-	                          (when (string= bufname "*slime-description*")
-	                            (with-current-buffer bufname (slime-company-doc-mode)))
-	                          (princ string)
-	                          (goto-char (point-min))))))
+	   (when (string= bufname "*slime-description*")
+	     (with-current-buffer bufname (slime-company-doc-mode)))
+	   (princ string)
+	   (goto-char (point-min))))))
    (my-init--message-package-loaded "slime-company"))
 
  ;; and activate slime-company in slime below
@@ -5894,17 +5894,17 @@ Modified from official 'slime-call-defun'"
          (if (symbolp toplevel)
              (error "Not in a function definition")
            (slime-dcase toplevel
-                        (((:defun :defgeneric :defmacro :define-compiler-macro) symbol)
-                         (insert-call symbol))
-                        ((:defmethod symbol &rest args)
-                         ;; (declare (ignore args))
-                         (insert-call symbol))
-                        (((:defparameter :defvar :defconstant) symbol)
-                         (insert-call symbol :function nil))
-                        (((:defclass) symbol)
-                         (insert-call symbol :defclass t))
-                        (t
-                         (error "Not in a function definition")))))))
+             (((:defun :defgeneric :defmacro :define-compiler-macro) symbol)
+              (insert-call symbol))
+             ((:defmethod symbol &rest args)
+              ;; (declare (ignore args))
+              (insert-call symbol))
+             (((:defparameter :defvar :defconstant) symbol)
+              (insert-call symbol :function nil))
+             (((:defclass) symbol)
+              (insert-call symbol :defclass t))
+             (t
+              (error "Not in a function definition")))))))
 
    (define-key slime-mode-map (kbd "C-c C-x")  #'my/slime-call-defun--with-time-monitoring)
 
@@ -6046,7 +6046,7 @@ With Electric Indent Mode enabled, inserts a newline and indents
    (when (and (buffer-file-name)
               (string-suffix-p ".el" (buffer-file-name))
               (buffer-modified-p))
-     (if (y-or-n-p (format "Emacs Lisp buffer %s modified; save it? " (buffer-name)))
+     (if (y-or-n-p (format "Emacs Lisp buffer %s will be evaluated (eval-buffer), but has been modified; save it? " (buffer-name)))
          (save-buffer)
        (message "Buffer not saved"))))
 
@@ -6055,7 +6055,7 @@ With Electric Indent Mode enabled, inserts a newline and indents
  
  (defun my-eval-buffer-advice2 (&rest _args)
    "Print a message when eval-buffer is called."
-   (message "Buffer %s has been evaluated" 
+   (message "Buffer %s has been evaluated (eval-buffer)" 
             (buffer-name)))
  ;; (note: apparently, 'eval-buffer' is also called for the first
  ;; opening of an org-file in the session.)
@@ -6426,8 +6426,8 @@ Return NIL if no system found.
      (if (null asdf-system-name)
          (message "No ASDF system found.")
        (slime-eval-async `(asdf:load-system ,asdf-system-name :force t)
-                         (lambda (_result)
-                           (message "System %s has been force-reloaded" asdf-system-name))))))
+         (lambda (_result)
+           (message "System %s has been force-reloaded" asdf-system-name))))))
 
  (defun my/asdf-force-test-system-corresponding-to-current-buffer ()
    "Force test current ASDF system.
@@ -6438,8 +6438,8 @@ Return NIL if no system found.
      (if (null asdf-system-name)
          (message "No ASDF system found.")
        (slime-eval-async `(asdf:test-system ,asdf-system-name :force t)
-                         (lambda (_result)
-                           (message "System %s has been force-tested" asdf-system-name))))))
+         (lambda (_result)
+           (message "System %s has been force-tested" asdf-system-name))))))
 
  ;; ===
  ;; === abbrev
@@ -7883,6 +7883,21 @@ For instance: abc/def --> abc\\def"
           (file-name-without-extension (file-name-sans-extension file-name))
           (cmd (concat "time ./" file-name-without-extension ".exe")))
      (my--eshell-send-cmd cmd)))
+
+ ;; Indentation
+
+ (defun my/indent-c-buffer ()
+   "Indent the entire buffer."
+   (interactive)
+   (save-excursion
+     (indent-region (point-min) (point-max) nil)))
+
+ ;; If you want to change how C code is indented, you can set the indentation style:
+ (when nil
+   (setq c-default-style "linux"  ; or "gnu", "k&r", "bsd", "stroustrup"
+         c-basic-offset 4))        ; tab width
+
+ ;; Hydra
  
  (defhydra hydra-c (:exit t :hint nil)
    "
@@ -7893,7 +7908,7 @@ M-. M-, : goto function/variable definition, and back (M-x xref-find-definitions
 M-? : find references (M-x xref-find-references)
 documentation : bottom of screen (automatic) and more with _d_ (M-x eldoc-doc-buffer)
 _r_efactor : (M-x eglot-rename)
-_i_ndent and format (M-x eglot-format)
+_i_ndent
 
 _s_ : show eshell
 
@@ -7920,12 +7935,21 @@ compile : M-x compile
    ("h" (lambda ()
           (interactive)
           (compile "make && hello")))
-   ("i" #'eglot-format)
+   ("i" #'my/indent-c-buffer
+    ;; previously indent & format via #'eglot-format
+    )
    ("m" (lambda ()
           (interactive)
           (compile "make")))
    ("r" #'eglot-rename)
-   ("s" #'eshell)
+   ("s" (lambda ()
+          "Delete other windows, split right, open eshell on right, return to left."
+          (interactive)
+          (delete-other-windows)
+          (split-window-right)
+          (other-window 1)
+          (eshell)
+          (other-window -1)))
    ("p" (lambda ()
           (interactive)
           (my/compile-current-c-buffer-in-eshell "-fopenmp -O3")
