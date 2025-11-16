@@ -3294,6 +3294,81 @@ With prefix argument NO-TOC, suppress table of contents."
          (message "Region converted to Org-mode (%s) and copied to clipboard" mode1))
      (message "No region selected")))
 
+ (defun my--markdown-to-org-convert (text)
+  "Convert markdown TEXT to org-mode format."
+  (with-temp-buffer
+    (insert text)
+    (goto-char (point-min))
+    
+    ;; Convert headers (# to *)
+    (while (re-search-forward "^\\(#+\\) " nil t)
+      (replace-match (make-string (length (match-string 1)) ?*) nil nil nil 1))
+    
+    ;; Convert code blocks FIRST (```lang to #+BEGIN_SRC lang)
+    ;; Track if we're opening or closing blocks
+    (goto-char (point-min))
+    (let ((in-block nil))
+      (while (re-search-forward "^```\\([a-zA-Z0-9_+-]*\\)[ \t]*$" nil t)
+        (let ((lang (match-string 1)))
+          (if in-block
+              (progn
+                (replace-match "#+END_SRC")
+                (setq in-block nil))
+            (replace-match (format "#+BEGIN_SRC %s" lang))
+            (setq in-block t)))))
+    
+    ;; Convert bold and italic in one pass to avoid interference
+    ;; First handle bold: **text** or __text__ -> use placeholder
+    (goto-char (point-min))
+    (while (re-search-forward "\\*\\*\\([^*\n]+?\\)\\*\\*" nil t)
+      (replace-match "⚿BOLD⚿\\1⚿BOLD⚿"))
+    (goto-char (point-min))
+    (while (re-search-forward "__\\([^_\n]+?\\)__" nil t)
+      (replace-match "⚿BOLD⚿\\1⚿BOLD⚿"))
+    
+    ;; Now handle italic: *text* or _text_ -> /text/
+    (goto-char (point-min))
+    (while (re-search-forward "\\*\\([^*\n]+?\\)\\*" nil t)
+      (replace-match "/\\1/"))
+    (goto-char (point-min))
+    (while (re-search-forward "_\\([^_\n]+?\\)_" nil t)
+      (replace-match "/\\1/"))
+    
+    ;; Replace bold placeholders with org-mode bold
+    (goto-char (point-min))
+    (while (re-search-forward "⚿BOLD⚿\\([^⚿]+?\\)⚿BOLD⚿" nil t)
+      (replace-match "*\\1*"))
+    
+    ;; Convert inline code (`code` to ~code~)
+    (goto-char (point-min))
+    (while (re-search-forward "`\\([^`]+\\)`" nil t)
+      (replace-match "~\\1~"))
+    
+    ;; Convert links ([text](url) to [[url][text]])
+    (goto-char (point-min))
+    (while (re-search-forward "\\[\\([^]]+\\)\\](\\([^)]+\\))" nil t)
+      (replace-match "[[\\2][\\1]]"))
+    
+    ;; Convert unordered lists (- or * to -)
+    (goto-char (point-min))
+    (while (re-search-forward "^\\([ \t]*\\)[*+-] " nil t)
+      (replace-match "\\1- "))
+    
+    ;; Convert images (![alt](url) to [[url]])
+    (goto-char (point-min))
+    (while (re-search-forward "!\\[\\([^]]*\\)\\](\\([^)]+\\))" nil t)
+      (replace-match "[[\\2]]"))
+    
+    (buffer-string)))
+
+(defun my/paste-markdown-as-org ()
+  "Paste clipboard content, converting from markdown to org-mode format."
+  (interactive)
+  (let* ((markdown-text (current-kill 0))
+         (org-text (markdown-to-org-convert markdown-text)))
+    (insert org-text)))
+
+
  ) ; end of init section
 
 (my-init--with-duration-measured-section 
@@ -3384,19 +3459,18 @@ Web site: _s_witch between FR and EN org files {end}"
 ^Org-mode import/export hydra:
 ^-----------------------------
 
-Copy from org: 
-   _1_ to Word / Teams / Thunderbird / Gmail
-   _2_ to markdown
+Copy from org to clipboard, under following format:
+   _1_ Word / Teams / Thunderbird / Gmail
+   _2_ markdown
 
-Copy from markdown
-   _3_ to org
-
-Paste:
-   _4_ from Word / Teams to org"
+Paste into org-mode from clipboard under following format:
+   _3_ from Word / Teams into org
+   _4_ from markdown into org
+"
    ("1" #'my/org-copy-region-ready-to-be-pasted-into-Word-Teams-Thunderbird-Gmail)
    ("2" #'my/org-region-to-markdown-clipboard)
-   ("3" #'my/markdown-region-to-org-clipboard)
-   ("4" #'my/org-paste-from-Teams-Word-as-org)
+   ("3" #'my/org-paste-from-Teams-Word-as-org)
+   ("4" #'my/paste-markdown-as-org)
    ) ; end of hydra
  
  ) ; end of init section
@@ -8334,9 +8408,11 @@ preview in browser : C-c C-c p
 
 M-x my/md-convert-region-to-anchor-and-kill 
 
+_3_ : copy from markdown to clipboard, under org-mode format
+
 (end)
 "
-   ;; ("e" #'a-function)
+      ("3" #'my/markdown-region-to-org-clipboard)
    )
  
  ) ; end of init section
