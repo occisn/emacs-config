@@ -7612,6 +7612,9 @@ q     to close magit buffer
 s     to stage
          and TAB on 'unstaged' line to see hunks one by one
          s / u     (n / p, M-n / M-p to navigate)
+
+       possibility to stage/unstage regions within hunks
+
 c c   to prepare commit, then write info, then C-c C-c
 P p   to push to remote (Github)
 
