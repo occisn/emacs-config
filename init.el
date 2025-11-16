@@ -6532,7 +6532,7 @@ Other sexp commands: M-(              wrap an sexp (paredit)
 Comment: region M-; to comment/uncomment (paredit)
 Macro expander: C-c m ou C-c e || q
 Eval: C-M-x to eval defun (M-x eval-defun) || C-x C-e to eval last sexp || C-c C-k = M-x eval-buffer
-REPL (IELM): C-x C-z (jump to REPL) | C-x C-y (send function to REPL) | C-c C-x (idem with time measurement) | C-c M-x to execute (M-x)
+REPL (IELM): C-c C-z (jump to REPL) | C-c C-y (send function to REPL) | C-c C-x (idem with time measurement) | C-c M-x to execute (M-x)
 Debug: (1) unexpected : c(ontinue), e(val), q(uit) (2) edebug: C-u C-M-x --> SPACE, h, f, o i, ? (3) (debug) within code
 {end}"
    ("a" #'outline-show-all)
