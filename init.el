@@ -7962,6 +7962,16 @@ For instance: abc/def --> abc\\def"
           (cmd (concat "gcc " file-name " -Wall -Wextra -Werror " optimization-flags " -std=c2x -pedantic -o " file-name-without-extension)))
      (my--eshell-send-cmd cmd)))
 
+ (add-hook 'c-mode-hook
+           (lambda ()
+             (local-set-key (kbd "C-c C-k") (lambda () (interactive) (my/compile-current-c-buffer-in-eshell "-O3")))))
+
+ (add-hook 'c-mode-hook
+           (lambda ()
+             (local-set-key (kbd "C-c C-c") (lambda () (interactive) (my/compile-current-c-buffer-in-eshell "-O3")))))
+
+ ;; Execution
+ 
  (defun my/execute-current-c-buffer-in-eshell ()
    "Execute current C file in eshell."
    (interactive)
@@ -7972,6 +7982,14 @@ For instance: abc/def --> abc\\def"
           (file-name-without-extension (file-name-sans-extension file-name))
           (cmd (concat "time ./" file-name-without-extension ".exe")))
      (my--eshell-send-cmd cmd)))
+
+ (add-hook 'c-mode-hook
+           (lambda ()
+             (local-set-key (kbd "C-c C-x") #'my/execute-current-c-buffer-in-eshell)))
+
+ (add-hook 'c-mode-hook
+           (lambda ()
+             (local-set-key (kbd "C-c C-y") #'my/execute-current-c-buffer-in-eshell)))
 
  ;; Indentation
 
@@ -7986,6 +8004,13 @@ For instance: abc/def --> abc\\def"
    (setq c-default-style "linux"  ; or "gnu", "k&r", "bsd", "stroustrup"
          c-basic-offset 4))        ; tab width
 
+ ;; Occur
+
+ (defun my-c-occur ()
+   (interactive)
+   (occur "^[A-Za-z]\\|// ===")
+   (other-window 1))
+
  ;; Hydra
  
  (defhydra hydra-c (:exit t :hint nil)
@@ -7998,6 +8023,7 @@ M-? : find references (M-x xref-find-references)
 documentation : bottom of screen (automatic) and more with _d_ (M-x eldoc-doc-buffer)
 _r_efactor : (M-x eglot-rename)
 _i_ndent
+_c_ : occur
 
 _s_ : show eshell
 
@@ -8007,19 +8033,16 @@ make :
 
 compile : M-x compile 
    _w_ : save and compile in eshell REPL with -O2
-   _c_ : save and compile in eshell REPL with -O3
+   C-c C-k or C-c C-c : save and compile in eshell REPL with -O3
    _p_ : save and compile in eshell REPL with -fopenmp -O3
    _v_ : save and compile in eshell REPL with -mavx -mfma -fopenmp -O3
-   _x_ : execute in eshell REPL
+   _x_ or C-c C-x or C-c C-y : execute in eshell REPL
    _m_: 'make'
    _h_: 'make && hello'
 
 (end)
 "
-   ("c" (lambda ()
-          (interactive)
-          (my/compile-current-c-buffer-in-eshell "-O3")
-          ))
+   ("c" #'my-c-occur)
    ("d" #'eldoc-doc-buffer)
    ("h" (lambda ()
           (interactive)
@@ -8051,7 +8074,8 @@ compile : M-x compile
           (interactive)
           (my/compile-current-c-buffer-in-eshell "-O2")
           ))
-   ("x" #'my/execute-current-c-buffer-in-eshell))
+   ("x" #'my/execute-current-c-buffer-in-eshell)
+   )
  
  ) ; end of init section
 
