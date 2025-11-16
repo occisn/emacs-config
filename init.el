@@ -991,7 +991,7 @@ Shall be used in the 'config' section of each package."
 
  (defun my/add-to-environment-variable (envt-variable-name prog-name directory)
    "Add DIRECTORY corresponding to PROG-NAME to environment variable ENVT-VARIABLE-NAME. DIRECTORY may have a final slash.
-(v1, available in occisn/elisp-utils GitHub repository) + messages"
+(v1, available in occisn/emacs-utils GitHub repository) + messages"
    (let ((envt-variable-content (getenv envt-variable-name)))
      (if (cl-search directory envt-variable-content)
 	 (my-init--message2 "No need to add %s to Windows %s environment variable since already in: %s" prog-name envt-variable-name directory)
