@@ -4163,12 +4163,16 @@ w   to resize cell
      ("usousensemble" "⊂" )
      ("usup" "≥")                        ; >=
 
-     ;; autres symboles :
+     ;; other symbols :
      ("uattention" "⚠")
      ("ubemol" "♭")
      ("ucroix" "✝")
      ("udiametre" "⌀")
      ("uell" "ℓ")
+     ("uhomme" "♂")
+     ("ufemale" "♀")
+     ("ufemme" "♀")
+     ("umale" "♂")
      ("upointmedian" "·")
      ("uquadrillage" "▦") 
      ("urip" "✝")
