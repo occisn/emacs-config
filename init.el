@@ -7587,14 +7587,17 @@ Alt-F4 and Alt-TAB
      (my-init--add-to-path-and-exec-path "Git" *git-executable-directory*)
    (my-init--warning "!! *git-executable-directory* is nil or does not exist: %s" *git-executable-directory*))
 
- (if (my-init--file-exists-p (concat *git-diff3-directory* "/diff3.exe"))
-     (add-to-list 'exec-path "C:/Program Files/Git/usr/bin")
-   (my-init--warning "!! (magit) diff3.exe not found within %s" *git-diff3-directory*))
- 
- (use-package magit
-   :bind (("C-x g" . magit-status)
-          ("C-x C-g" . magit-status))
-   :config (my-init--message-package-loaded "magit"))
+
+(let ((diff3-executable (concat *git-diff3-directory* "/diff3.exe")))
+    (if (my-init--file-exists-p diff3-executable)
+        (add-to-list 'exec-path *git-diff3-directory*)
+      (my-init--warning "!! (magit) diff3.exe not found within %s" *git-diff3-directory*)))
+;; (setq ediff-diff3-program "C:/portable-programs/Git/usr/bin/diff3.exe")
+
+(use-package magit
+  :bind (("C-x g" . magit-status)
+         ("C-x C-g" . magit-status))
+  :config (my-init--message-package-loaded "magit"))
 
  (defhydra hydra-magit (:exit t :hint nil)
    "
