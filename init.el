@@ -3295,78 +3295,78 @@ With prefix argument NO-TOC, suppress table of contents."
      (message "No region selected")))
 
  (defun my--markdown-to-org-convert (text)
-  "Convert markdown TEXT to org-mode format."
-  (with-temp-buffer
-    (insert text)
-    (goto-char (point-min))
-    
-    ;; Convert headers (# to *)
-    (while (re-search-forward "^\\(#+\\) " nil t)
-      (replace-match (make-string (length (match-string 1)) ?*) nil nil nil 1))
-    
-    ;; Convert code blocks FIRST (```lang to #+BEGIN_SRC lang)
-    ;; Track if we're opening or closing blocks
-    (goto-char (point-min))
-    (let ((in-block nil))
-      (while (re-search-forward "^```\\([a-zA-Z0-9_+-]*\\)[ \t]*$" nil t)
-        (let ((lang (match-string 1)))
-          (if in-block
-              (progn
-                (replace-match "#+END_SRC")
-                (setq in-block nil))
-            (replace-match (format "#+BEGIN_SRC %s" lang))
-            (setq in-block t)))))
-    
-    ;; Convert bold and italic in one pass to avoid interference
-    ;; First handle bold: **text** or __text__ -> use placeholder
-    (goto-char (point-min))
-    (while (re-search-forward "\\*\\*\\([^*\n]+?\\)\\*\\*" nil t)
-      (replace-match "⚿BOLD⚿\\1⚿BOLD⚿"))
-    (goto-char (point-min))
-    (while (re-search-forward "__\\([^_\n]+?\\)__" nil t)
-      (replace-match "⚿BOLD⚿\\1⚿BOLD⚿"))
-    
-    ;; Now handle italic: *text* or _text_ -> /text/
-    (goto-char (point-min))
-    (while (re-search-forward "\\*\\([^*\n]+?\\)\\*" nil t)
-      (replace-match "/\\1/"))
-    (goto-char (point-min))
-    (while (re-search-forward "_\\([^_\n]+?\\)_" nil t)
-      (replace-match "/\\1/"))
-    
-    ;; Replace bold placeholders with org-mode bold
-    (goto-char (point-min))
-    (while (re-search-forward "⚿BOLD⚿\\([^⚿]+?\\)⚿BOLD⚿" nil t)
-      (replace-match "*\\1*"))
-    
-    ;; Convert inline code (`code` to ~code~)
-    (goto-char (point-min))
-    (while (re-search-forward "`\\([^`]+\\)`" nil t)
-      (replace-match "~\\1~"))
-    
-    ;; Convert links ([text](url) to [[url][text]])
-    (goto-char (point-min))
-    (while (re-search-forward "\\[\\([^]]+\\)\\](\\([^)]+\\))" nil t)
-      (replace-match "[[\\2][\\1]]"))
-    
-    ;; Convert unordered lists (- or * to -)
-    (goto-char (point-min))
-    (while (re-search-forward "^\\([ \t]*\\)[*+-] " nil t)
-      (replace-match "\\1- "))
-    
-    ;; Convert images (![alt](url) to [[url]])
-    (goto-char (point-min))
-    (while (re-search-forward "!\\[\\([^]]*\\)\\](\\([^)]+\\))" nil t)
-      (replace-match "[[\\2]]"))
-    
-    (buffer-string)))
+   "Convert markdown TEXT to org-mode format."
+   (with-temp-buffer
+     (insert text)
+     (goto-char (point-min))
+     
+     ;; Convert headers (# to *)
+     (while (re-search-forward "^\\(#+\\) " nil t)
+       (replace-match (make-string (length (match-string 1)) ?*) nil nil nil 1))
+     
+     ;; Convert code blocks FIRST (```lang to #+BEGIN_SRC lang)
+     ;; Track if we're opening or closing blocks
+     (goto-char (point-min))
+     (let ((in-block nil))
+       (while (re-search-forward "^```\\([a-zA-Z0-9_+-]*\\)[ \t]*$" nil t)
+         (let ((lang (match-string 1)))
+           (if in-block
+               (progn
+                 (replace-match "#+END_SRC")
+                 (setq in-block nil))
+             (replace-match (format "#+BEGIN_SRC %s" lang))
+             (setq in-block t)))))
+     
+     ;; Convert bold and italic in one pass to avoid interference
+     ;; First handle bold: **text** or __text__ -> use placeholder
+     (goto-char (point-min))
+     (while (re-search-forward "\\*\\*\\([^*\n]+?\\)\\*\\*" nil t)
+       (replace-match "⚿BOLD⚿\\1⚿BOLD⚿"))
+     (goto-char (point-min))
+     (while (re-search-forward "__\\([^_\n]+?\\)__" nil t)
+       (replace-match "⚿BOLD⚿\\1⚿BOLD⚿"))
+     
+     ;; Now handle italic: *text* or _text_ -> /text/
+     (goto-char (point-min))
+     (while (re-search-forward "\\*\\([^*\n]+?\\)\\*" nil t)
+       (replace-match "/\\1/"))
+     (goto-char (point-min))
+     (while (re-search-forward "_\\([^_\n]+?\\)_" nil t)
+       (replace-match "/\\1/"))
+     
+     ;; Replace bold placeholders with org-mode bold
+     (goto-char (point-min))
+     (while (re-search-forward "⚿BOLD⚿\\([^⚿]+?\\)⚿BOLD⚿" nil t)
+       (replace-match "*\\1*"))
+     
+     ;; Convert inline code (`code` to ~code~)
+     (goto-char (point-min))
+     (while (re-search-forward "`\\([^`]+\\)`" nil t)
+       (replace-match "~\\1~"))
+     
+     ;; Convert links ([text](url) to [[url][text]])
+     (goto-char (point-min))
+     (while (re-search-forward "\\[\\([^]]+\\)\\](\\([^)]+\\))" nil t)
+       (replace-match "[[\\2][\\1]]"))
+     
+     ;; Convert unordered lists (- or * to -)
+     (goto-char (point-min))
+     (while (re-search-forward "^\\([ \t]*\\)[*+-] " nil t)
+       (replace-match "\\1- "))
+     
+     ;; Convert images (![alt](url) to [[url]])
+     (goto-char (point-min))
+     (while (re-search-forward "!\\[\\([^]]*\\)\\](\\([^)]+\\))" nil t)
+       (replace-match "[[\\2]]"))
+     
+     (buffer-string)))
 
-(defun my/paste-markdown-as-org ()
-  "Paste clipboard content, converting from markdown to org-mode format."
-  (interactive)
-  (let* ((markdown-text (current-kill 0))
-         (org-text (markdown-to-org-convert markdown-text)))
-    (insert org-text)))
+ (defun my/paste-markdown-as-org ()
+   "Paste clipboard content, converting from markdown to org-mode format."
+   (interactive)
+   (let* ((markdown-text (current-kill 0))
+          (org-text (markdown-to-org-convert markdown-text)))
+     (insert org-text)))
 
 
  ) ; end of init section
@@ -5743,10 +5743,10 @@ d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
          (slime-with-popup-buffer (bufname :package package
 					   :connection t
 					   :select slime-description-autofocus)
-	   (when (string= bufname "*slime-description*")
-	     (with-current-buffer bufname (slime-company-doc-mode)))
-	   (princ string)
-	   (goto-char (point-min))))))
+	                          (when (string= bufname "*slime-description*")
+	                            (with-current-buffer bufname (slime-company-doc-mode)))
+	                          (princ string)
+	                          (goto-char (point-min))))))
    (my-init--message-package-loaded "slime-company"))
 
  ;; and activate slime-company in slime below
@@ -5973,17 +5973,17 @@ Modified from official 'slime-call-defun'"
          (if (symbolp toplevel)
              (error "Not in a function definition")
            (slime-dcase toplevel
-             (((:defun :defgeneric :defmacro :define-compiler-macro) symbol)
-              (insert-call symbol))
-             ((:defmethod symbol &rest args)
-              ;; (declare (ignore args))
-              (insert-call symbol))
-             (((:defparameter :defvar :defconstant) symbol)
-              (insert-call symbol :function nil))
-             (((:defclass) symbol)
-              (insert-call symbol :defclass t))
-             (t
-              (error "Not in a function definition")))))))
+                        (((:defun :defgeneric :defmacro :define-compiler-macro) symbol)
+                         (insert-call symbol))
+                        ((:defmethod symbol &rest args)
+                         ;; (declare (ignore args))
+                         (insert-call symbol))
+                        (((:defparameter :defvar :defconstant) symbol)
+                         (insert-call symbol :function nil))
+                        (((:defclass) symbol)
+                         (insert-call symbol :defclass t))
+                        (t
+                         (error "Not in a function definition")))))))
 
    (define-key slime-mode-map (kbd "C-c C-x")  #'my/slime-call-defun--with-time-monitoring)
 
@@ -6505,8 +6505,8 @@ Return NIL if no system found.
      (if (null asdf-system-name)
          (message "No ASDF system found.")
        (slime-eval-async `(asdf:load-system ,asdf-system-name :force t)
-         (lambda (_result)
-           (message "System %s has been force-reloaded" asdf-system-name))))))
+                         (lambda (_result)
+                           (message "System %s has been force-reloaded" asdf-system-name))))))
 
  (defun my/asdf-force-test-system-corresponding-to-current-buffer ()
    "Force test current ASDF system.
@@ -6517,8 +6517,8 @@ Return NIL if no system found.
      (if (null asdf-system-name)
          (message "No ASDF system found.")
        (slime-eval-async `(asdf:test-system ,asdf-system-name :force t)
-         (lambda (_result)
-           (message "System %s has been force-tested" asdf-system-name))))))
+                         (lambda (_result)
+                           (message "System %s has been force-tested" asdf-system-name))))))
 
  ;; ===
  ;; === abbrev
@@ -7662,16 +7662,16 @@ Alt-F4 and Alt-TAB
    (my-init--warning "!! *git-executable-directory* is nil or does not exist: %s" *git-executable-directory*))
 
 
-(let ((diff3-executable (concat *git-diff3-directory* "/diff3.exe")))
-    (if (my-init--file-exists-p diff3-executable)
-        (add-to-list 'exec-path *git-diff3-directory*)
-      (my-init--warning "!! (magit) diff3.exe not found within %s" *git-diff3-directory*)))
-;; (setq ediff-diff3-program "C:/portable-programs/Git/usr/bin/diff3.exe")
+ (let ((diff3-executable (concat *git-diff3-directory* "/diff3.exe")))
+   (if (my-init--file-exists-p diff3-executable)
+       (add-to-list 'exec-path *git-diff3-directory*)
+     (my-init--warning "!! (magit) diff3.exe not found within %s" *git-diff3-directory*)))
+ ;; (setq ediff-diff3-program "C:/portable-programs/Git/usr/bin/diff3.exe")
 
-(use-package magit
-  :bind (("C-x g" . magit-status)
-         ("C-x C-g" . magit-status))
-  :config (my-init--message-package-loaded "magit"))
+ (use-package magit
+   :bind (("C-x g" . magit-status)
+          ("C-x C-g" . magit-status))
+   :config (my-init--message-package-loaded "magit"))
 
  (defhydra hydra-magit (:exit t :hint nil)
    "
@@ -7940,14 +7940,18 @@ For instance: abc/def --> abc\\def"
 
  ;; gcc shall be in PATH
 
- ;; Display line number: 
+ ;; Display line number
+ 
  (dolist (mode '(c-mode-hook))
    (add-hook mode (lambda () (display-line-numbers-mode 1))))
 
- ;; Babel:
+ ;; Babel
+
  (with-eval-after-load 'org
    (add-to-list 'org-babel-load-languages '(C . t))
    (org-babel-do-load-languages 'org-babel-load-languages org-babel-load-languages))
+
+ ;; Compilation
 
  (defun my/compile-current-c-buffer-in-eshell (optimization-flags)
    "Save and compile current C file in eshell witn OPTIMIZATION-FLAGS as a string ('-O2' or '-O3' or '-fopenmp -O3' or ...)."
@@ -8436,7 +8440,7 @@ _3_ : copy from markdown to clipboard, under org-mode format
 
 (end)
 "
-      ("3" #'my/markdown-region-to-org-clipboard)
+   ("3" #'my/markdown-region-to-org-clipboard)
    )
  
  ) ; end of init section
