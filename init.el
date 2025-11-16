@@ -723,8 +723,10 @@ d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
        *R-executable* "c:/.../R-Portable/App/R-Portable/bin/x64/R.exe"
        *Rterm-executable* "c:/.../R-Portable/App/R-Portable/bin/x64/Rterm.exe"
 
+       *git-bash-executable* "C:/.../Git/bin/bash.exe"
        *git-executable-directory* "C:/.../Git/bin"
-       
+       *git-diff3-directory* "C:/.../Git/usr/bin"    
+
        *tesseract-tessdata-dir* "C:/.../Tesseract-OCR/tessdata"
        *tesseract-exe* "C:/.../Tesseract-OCR/tesseract.exe"
 
@@ -745,7 +747,6 @@ d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
        *thunderbird-executable* "C:/.../Thunderbird.exe"
        *chrome-executable "C:/.../chrome.exe"
 
-       *git-bash-executable* "C:/.../Git/bin/bash.exe"
        
        ) ; end of setq
  
@@ -7586,6 +7587,10 @@ Alt-F4 and Alt-TAB
      (my-init--add-to-path-and-exec-path "Git" *git-executable-directory*)
    (my-init--warning "!! *git-executable-directory* is nil or does not exist: %s" *git-executable-directory*))
 
+ (if (my-init--file-exists-p (concat *git-diff3-directory* "/diff3.exe"))
+     (add-to-list 'exec-path "C:/Program Files/Git/usr/bin")
+   (my-init--warning "!! (magit) diff3.exe not found within %s" *git-diff3-directory*))
+ 
  (use-package magit
    :bind (("C-x g" . magit-status)
           ("C-x C-g" . magit-status))
