@@ -1670,6 +1670,7 @@ This advice changes the encoding of the argument given to w32explore function in
      ("D2Coding" 9)
      ("DejaVu Sans Mono" 7)
      ("DejaVu Sans Mono" 8)
+     ("DM Mono" 8)
      ("DM Mono" 9)
      ("Droid Sans Mono" 8)
      ("Droid Sans Mono" 9) 
@@ -1805,7 +1806,7 @@ This advice changes the encoding of the argument given to w32explore function in
      (switch-to-buffer buf)))           ; end of defun
 
  ;; The font which is chosen:
- (my-init--set-font-if-exists "DM Mono" 9)
+ (my-init--set-font-if-exists "DM Mono" 8)
  ;; I like also:
  (when nil
    (my-init--set-font-if-exists "Droid Sans Mono" 8)
