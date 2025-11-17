@@ -1171,8 +1171,11 @@ If WITH-DAY-IN-WEEK-P, return 'mardi 25 août 2023' or similar
                                  (newline)
                                  (insert "#+DATE: ")
                                  (newline)
-                                 (forward-line -1)
-                                 (forward-line -1)
+                                 (newline)
+                                 (insert "Participants : ")
+                                 (newline)
+                                 (newline)
+                                 (forward-line -6)
                                  (org-end-of-line)))))
  
  ;; F9
@@ -4241,6 +4244,7 @@ w   to resize cell
      ;; other symbols :
      ("uattention" "⚠")
      ("ubemol" "♭")
+     ("ubémol" "♭")
      ("ucroix" "✝")
      ("udiametre" "⌀")
      ("uell" "ℓ")
