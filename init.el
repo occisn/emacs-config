@@ -8035,16 +8035,19 @@ _c_ : occur
 
 _s_ : show eshell
 
-make :
-   compile : C-c p c
-   execute : C-c p u
+(?) make :
+   compile : (?) C-c p c
+   execute : (?) C-c p u
 
-compile : M-x compile 
+ONE FILE:
    _w_ : save and compile in eshell REPL with -O2
    C-c C-k or C-c C-c : save and compile in eshell REPL with -O3
    _p_ : save and compile in eshell REPL with -fopenmp -O3
    _v_ : save and compile in eshell REPL with -mavx -mfma -fopenmp -O3
    _x_ or C-c C-x or C-c C-y : execute in eshell REPL
+
+MAKE:
+   compile : M-x compile 
    _m_: 'make'
    _h_: 'make && hello'
 
