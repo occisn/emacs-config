@@ -1781,7 +1781,9 @@ This advice changes the encoding of the argument given to w32explore function in
              (insert (format "%s " string2))
              (make-text-button start (point)
                                'action (lambda (_button)
-                                         (my-init--set-font-if-exists family1 height1))
+                                         (my-init--set-font-if-exists family1 height1)
+                                         (message "Font changed to %s %s" family1 height1)
+                                         )
                                'follow-link t
                                'face '(:box (:line-width 2 :color "gray50" :style released-button)
                                             :background "lightgray"
@@ -1806,7 +1808,7 @@ This advice changes the encoding of the argument given to w32explore function in
      (switch-to-buffer buf)))           ; end of defun
 
  ;; The font which is chosen:
- (my-init--set-font-if-exists "DM Mono" 8)
+ (my-init--set-font-if-exists "DM Mono" 9)
  ;; I like also:
  (when nil
    (my-init--set-font-if-exists "Droid Sans Mono" 8)
@@ -7956,49 +7958,62 @@ For instance: abc/def --> abc\\def"
    (add-to-list 'org-babel-load-languages '(C . t))
    (org-babel-do-load-languages 'org-babel-load-languages org-babel-load-languages))
 
- ;; Compilation
+ ;; stand-alone & compile
 
- (defun my/compile-current-c-buffer-in-eshell (optimization-flags)
-   "Save and compile current C file in eshell witn OPTIMIZATION-FLAGS as a string ('-O2' or '-O3' or '-fopenmp -O3' or ...)."
+ (defun c-save-compile-and-run-c-file ()
+   "Compile and execute the current C file using gcc on Windows."
+   (interactive)
+   (let* ((flags "-Wall -Wextra -Werror -O3 -std=c2x -pedantic")
+          (source-file (buffer-file-name))
+          (file-name (file-name-nondirectory source-file))
+          (exe-file (concat (file-name-sans-extension file-name) ".exe"))
+          (compile-command (format "gcc %s -o %s %s && %s" 
+                                   flags
+                                   exe-file 
+                                   file-name 
+                                   exe-file)))
+     (if source-file
+         (progn
+           (save-buffer)
+           (compile compile-command))
+       (message "Buffer is not visiting a file!"))))
+
+ (add-hook 'c-mode-hook
+           (lambda ()
+             (local-set-key (kbd "C-c C-r") #'c-save-compile-and-run-c-file)))
+
+ ;; stand-alone & shell
+
+ (defun my/compile-and-execute-current-c-buffer-in-eshell ()
+   "Save and compile current C file in eshell"
    (interactive)
    (save-buffer)
-   (message "Compiling with flags: %s" optimization-flags)
    (my--eshell-cd-to-directory-of-current-buffer-if-not-the-case)
    (let* (
           ;; (eshell-buffer (get-buffer "*eshell*"))
+          (flags "-Wall -Wextra -Werror -O3 -std=c2x -pedantic")
           (file-name (file-name-nondirectory buffer-file-name))
           (file-name-without-extension (file-name-sans-extension file-name))
-          (cmd (concat "gcc " file-name " -Wall -Wextra -Werror " optimization-flags " -std=c2x -pedantic -o " file-name-without-extension)))
+          (cmd (concat "gcc " file-name " " flags " -o " file-name-without-extension " && time ./" file-name-without-extension ".exe")))
      (my--eshell-send-cmd cmd)))
 
- (add-hook 'c-mode-hook
-           (lambda ()
-             (local-set-key (kbd "C-c C-k") (lambda () (interactive) (my/compile-current-c-buffer-in-eshell "-O3")))))
+ ;; project & compile
 
- (add-hook 'c-mode-hook
-           (lambda ()
-             (local-set-key (kbd "C-c C-c") (lambda () (interactive) (my/compile-current-c-buffer-in-eshell "-O3")))))
-
- ;; Execution
- 
- (defun my/execute-current-c-buffer-in-eshell ()
-   "Execute current C file in eshell."
+ (defun compile-and-run-makefile-project ()
+   "Compile using make and run the executable specified in the Makefile."
    (interactive)
-   (my--eshell-cd-to-directory-of-current-buffer-if-not-the-case)
-   (let* (
-          ;; (eshell-buffer (get-buffer "*eshell*"))
-          (file-name (file-name-nondirectory buffer-file-name))
-          (file-name-without-extension (file-name-sans-extension file-name))
-          (cmd (concat "time ./" file-name-without-extension ".exe")))
-     (my--eshell-send-cmd cmd)))
+   (let* ((makefile-dir (locate-dominating-file default-directory "Makefile"))
+          (default-directory (or makefile-dir default-directory))
+          (compile-command "make && make run"))
+     (if makefile-dir
+         (progn
+           (save-some-buffers t)
+           (compile compile-command))
+       (message "No Makefile found in current or parent directories!"))))
 
  (add-hook 'c-mode-hook
            (lambda ()
-             (local-set-key (kbd "C-c C-x") #'my/execute-current-c-buffer-in-eshell)))
-
- (add-hook 'c-mode-hook
-           (lambda ()
-             (local-set-key (kbd "C-c C-y") #'my/execute-current-c-buffer-in-eshell)))
+             (local-set-key (kbd "C-c C-m") #'c-save-compile-and-run-c-file)))
 
  ;; Indentation
 
@@ -8020,89 +8035,10 @@ For instance: abc/def --> abc\\def"
    (occur "^[A-Za-z]\\|// ===")
    (other-window 1))
 
- ;; Hydra
- 
- (defhydra hydra-c (:exit t :hint nil)
-   "
-^C hydra:
-^--------
-
-M-. M-, : goto function/variable definition, and back (M-x xref-find-definitions)
-M-? : find references (M-x xref-find-references)
-documentation : bottom of screen (automatic) and more with _d_ (M-x eldoc-doc-buffer)
-_r_efactor : (M-x eglot-rename)
-_i_ndent
-_c_ : occur
-
-_s_ : show eshell
-
-(?) make :
-   compile : (?) C-c p c
-   execute : (?) C-c p u
-
-ONE FILE:
-   _w_ : save and compile in eshell REPL with -O2
-   C-c C-k or C-c C-c : save and compile in eshell REPL with -O3
-   _p_ : save and compile in eshell REPL with -fopenmp -O3
-   _v_ : save and compile in eshell REPL with -mavx -mfma -fopenmp -O3
-   _x_ or C-c C-x or C-c C-y : execute in eshell REPL
-
-MAKE:
-   compile : M-x compile 
-   _m_: 'make'
-   _h_: 'make && hello'
-
-(end)
-"
-   ("c" #'my-c-occur)
-   ("d" #'eldoc-doc-buffer)
-   ("h" (lambda ()
-          (interactive)
-          (compile "make && hello")))
-   ("i" #'my/indent-c-buffer
-    ;; previously indent & format via #'eglot-format
-    )
-   ("m" (lambda ()
-          (interactive)
-          (compile "make")))
-   ("r" #'eglot-rename)
-   ("s" (lambda ()
-          "Delete other windows, split right, open eshell on right, return to left."
-          (interactive)
-          (delete-other-windows)
-          (split-window-right)
-          (other-window 1)
-          (eshell)
-          (other-window -1)))
-   ("p" (lambda ()
-          (interactive)
-          (my/compile-current-c-buffer-in-eshell "-fopenmp -O3")
-          ))
-   ("v" (lambda ()
-          (interactive)
-          (my/compile-current-c-buffer-in-eshell "-mavx -mfma -fopenmp -O3")
-          ))
-   ("w" (lambda ()
-          (interactive)
-          (my/compile-current-c-buffer-in-eshell "-O2")
-          ))
-   ("x" #'my/execute-current-c-buffer-in-eshell)
-   )
- 
- ) ; end of init section
-
-
-;;; ===
-;;; =======================
-;;; ===== EGLOT FOR C =====
-;;; =======================
-
-(my-init--with-duration-measured-section 
- t
- "eglot for C"
+ ;; Eglot
 
  (add-hook 'c-mode-hook 'eglot-ensure)
- 
+
  (use-package eglot
    :ensure t
    :hook (c-mode . eglot-ensure)
@@ -8119,7 +8055,54 @@ MAKE:
    :config
    (yas-global-mode 1))
 
+ ;; Hydra
+ 
+ (defhydra hydra-c (:exit t :hint nil)
+   "
+^C hydra:
+^--------
+
+M-. M-, : goto function/variable definition, and back (M-x xref-find-definitions)
+M-? : find references (M-x xref-find-references)
+documentation : bottom of screen (automatic) and more with _d_ (M-x eldoc-doc-buffer)
+_r_efactor : (M-x eglot-rename)
+_i_ndent
+_c_ : occur
+
+ONE FILE with compile:
+   C-c C-r: save, compile and run
+
+ONE FILE with shell:
+   _s_ : show eshell
+   _x_ : compile & execute in shell
+
+PROJECT with compile:
+   C-c C-m, save compile and run
+
+PROJECT with projectile:
+   compile : C-c p c c (make)
+   execute : C-c p u   (make run)
+
+(end)
+"
+   ("c" #'my-c-occur)
+   ("d" #'eldoc-doc-buffer)
+   ("i" #'my/indent-c-buffer) ; previously indent & format via #'eglot-format
+   
+   ("r" #'eglot-rename)
+   ("s" (lambda ()
+          "Delete other windows, split right, open eshell on right, return to left."
+          (interactive)
+          (delete-other-windows)
+          (split-window-right)
+          (other-window 1)
+          (eshell)
+          (other-window -1)))
+   ("x" #'my/compile-and-execute-current-c-buffer-in-eshell)
+   )
+ 
  ) ; end of init section
+
 
 
 ;;; ===
