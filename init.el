@@ -1515,33 +1515,6 @@ This advice changes the encoding of the argument given to w32explore function in
  t
  "Fonts"
 
- ;; Note: interesting fonts which could be tried in Powershell parameters:
- ;;    Consolas
- ;;    Cascadia Mono
- ;; ... and ...
- ;;    Anonymous Pro
- ;;    Cousine
- ;;    D2Coding
- ;;    DejaVu Sans Mono
- ;;    DM Mono
- ;;    DM Mono Medium
- ;;    Droid Sans Mono
- ;;    Fantasque Sans Mono
- ;;    Fira Code
- ;;    Fira Code Medium
- ;;    Fira Code Retina
- ;;    Fira Mono
- ;;    Fira Mono Medium
- ;;    Hack
- ;;    Hasklig
- ;;    Hasklig Medium
- ;;    Iosevka
- ;;    JetBrains Mono
- ;;    JetBrains Mono Medium
- ;;    Menlo
- ;;    Menlo LG S DZ
- ;;    Office Code Pro
- 
  (defun my-init--default-font ()
    "Return default font as a string."  
    (let* ((tmp1 (face-attribute 'default :font))
@@ -1652,7 +1625,8 @@ This advice changes the encoding of the argument given to w32explore function in
      ;; B612 Mono: https://crankysec.com/blog/broken/
      ;; Berkeley Mono (not free): https://laplab.me/posts/whats-that-touchscreen-in-my-room/
      ("Cantarell" 9)
-     ("Cascadia Mono" 9)
+     ("Cascadia Code" 9) ; (my-init--set-font-if-exists "Cascadia Code" 9)
+     ("Cascadia Code Medium" 9) ; (my-init--set-font-if-exists "Cascadia Code Medium" 9)
      ;; Cascadia Mono: https://emacsredux.com/blog/2023/03/16/setting-the-default-font-for-emacs/
      ("Consolas" 9)
      ("Consolas" 10)
@@ -1677,6 +1651,7 @@ This advice changes the encoding of the argument given to w32explore function in
      ("Fantasque Sans Mono" 10)
      ("Fira Code Retina" 8)
      ("Fira Code Retina" 9)
+     ("FreeMono" 10) ; (my-init--set-font-if-exists "FreeMono" 10)
      ("Go Mono" 8)
      ;; Go Mono: https://twitter.com/TeXtip/status/1537606991987843072
      ("Hack" 8)
@@ -1811,6 +1786,7 @@ This advice changes the encoding of the argument given to w32explore function in
  (my-init--set-font-if-exists "DM Mono" 9)
  ;; I like also:
  (when nil
+   (my-init--set-font-if-exists "Cascadia Code" 9)
    (my-init--set-font-if-exists "Droid Sans Mono" 8)
    (my-init--set-font-if-exists "Consolas" 9)
    (my-init--set-font-if-exists "Meslo" 10)
@@ -2061,15 +2037,20 @@ This advice changes the encoding of the argument given to w32explore function in
    (interactive)
    (set-cursor-color "yellow"))
 
+ (defun my/orange-cursor ()
+   "Set cursor cursor to orange."
+   (interactive)
+   (set-cursor-color "orange"))
+
  (defun my/blue-cursor ()
    "Set cursor cursor to blue."
    (interactive)
    (set-cursor-color "deep sky blue"))
 
- ;; start with violet cursor:
+ ;; start with specific color for the cursor:
  (add-hook 'emacs-startup-hook
            (lambda ()
-             (my/violet-cursor)))
+             (my/orange-cursor)))
  ) ; end of init section
 
 
