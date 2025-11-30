@@ -4253,9 +4253,7 @@ w   to resize cell
  (my-init--load-additional-init-file "personal--abbrev.el")
 
  (dolist (hook '(org-mode-hook
-                 text-mode-hook
-                 lisp-mode-hook
-                 emacs-lisp-mode-hook))
+                 text-mode-hook))
    (add-hook hook #'abbrev-mode))
 
  (write-abbrev-file))
@@ -6514,7 +6512,9 @@ Return NIL if no system found.
  ;; ===
  ;; === abbrev
 
- ;; see abbrev
+ (dolist (hook '(lisp-mode-hook
+                 emacs-lisp-mode-hook))
+   (add-hook hook #'abbrev-mode))
 
  ;; ===
  ;; === sidebar
@@ -8012,6 +8012,42 @@ For instance: abc/def --> abc\\def"
    (setq c-default-style "linux"  ; or "gnu", "k&r", "bsd", "stroustrup"
          c-basic-offset 4))        ; tab width
 
+ ;; Abbrev
+
+ (add-hook 'c-mode-hook
+
+           (lambda ()
+
+             (abbrev-mode 1)
+
+             (define-skeleton c-main-skeleton 
+               "C main skeleton"
+               nil
+               "int main(void)\n{\n" > _ "\n}\n")
+
+             (define-abbrev c-mode-abbrev-table "cmain"
+               "" 'c-main-skeleton)
+
+             (define-skeleton c-while-loop-skeleton
+               "Insert a while loop structure"
+               nil
+               > "while (" _ ") {" \n
+               > \n
+               "}" >)
+
+             (define-abbrev c-mode-abbrev-table "cwhile" "" 'c-while-loop-skeleton)
+
+             (define-skeleton c-for-loop-skeleton
+               "Insert a for loop structure"
+               nil
+               > "for (" _ "; ; ) {" \n
+               > \n
+               "}" >)
+
+             (define-abbrev c-mode-abbrev-table "cfor" "" 'c-for-loop-skeleton)
+             
+             ))
+ 
  ;; Occur
 
  (defun my-c-occur ()
