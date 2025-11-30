@@ -817,6 +817,9 @@ v1 as of 2025-09-07; available in occisn/elisp-utils GitHub repository"
         (insert (format "Computer: %s on %s, %s\n" (system-name) system-type system-configuration))
 
         (newline)
+        (insert (format "Native compilation: %s, %s and %s\n" (featurep 'native-compile) (native-comp-available-p) (featurep 'comp)))
+
+        (newline)
         (insert (format "Context: %s\n" *context*))
 
         (newline)
