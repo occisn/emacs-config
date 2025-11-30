@@ -751,6 +751,7 @@ d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
        *chrome-executable "C:/.../chrome.exe"
 
        *gcc-path* "C:/.../bin"
+       *clangd-path* "c:/.../clangd_21.1.0/bin/"
        
        ) ; end of setq
  
@@ -8001,24 +8002,24 @@ For instance: abc/def --> abc\\def"
  t
  "C programming language"
 
- ;; gcc shall be in PATH
+ ;; === gcc in path
  
  (if (my-init--directory-exists-p *gcc-path*)
      (my-init--add-to-path-and-exec-path "gcc" *gcc-path*)
    (my-init--warning "!! *gcc-path* is nil or does not exist: %s" *gcc-path*))
  
- ;; Display line number
+ ;; === Display line number
  
  (dolist (mode '(c-mode-hook))
    (add-hook mode (lambda () (display-line-numbers-mode 1))))
 
- ;; Babel
+ ;; === Babel
 
  (with-eval-after-load 'org
    (add-to-list 'org-babel-load-languages '(C . t))
    (org-babel-do-load-languages 'org-babel-load-languages org-babel-load-languages))
 
- ;; stand-alone & compile
+ ;; === stand-alone & compile
 
  (defun c-save-compile-and-run-c-file ()
    "Compile and execute the current C file using gcc on Windows."
@@ -8042,7 +8043,7 @@ For instance: abc/def --> abc\\def"
            (lambda ()
              (local-set-key (kbd "C-c C-r") #'c-save-compile-and-run-c-file)))
 
- ;; stand-alone & shell
+ ;; === stand-alone & shell
 
  (defun my/compile-and-execute-current-c-buffer-in-eshell ()
    "Save and compile current C file in eshell"
@@ -8057,7 +8058,7 @@ For instance: abc/def --> abc\\def"
           (cmd (concat "gcc " file-name " " flags " -o " file-name-without-extension " && time ./" file-name-without-extension ".exe")))
      (my--eshell-send-cmd cmd)))
 
- ;; project & compile
+ ;; === project & compile
 
  (defun compile-and-run-makefile-project ()
    "Compile using make and run the executable specified in the Makefile."
@@ -8075,7 +8076,7 @@ For instance: abc/def --> abc\\def"
            (lambda ()
              (local-set-key (kbd "C-c C-m") #'c-save-compile-and-run-c-file)))
 
- ;; Indentation
+ ;; === Indentation
 
  (defun my/indent-c-buffer ()
    "Indent the entire buffer."
@@ -8097,7 +8098,7 @@ For instance: abc/def --> abc\\def"
              ;; Automatically switch to the correct style when opening a C file
              (c-set-style "gnu")))
  
- ;; Abbrev for C
+ ;; === Abbrev for C
 
  (add-hook 'c-mode-hook
 
@@ -8154,34 +8155,100 @@ For instance: abc/def --> abc\\def"
              
              ))
  
- ;; Occur
+ ;; === Occur
 
  (defun my-c-occur ()
    (interactive)
    (occur "^[A-Za-z]\\|// ===")
    (other-window 1))
 
- ;; Eglot
+ ;; === Clangd
 
- (add-hook 'c-mode-hook 'eglot-ensure)
+ (my-init--add-to-path-and-exec-path "clangd" *clangd-path*)
 
- (use-package eglot
-   :ensure t
-   :hook (c-mode . eglot-ensure)
-   :config  
-   (add-to-list 'eglot-server-programs '(c-mode . ("clangd"))))
+ ;; === lsp (alternative to eglot)
+
+ (when nil
+   (use-package lsp-mode
+     ;; :ensure t is usually implied if you use package management, but explicit is fine
+     :commands (lsp lsp-deferred)
+     :init
+     ;; Set the key prefix for all lsp commands (e.g., C-c l f for format)
+     (setq lsp-keymap-prefix "C-c l")
+
+     :config
+     ;; Optional: Better error highlighting with flycheck (instead of default flymake)
+     ;; Requires installing the flycheck package separately.
+     (setq lsp-diagnostics-provider :flycheck)
+     ;; Optional: Enable Which-Key integration for better command discovery
+     (lsp-enable-which-key-integration t)
+     (my-init--message-package-loaded "lsp-mode")
+
+     :hook
+     ;; Start lsp-mode (specifically `lsp-deferred`) for C and C++ major modes.
+     ;; `lsp-deferred` waits a moment before starting, preventing Emacs from hanging.
+     ((c-mode) . lsp-deferred)))
+
+ (when nil
+   (use-package lsp-ui
+     :ensure t
+     :hook
+     ;; Enable lsp-ui-mode whenever lsp-mode is active
+     (lsp-mode . lsp-ui-mode)
+
+     :config
+     (my-init--message-package-loaded "lsp-ui")
+
+     :custom
+     ;; Display documentation pop-ups at the bottom of the window
+     (lsp-ui-doc-position 'bottom)
+     ;; Make the pop-up documentation a bit faster
+     (lsp-ui-doc-delay 0.8)
+     ;; Show lsp-ui-sideline only when the cursor is on the diagnostic
+     (lsp-ui-sideline-show-hover nil)))
+
+ ;; Note: lsp-mode automatically registers itself as a company backend,
+ ;; so you don't need a separate `company-lsp` package.
  
- (use-package company
-   :ensure t
-   :hook (eglot-managed-mode . company-mode))
+ ;; === Eglot (alternative to lsp)
 
- ;; differ?
- (use-package yasnippet
-   :ensure t
-   :config
-   (yas-global-mode 1))
+ (when t
+   
+   (add-hook 'c-mode-hook 'eglot-ensure)
 
- ;; Hydra
+   (use-package eglot
+     :defer t ; Load Eglot only when one of the hooks is run
+     :hook
+     ;; This is the main line: start Eglot for C/C++ modes
+     ((c-mode) . eglot-ensure)
+
+     :config
+     ;; Optional: Add clangd to the server list explicitly if Emacs doesn't find it.
+     ;; If clangd is in your PATH, this may not be strictly necessary.
+     (add-to-list 'eglot-server-programs
+                  '((c-mode) . ("clangd")))
+
+     ;; Optional: Enable snippet completion (requires yasnippet to be active)
+     (when nil
+       (when (featurep 'yasnippet)
+         (setq eglot-snippet-insertion 'yasnippet)))
+     (my-init--message-package-loaded "eglot"))
+
+   ;; normally already loaded:
+   (use-package company
+     :ensure t
+     :hook (eglot-managed-mode . company-mode)
+     :config (my-init--message-package-loaded "company")))
+
+ ;; === yasnippet... no since abbrev
+
+ (when nil
+   (use-package yasnippet
+     :ensure t
+     :config
+     (yas-global-mode 1)))
+
+ ;; === Hydra
  
  (defhydra hydra-c (:exit t :hint nil)
    "
@@ -8225,9 +8292,7 @@ PROJECT with projectile:
           (eshell)
           (other-window -1)))
    ("x" #'my/compile-and-execute-current-c-buffer-in-eshell)
-   )
- 
- ) ; end of init section
+   )) ; end of init section
 
 
 
