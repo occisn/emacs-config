@@ -723,6 +723,9 @@ d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
        *R-executable* "c:/.../R-Portable/App/R-Portable/bin/x64/R.exe"
        *Rterm-executable* "c:/.../R-Portable/App/R-Portable/bin/x64/Rterm.exe"
 
+       *msys2-bash-executable* "C:/.../msys2.exe"
+       *msys2-shell-cmd* "C:/.../msys2_shell.cmd"
+       
        *git-bash-executable* "C:/.../Git/bin/bash.exe"
        *git-executable-directory* "C:/.../Git/bin"
        *git-diff3-directory* "C:/.../Git/usr/bin"    
@@ -747,6 +750,7 @@ d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
        *thunderbird-executable* "C:/.../Thunderbird.exe"
        *chrome-executable "C:/.../chrome.exe"
 
+       *gcc-path* "C:/.../bin"
        
        ) ; end of setq
  
@@ -3732,6 +3736,69 @@ and starting in the current buffer's directory (if any)."
        (pop-to-buffer (current-buffer))
        (message "PowerShell started in %s (UTF-8 mode)" default-dir))))
 
+ ;; === msys2 bash
+
+ (defun my/open-msys2-external ()
+   "Open MSYS2 in a native window, within the directory of current buffer (if it is a dired or a file)."
+   (interactive)
+   (let ((msys2-shell-cmd (or (bound-and-true-p *msys2-shell-cmd*)
+                              "C:/msys64/msys2_shell.cmd")))
+     (unless (file-exists-p msys2-shell-cmd)
+       (user-error "Could not find MSYS2 shell script at %s" msys2-shell-cmd))
+     (if (or (buffer-file-name) (derived-mode-p 'dired-mode))
+         (let ((dir default-directory))
+           (start-process "msys2" nil msys2-shell-cmd "-defterm" "-here" "-mingw64")
+           (message "Native MSYS2 window opened in %s" dir))
+       (start-process "msys2" nil msys2-shell-cmd "-defterm" "-mingw64")
+       (message "Native MSYS2 window opened."))))
+
+ (defun my/open-msys2-in-emacs ()
+   "Open MSYS2 shell inside an Emacs buffer, using UTF-8 encoding
+and starting in the current buffer's directory (if any)."
+   (interactive)
+   (let* ((default-dir (if (or (buffer-file-name) (derived-mode-p 'dired-mode))
+                           (file-name-directory (or (buffer-file-name) default-directory))
+                         (expand-file-name "~")))
+          ;; Path to msys2_shell.cmd
+          (msys2-shell-cmd *msys2-shell-cmd*)
+          (buffer-name (generate-new-buffer-name "*MSYS2*"))
+          (coding-system-for-read 'utf-8)
+          (coding-system-for-write 'utf-8))
+     (unless (file-exists-p msys2-shell-cmd)
+       (user-error "Could not find MSYS2 shell script at %s" msys2-shell-cmd))
+     (let ((process-environment (cons "MSYSTEM=MSYS"
+                                      (cons "CHERE_INVOKING=1"
+                                            process-environment)))
+           (process-connection-type t))
+       (with-current-buffer (get-buffer-create buffer-name)
+         (setq default-directory default-dir)
+         (comint-mode)
+         ;; Set a custom prompt regexp for better prompt detection
+         (setq-local comint-prompt-regexp "^.*\\$ ")
+         ;; Launch via cmd.exe which can handle .cmd files
+         (let ((proc (make-process
+                      :name "MSYS2"
+                      :buffer (current-buffer)
+                      :command (list "cmd.exe" "/c" msys2-shell-cmd "-defterm" "-no-start" "-here")
+                      :connection-type 'pty
+                      :coding 'utf-8
+                      :filter #'comint-output-filter)))
+           (unless (process-live-p proc)
+             (user-error "Failed to start MSYS2 process"))
+           ;; Insert fake prompt immediately after process is created
+           (goto-char (point-max))
+           (insert (format "%s@%s MSYS %s\n$ " 
+                           (user-login-name)
+                           (system-name)
+                           default-dir))
+           (set-marker (process-mark proc) (point))
+           ;; Give it time to initialize
+           (sit-for 0.2)
+           ;; Send cd command
+           (comint-send-string proc (format "cd '%s'\n" default-dir)))
+         (pop-to-buffer (current-buffer))
+         (message "MSYS2 shell started in %s (UTF-8 mode)" default-dir)))))
+
  ;; === git bash
 
  (defun my/open-git-bash-external ()
@@ -3864,20 +3931,23 @@ The prompt is 'fake' and is not updated with successive 'cd'."
 ^-------------
 
 eshell :     _e_ in buffer
-cmd shell :  _c_ external or _m_ in buffer
+cmd shell :  _c_ external or _d_ in buffer
 powershell : _p_ external or _o_ in buffer
+msys2 :      _m_ external or _y_ in buffer
 git bash :   _g_ external or _i_ in buffer (Windows native equivalents)
 wsl shell :  _w_ external or _s_ in buffer
 "
    ("c" #'my/open-cmd-shell-external)
+   ("d" #'my/open-cmd-shell-in-emacs)
    ("e" #'eshell)
    ("i" #'my/open-git-bash-in-emacs)
    ("g" #'my/open-git-bash-external)
-   ("m" #'my/open-cmd-shell-in-emacs)
    ("o" #'my/open-powershell-in-emacs)
+   ("m" #'my/open-msys2-external)
    ("p" #'my/open-powershell-external)
    ("s" #'my/open-wsl-shell-in-emacs)
    ("w" #'my/open-wsl-shell-external)
+   ("y" #'my/open-msys2-in-emacs)
    )
 
  ) ; end of init section
@@ -7652,7 +7722,6 @@ Alt-F4 and Alt-TAB
      (my-init--add-to-path-and-exec-path "Git" *git-executable-directory*)
    (my-init--warning "!! *git-executable-directory* is nil or does not exist: %s" *git-executable-directory*))
 
-
  (let ((diff3-executable (concat *git-diff3-directory* "/diff3.exe")))
    (if (my-init--file-exists-p diff3-executable)
        (add-to-list 'exec-path *git-diff3-directory*)
@@ -7930,7 +7999,11 @@ For instance: abc/def --> abc\\def"
  "C programming language"
 
  ;; gcc shall be in PATH
-
+ 
+ (if (my-init--directory-exists-p *gcc-path*)
+     (my-init--add-to-path-and-exec-path "gcc" *gcc-path*)
+   (my-init--warning "!! *gcc-path* is nil or does not exist: %s" *gcc-path*))
+ 
  ;; Display line number
  
  (dolist (mode '(c-mode-hook))
@@ -8007,12 +8080,21 @@ For instance: abc/def --> abc\\def"
    (save-excursion
      (indent-region (point-min) (point-max) nil)))
 
- ;; If you want to change how C code is indented, you can set the indentation style:
- (when nil
-   (setq c-default-style "linux"  ; or "gnu", "k&r", "bsd", "stroustrup"
-         c-basic-offset 4))        ; tab width
+ (setq c-default-style "gnu"  ; "linux, "gnu", "k&r", "bsd", "stroustrup"
+       c-basic-offset 4)        ; tab width
+ 
+ ;; already stated elsewhere in this file:
+ ;; (setq-default indent-tabs-mode nil)
 
- ;; Abbrev
+ ;; normally default:
+ ;; (global-font-lock-mode t)
+
+ (add-hook 'c-mode-hook
+           (lambda ()
+             ;; Automatically switch to the correct style when opening a C file
+             (c-set-style "gnu")))
+ 
+ ;; Abbrev for C
 
  (add-hook 'c-mode-hook
 
@@ -8023,7 +8105,7 @@ For instance: abc/def --> abc\\def"
              (define-skeleton c-main-skeleton 
                "C main skeleton"
                nil
-               "int main(void)\n{\n" > _ "\n}\n")
+               "int main(void)\n{\n" > _ "\n" > "return EXIT_SUCCESS;\n" > "}\n")
 
              (define-abbrev c-mode-abbrev-table "cmain"
                "" 'c-main-skeleton)
@@ -8045,6 +8127,27 @@ For instance: abc/def --> abc\\def"
                "}" >)
 
              (define-abbrev c-mode-abbrev-table "cfor" "" 'c-for-loop-skeleton)
+
+             (define-skeleton c-include-skeleton
+               "Insert includes"
+               nil
+               "#include <stdlib.h>\n#include <stdio.h>\n#include <string.h>\n#include <stdbool.h>\n\n")
+
+             (define-abbrev c-mode-abbrev-table "cinclude" "" 'c-include-skeleton)
+
+             (define-skeleton c-if-skeleton
+               "Insert an if structure"
+               nil
+               > "if (" _ ") {" \n > \n "}" >)
+
+             (define-abbrev c-mode-abbrev-table "cif" "" 'c-if-skeleton)
+
+             (define-skeleton c-if-else-skeleton
+               "Insert an if structure"
+               nil
+               > "if (" _ ") {" \n > \n > "} else {" \n \n "}" >)
+
+             (define-abbrev c-mode-abbrev-table "cifelse" "" 'c-if-else-skeleton)
              
              ))
  
