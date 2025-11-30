@@ -4150,6 +4150,9 @@ w   to resize cell
      ("d'Ecole" "d'École")
      ("l'Ecole" "l'École")
      ("L'Ecole" "L'École")
+
+     ("u(1)" "①")
+     ("u(2)" "②")
      
      ("oeil" "œil")
      ("oeuf" "œuf")
