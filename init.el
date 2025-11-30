@@ -8807,6 +8807,7 @@ Undo : C-j to cut undo chain? {end}
 ;;; === THE VERY END ===
 ;;; ====================
 
+
 (my-init--message2 "[ very last line of init.el ]")
 
 ;;; the very end
