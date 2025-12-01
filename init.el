@@ -303,24 +303,24 @@ Requires 'f' package.
 For instance: 123456 as a number--> 123,456 as a string
 (v1, available in occisn/elisp-utils GitHub repository)"
                  (let ((num (number-to-string number))
-	               (op (or separator ",")))
+                       (op (or separator ",")))
                    (while (string-match "\\(.*[0-9]\\)\\([0-9][0-9][0-9].*\\)" num)
                      (setq num (concat 
-		                (match-string 1 num) op
-		                (match-string 2 num))))
+                                (match-string 1 num) op
+                                (match-string 2 num))))
                    num))) ; end of function definitions within cl-labels
      (let ((root default-directory)
-	   (size0 (string-to-number (read-string "Minimal size in Mo (default = 50): " "" nil "50")))
-	   (results-buffer (generate-new-buffer "*Big files*"))
-	   (list1 nil)
-	   (list2 nil)
+           (size0 (string-to-number (read-string "Minimal size in Mo (default = 50): " "" nil "50")))
+           (results-buffer (generate-new-buffer "*Big files*"))
+           (list1 nil)
+           (list2 nil)
            (start-time (current-time)))
        (f-files root
-	        (lambda (file)
-	          (when (> (file-size-Mo file) size0)
-		    (push (cons file (file-size-Mo file)) list1))
-	          nil)
-	        t)
+                (lambda (file)
+                  (when (> (file-size-Mo file) size0)
+                    (push (cons file (file-size-Mo file)) list1))
+                  nil)
+                t)
        (setq list2 (sort list1 (lambda (a b) (> (cdr a) (cdr b)))))
        (switch-to-buffer results-buffer)
        (newline)
@@ -368,24 +368,24 @@ Requires 'f' package.
 For instance: 123456 as a number--> 123,456 as a string
 (v1, available in occisn/elisp-utils GitHub repository)"
                  (let ((num (number-to-string number))
-	               (op (or separator ",")))
+                       (op (or separator ",")))
                    (while (string-match "\\(.*[0-9]\\)\\([0-9][0-9][0-9].*\\)" num)
                      (setq num (concat 
-		                (match-string 1 num) op
-		                (match-string 2 num))))
+                                (match-string 1 num) op
+                                (match-string 2 num))))
                    num))) ; end of functions definitions within cl-labels
      (let ((root default-directory)
-	   (nb0 (string-to-number (read-string "Minimal number (default = 100): " "" nil "100")))
-	   (results-buffer (generate-new-buffer "*Folders with many files or direct subdirectories*"))
-	   (list1 nil)
-	   (list2 nil)
+           (nb0 (string-to-number (read-string "Minimal number (default = 100): " "" nil "100")))
+           (results-buffer (generate-new-buffer "*Folders with many files or direct subdirectories*"))
+           (list1 nil)
+           (list2 nil)
            (start-time (current-time)))
        (f-directories root
-		      (lambda (folder)
-		        (when (> (nb-of-elements-in-directory folder) nb0)
-		          (push (cons folder (nb-of-elements-in-directory folder)) list1))
-		        nil)
-		      t)
+                      (lambda (folder)
+                        (when (> (nb-of-elements-in-directory folder) nb0)
+                          (push (cons folder (nb-of-elements-in-directory folder)) list1))
+                        nil)
+                      t)
        (setq list2 (sort list1 (lambda (a b) (> (cdr a) (cdr b)))))
        (switch-to-buffer results-buffer)
        (newline)
@@ -425,10 +425,10 @@ Requires 'f' package.
    (when (not (string-equal major-mode "dired-mode"))
      (error "Not in dired-mode."))
    (let ((root default-directory)
-	 (minimal-size (string-to-number (read-string "Minimal size in Mo (default = 100): " "" nil "100")))
-	 (results-buffer (generate-new-buffer "*Folders with big size*"))
-	 (list1 nil)
-	 (list2 nil)
+         (minimal-size (string-to-number (read-string "Minimal size in Mo (default = 100): " "" nil "100")))
+         (results-buffer (generate-new-buffer "*Folders with big size*"))
+         (list1 nil)
+         (list2 nil)
          (start-time (current-time)))
      (cl-labels ((file-size-o (filename)
                    "Return file size of FILENAME in o.
@@ -452,11 +452,11 @@ During this process, each time a directory size exceeds MINIMAL-SIZE (bound in e
 For instance: 123456 as a number--> 123,456 as a string
 (v1, available in occisn/elisp-utils GitHub repository)"
                    (let ((num (number-to-string number))
-	                 (op (or separator ",")))
+                         (op (or separator ",")))
                      (while (string-match "\\(.*[0-9]\\)\\([0-9][0-9][0-9].*\\)" num)
                        (setq num (concat 
-		                  (match-string 1 num) op
-		                  (match-string 2 num))))
+                                  (match-string 1 num) op
+                                  (match-string 2 num))))
                      num))) ; end of functions definition within cl-labels
        (list-size-of-directory-and-subdirectories root)
        (setq list2 (sort list1 (lambda (a b) (> (cdr a) (cdr b)))))
@@ -499,9 +499,9 @@ Requires 'f' package.
      (error "Trying to perform an my/list-directories-containing-zip-files when not in dired-mode."))
    (let ((already-OK-folders nil)
          (root default-directory)
-	 (results-buffer (generate-new-buffer "*Folders with ZIP files*"))
-	 (suspect-folders nil)
-	 (sorted-suspect-folders nil)
+         (results-buffer (generate-new-buffer "*Folders with ZIP files*"))
+         (suspect-folders nil)
+         (sorted-suspect-folders nil)
          (start-time (current-time)))
      (cl-labels ((string-suffix-p (suffix str &optional ignore-case)
                    "Return t if STR finished by SUFFIX.
@@ -522,16 +522,16 @@ Source: https://stackoverflow.com/questions/22403751/check-if-a-string-ends-with
                         (file-attributes filename))
                        1000000)))) ; end of functions definition within cl-labels
        (f-directories root
-		      (lambda (folder)
+                      (lambda (folder)
                         (let ((zip-files-and-sizes nil)
                               (sorted-zip-files-and-sizes nil)
                               (biggest-zip-file-and-size nil))
                           (f-files folder
-	                           (lambda (file)
-                     	             (when (string-suffix-p ".zip" file)
-		                       (push (cons file (file-size-Mo file)) zip-files-and-sizes))
-	                             nil)
-	                           nil ; not recursive
+                                   (lambda (file)
+                                     (when (string-suffix-p ".zip" file)
+                                       (push (cons file (file-size-Mo file)) zip-files-and-sizes))
+                                     nil)
+                                   nil ; not recursive
                                    ) 
                           (when (not (null zip-files-and-sizes))
                             (setq sorted-zip-files-and-sizes (sort zip-files-and-sizes (lambda (a b) (> (cdr a) (cdr b)))))
@@ -540,8 +540,8 @@ Source: https://stackoverflow.com/questions/22403751/check-if-a-string-ends-with
                                          always (not (string-suffix-p suffix folder)))
                                 (push (list folder (cdr biggest-zip-file-and-size) (car biggest-zip-file-and-size)) suspect-folders)
                               (message "ZIP file in %s but skipped" folder)))) ; if
-		        nil)
-		      t)
+                        nil)
+                      t)
        (setq sorted-suspect-folders (sort suspect-folders (lambda (a b) (> (cadr a) (cadr b)))))
        (switch-to-buffer results-buffer)
        (newline)
@@ -591,14 +591,14 @@ d1/a.org d1/b.org d2/c.org d3/d.org
 d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
 (v1, available in occisn/elisp-utils GitHub repository)"
                  (let ((current-dir "")
-	               (files-intertwined-with-directories nil))
+                       (files-intertwined-with-directories nil))
                    (cl-loop for filename in files
-	                    for dir1 = (file-name-directory filename)
-	                    do (progn
-		                 (when (not (string= current-dir dir1))
-		                   (push dir1 files-intertwined-with-directories)
-		                   (setq current-dir dir1))
-		                 (push filename files-intertwined-with-directories)))
+                            for dir1 = (file-name-directory filename)
+                            do (progn
+                                 (when (not (string= current-dir dir1))
+                                   (push dir1 files-intertwined-with-directories)
+                                   (setq current-dir dir1))
+                                 (push filename files-intertwined-with-directories)))
                    (reverse files-intertwined-with-directories)))) ; end of functions definition within cl-labels
      (let ((start-time (current-time)))
        (aprogn
@@ -901,10 +901,10 @@ v1 as of 2025-09-07; available in occisn/elisp-utils GitHub repository"
 
  (setq package-archives
        '(("melpa" . "https://melpa.org/packages/") ; "http://melpa.milkbox.net/packages/"
-	 ("melpa-stable" . "https://stable.melpa.org/packages/")
-	 ("gnu" . "http://elpa.gnu.org/packages/")
-	 ;; ("marmalade" . "http://marmalade-repo.org/packages/")
-	 ))
+         ("melpa-stable" . "https://stable.melpa.org/packages/")
+         ("gnu" . "http://elpa.gnu.org/packages/")
+         ;; ("marmalade" . "http://marmalade-repo.org/packages/")
+         ))
 
  (when nil
    (package-initialize))
@@ -963,9 +963,9 @@ Shall be used in the 'config' section of each package."
 (v1, available in occisn/elisp-utils GitHub repository)"
    `(let*
         ,@(cl-loop for remaining-clauses on body
-		   until (<= (length remaining-clauses) 1)
-		   collect `(it ,(car remaining-clauses)) into bindings
-		   finally (return (list bindings (car remaining-clauses))))))
+                   until (<= (length remaining-clauses) 1)
+                   collect `(it ,(car remaining-clauses)) into bindings
+                   finally (return (list bindings (car remaining-clauses))))))
 
  (defmacro amapcar (form list)
    "Anaphoric mapcar.
@@ -1002,7 +1002,7 @@ Shall be used in the 'config' section of each package."
 (v1, available in occisn/emacs-utils GitHub repository) + messages"
    (let ((envt-variable-content (getenv envt-variable-name)))
      (if (cl-search directory envt-variable-content)
-	 (my-init--message2 "No need to add %s to Windows %s environment variable since already in: %s" prog-name envt-variable-name directory)
+         (my-init--message2 "No need to add %s to Windows %s environment variable since already in: %s" prog-name envt-variable-name directory)
        (setenv envt-variable-name (concat directory ";" envt-variable-content))
        (my-init--message2 "%s is added to %s environment variable." prog-name envt-variable-name))))
 
@@ -1047,20 +1047,20 @@ First check that the path is correct."
 BUILD-CMD-FN is a function which accepts a file name as argument, and returns the command to be executed.
 Inspiration: http://ergoemacs.org/emacs/emacs_dired_open_file_in_ext_apps.html "
    (let* ((file-list
-	   (if (eq major-mode 'dired-mode)
-	       (dired-get-marked-files)
-	     (list (buffer-file-name))))
+           (if (eq major-mode 'dired-mode)
+               (dired-get-marked-files)
+             (list (buffer-file-name))))
           (do-it-p (if (<= (length file-list) 5)
                        t
                      (y-or-n-p "Open more than 5 files? "))))
      (when do-it-p
        (if (= (length file-list) 1)
-	   (message "Open %S with %s" (file-name-nondirectory (car file-list)) program-name)
-	 (message "Open %S with %s" (mapcar #'file-name-nondirectory file-list) program-name))
+           (message "Open %S with %s" (file-name-nondirectory (car file-list)) program-name)
+         (message "Open %S with %s" (mapcar #'file-name-nondirectory file-list) program-name))
        (mapc
         (lambda (fpath)
-	  (let* ((cmd (funcall build-cmd-fn fpath)))
-	    (call-process-shell-command cmd nil 0)))
+          (let* ((cmd (funcall build-cmd-fn fpath)))
+            (call-process-shell-command cmd nil 0)))
         file-list))))) ; end of init section
 
 
@@ -1164,7 +1164,7 @@ If WITH-DAY-IN-WEEK-P, return 'mardi 25 août 2023' or similar
  ;; F8
 
  (global-set-key '[(f8)] (lambda () (interactive)
-			   (insert (format-time-string "%Y-%m-%d"))))
+                           (insert (format-time-string "%Y-%m-%d"))))
  ;; 2025-10-15 or similar
  ;; see 'my/today-YYYY-MM-DD' in occisn/elisp-utils GitHub repository
  
@@ -1194,8 +1194,8 @@ If WITH-DAY-IN-WEEK-P, return 'mardi 25 août 2023' or similar
                                (require 'projectile)
                                (require 'counsel-projectile)
                                (let ((projectile-switch-project-action
-	                              (lambda ()
-	                                (projectile-dired))))
+                                      (lambda ()
+                                        (projectile-dired))))
                                  (counsel-projectile-switch-project-by-name *my-main-directory*))) )
    (my-init--warning "Cannot assign f9 to *my-main-directory* since its content is not valid: %s" *my-main-directory*))
  
@@ -1205,7 +1205,7 @@ If WITH-DAY-IN-WEEK-P, return 'mardi 25 août 2023' or similar
 
  (if (my-init--file-exists-p *F10-file*)
      (global-set-key '[(f10)] (lambda () (interactive)
-			        (find-file *F10-file*)))
+                                (find-file *F10-file*)))
    (my-init--warning "Cannot assign f10 to *F10-file* since its content is not valid: %s" *F10-file*))
  
 
@@ -1215,7 +1215,7 @@ If WITH-DAY-IN-WEEK-P, return 'mardi 25 août 2023' or similar
 
  (if (my-init--file-exists-p *F12-temp-file*)
      (global-set-key '[(f12)] (lambda () (interactive)
-			        (find-file *F12-temp-file*)))
+                                (find-file *F12-temp-file*)))
    (my-init--warning "Cannot assign f12 to *F12-temp-file* since its content is not valid: %s" *F12-temp-file*))) ; end of init section
 
 
@@ -1476,7 +1476,7 @@ This advice changes the encoding of the argument given to w32explore function in
  ;;    "Solve the issue with Ctrl-RET in dired, which was not enable to open directory when accents in path.
  ;; This advice changes the encoding of the argument given to w32explore function in w32-browser.el, which calls shell-execute"
  ;;    (let* ((file-name (ad-get-arg 0))
- ;; 	  (file-name-with-fixed-encoding (my-init--encode-filename-or-directory-for-cmd file-name)))
+ ;;       (file-name-with-fixed-encoding (my-init--encode-filename-or-directory-for-cmd file-name)))
  ;;      (ad-set-arg 0 file-name-with-fixed-encoding)))
  ;;  (ad-activate 'w32explore)
  ) ; end of init section
@@ -2644,7 +2644,7 @@ M-x keycast-mode: show current key and its meaning on the command line
      (save-excursion
        (beginning-of-line)
        (dotimes (i (if (null nb) 1 nb))
-	 (insert ";"))
+         (insert ";"))
        (insert " ")))
    (global-set-key (kbd "C-c ;") #'my/add-comment-symbol-at-beginning-of-line)) ; end of when nil
 
@@ -2794,7 +2794,7 @@ Version 2019-12-02"
                                 (format-time-string "_%Y%m%d_%H%M%S")
                                 ".png"))
               ;; Build destination path:
-	      (destination-file-with-path (concat "\"" subdirectory-path file-short-name "\"")))
+              (destination-file-with-path (concat "\"" subdirectory-path file-short-name "\"")))
          ;; Paste to file:
          (paste-image-from-clipboard-to-file-with-imagemagick destination-file-with-path)
          ;; Add link:
@@ -3042,7 +3042,7 @@ Requires my/save-region-as-html."
    (unless (my-init--directory-exists-p *temp-directory*)
      (error "Temp directory is not valid: %s" *temp-directory*))
    (let* ((temp-file-name (concat *temp-directory* "org_mode_export_to_outlook_temp.html"))
-	  (cmd (concat "powershell -Command \"Get-Content '" temp-file-name "' | Set-Clipboard -AsHtml\"")))
+          (cmd (concat "powershell -Command \"Get-Content '" temp-file-name "' | Set-Clipboard -AsHtml\"")))
 
      ;; (1) Convert to HTML and save in file
      (my/save-region-as-html temp-file-name)
@@ -3058,7 +3058,7 @@ Requires my/save-region-as-html."
    (unless (my-init--directory-exists-p *temp-directory*)
      (error "Temp directory is not valid: %s" *temp-directory*))
    (let* ((temp-file-name (concat *temp-directory* "org_mode_export_to_outlook_temp.html"))
-	  (cmd (concat "powershell -Command \"& {type '" temp-file-name "' | Set-Clipboard -AsHtml}\"")))
+          (cmd (concat "powershell -Command \"& {type '" temp-file-name "' | Set-Clipboard -AsHtml}\"")))
 
      ;; (1) Convert to HTML and save in file
      (my/save-region-as-html temp-file-name)
@@ -3994,7 +3994,7 @@ wsl shell :  _w_ external or _s_ in buffer
      (let* ((regionp (region-active-p))
             (beg (and regionp (region-beginning)))
             (end (and regionp (region-end)))
-	    (buf (current-buffer)))
+            (buf (current-buffer)))
        (when (file-exists-p temp-file-name) (delete-file temp-file-name))
        (with-temp-buffer
          (insert-buffer-substring buf beg end)
@@ -4473,8 +4473,8 @@ w   to resize cell
    (interactive)
    (if (equal major-mode 'dired-mode)
        (progn
-	 (message "Opening this dired directory in Windows explorer")
-	 (w32explore (expand-file-name default-directory)))
+         (message "Opening this dired directory in Windows explorer")
+         (w32explore (expand-file-name default-directory)))
      (error "This is not a dired buffer. Could not be open in Windows Explorer")))
  ;; available in dired hydra
 
@@ -4489,10 +4489,10 @@ w   to resize cell
    (when (> (length (dired-get-marked-files)) 1)
      (error "Trying to copy several files in same folder."))
    (let* ((current-path-and-name (car (dired-get-marked-files)))
-	  (current-path (file-name-directory current-path-and-name))
+          (current-path (file-name-directory current-path-and-name))
           (current-name (file-name-nondirectory current-path-and-name))
-	  (suggested-new-name (concat (file-name-sans-extension current-name) " (2)." (file-name-extension current-name)))
-	  (new-name (read-string "Copy into: " suggested-new-name))
+          (suggested-new-name (concat (file-name-sans-extension current-name) " (2)." (file-name-extension current-name)))
+          (new-name (read-string "Copy into: " suggested-new-name))
           (new-path-and-name (concat current-path new-name)))
      (message "Copying %s into %s within %s." current-name new-name current-path) 
      (copy-file current-path-and-name new-path-and-name)
@@ -4521,9 +4521,9 @@ Uses ImageMagick.
                    (call-process-shell-command cmd)))) ; end of labels definition
      
      (let* ((file-short-name (read-string "File name without suffix: "))
-	    (suffix ".png")
+            (suffix ".png")
             (destination-file-with-path1 (concat default-directory file-short-name suffix))
-	    (destination-file-with-path2 (concat "\"" destination-file-with-path1 "\"")))
+            (destination-file-with-path2 (concat "\"" destination-file-with-path1 "\"")))
 
        (paste-image-from-clipboard-to-file-with-imagemagick destination-file-with-path2)
        (revert-buffer)                               ; update dired
@@ -4580,7 +4580,7 @@ Uses ImageMagick.
                    (clipboard-kill-region (point-min) (point-max)))))
      
      (let* ((files-list (dired-get-marked-files))
-	    (file-full-name (car files-list))
+            (file-full-name (car files-list))
             (date1 (get-file-last-modification-date file-full-name)) ; as Lisp timestamp
             (date2 (lisp-timestamp-to-YYYY-MM-DD date1))) ; as YYYY-MM-DD
        
@@ -4731,7 +4731,7 @@ Attach file to mail: C-c RET C-a (gnus-dired-attach) {end}"
            (directory (my-init--replace-linux-slash-with-two-windows-slashes *libreoffice-directory*))
            (path-env (getenv "UNOPATH")))
        (if (cl-search directory path-env)
-	   (my-init--message2 "No need to add %s to Windows UNOPATH since already in: %s" prog-name directory)
+           (my-init--message2 "No need to add %s to Windows UNOPATH since already in: %s" prog-name directory)
          (setenv "UNOPATH" (concat directory ";" (getenv "UNOPATH")))
          (my-init--message2 "%s is added to UNOPATH." prog-name)))
    (my-init--warning "!! *libreoffice-directory* is nil or does not exist: %s" *libreoffice-directory*))
@@ -4865,10 +4865,10 @@ M-x doc-view-clear-cache   _c_lears cache
    :defer nil                    ; otherwise C-x C-r = find-file-read-only
    :config (my-init--message-package-loaded "counsel")
    :bind (("M-x" . counsel-M-x) ; enriched by ivy-rich ; (global-set-key (kbd "M-x") 'counsel-M-x)
-	  ("C-x C-f" . counsel-find-file) ; (global-set-key (kbd "C-x C-f") 'counsel-find-file)
-	  ("C-x C-r" . my-init--recent-files-or-directories) ; files: counsel-recentf enriched by ivy-rich
-	  ("C-c b" . counsel-bookmark) ; enriched by ivy-rich ; file bookmark - see below
-	  ("C-:" . counsel-company)
+          ("C-x C-f" . counsel-find-file) ; (global-set-key (kbd "C-x C-f") 'counsel-find-file)
+          ("C-x C-r" . my-init--recent-files-or-directories) ; files: counsel-recentf enriched by ivy-rich
+          ("C-c b" . counsel-bookmark) ; enriched by ivy-rich ; file bookmark - see below
+          ("C-:" . counsel-company)
           ("C-h v" . counsel-describe-variable) ; enriched by ivy-rich
           ))) ; end of init section
 
@@ -4978,8 +4978,8 @@ M-x doc-view-clear-cache   _c_lears cache
      "Open ‘dired’ at the root of the project."
      (require 'counsel-projectile)
      (let ((projectile-switch-project-action
-	    (lambda ()
-	      (projectile-dired))))
+            (lambda ()
+              (projectile-dired))))
        (counsel-projectile-switch-project-by-name project)))
    
    (setq projectile-completion-system 'ivy)
@@ -5021,19 +5021,19 @@ M-x doc-view-clear-cache   _c_lears cache
    (counsel-projectile-modify-action
     'counsel-projectile-switch-project-action
     '((add ("." my-init--counsel-projectile-switch-project-action-dired
-	    "open ‘dired’ at the root of the project")
-	   1)))
+            "open ‘dired’ at the root of the project")
+           1)))
    ;; see https://github.com/ericdanan/counsel-projectile/issues/58
 
    ;; for C-c p f, addition of "open dired for the directory of the file"
    (counsel-projectile-modify-action
     'counsel-projectile-find-file-action
     '((add ("d" (lambda (file)
-		  (dired (file-name-directory (projectile-expand-root file)))
-		  (dired-goto-file (projectile-expand-root file))	
-		  )
-	    "open in dired")
-	   1)))) ; end of use-package
+                  (dired (file-name-directory (projectile-expand-root file)))
+                  (dired-goto-file (projectile-expand-root file))       
+                  )
+            "open in dired")
+           1)))) ; end of use-package
  
  ;; problem: counsel-projectile-find-dir and counsel-projectile-find-file
  ;; systematically regenerate cache
@@ -5358,19 +5358,19 @@ d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
 (v1, available in occisn/elisp-utils GitHub repository)"
                  
                  (let ((current-dir "")
-	               (files-intertwined-with-directories nil))
+                       (files-intertwined-with-directories nil))
                    
                    (cl-loop for filename in files
-	                    for dir1 = (file-name-directory filename)
-	                    do (progn
-		                 (when (not (string= current-dir dir1))
-		                   (push dir1 files-intertwined-with-directories)
-		                   (setq current-dir dir1))
-		                 (push filename files-intertwined-with-directories)))
+                            for dir1 = (file-name-directory filename)
+                            do (progn
+                                 (when (not (string= current-dir dir1))
+                                   (push dir1 files-intertwined-with-directories)
+                                   (setq current-dir dir1))
+                                 (push filename files-intertwined-with-directories)))
                    (reverse files-intertwined-with-directories)))) ; end of labels definition
      
      (let ((regexp (read-string "Regex: " ""))
-	   (root0 default-directory))
+           (root0 default-directory))
        
        (aprogn
         ;; list of absolute files:
@@ -5394,8 +5394,8 @@ d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
    (when (not (string-equal major-mode "dired-mode"))
      (error "Trying to perform a my/find2 when not in dired-mode."))
    (let* ((directory default-directory)
-	  (file (projectile-completing-read
-		 "Find file in current directory: "
+          (file (projectile-completing-read
+                 "Find file in current directory: "
                  (projectile-dir-files directory))))
      (find-file (expand-file-name file directory)))) ; end of defun
 
@@ -5417,19 +5417,19 @@ d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
 (v1, available in occisn/elisp-utils GitHub repository)"
                  
                  (let ((current-dir "")
-	               (files-intertwined-with-directories nil))
+                       (files-intertwined-with-directories nil))
                    
                    (cl-loop for filename in files
-	                    for dir1 = (file-name-directory filename)
-	                    do (progn
-		                 (when (not (string= current-dir dir1))
-		                   (push dir1 files-intertwined-with-directories)
-		                   (setq current-dir dir1))
-		                 (push filename files-intertwined-with-directories)))
+                            for dir1 = (file-name-directory filename)
+                            do (progn
+                                 (when (not (string= current-dir dir1))
+                                   (push dir1 files-intertwined-with-directories)
+                                   (setq current-dir dir1))
+                                 (push filename files-intertwined-with-directories)))
                    (reverse files-intertwined-with-directories)))) ; end of labels definition
      
      (let ((regexp (read-string "Regex: " ""))
-	   (root0 default-directory))
+           (root0 default-directory))
        
        (aprogn
         ;; list of relative files and dirs:
@@ -5527,7 +5527,7 @@ d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
       default-directory)
      (other-window 1)
      (let ((buffer-read-only nil)
-	   (text (buffer-substring (point-min) (point-max))))
+           (text (buffer-substring (point-min) (point-max))))
        (delete-region (point-min) (point-max))
        (insert (decode-coding-string (encode-coding-string text 'utf-8-dos) 'latin-1))))
    
@@ -5689,9 +5689,9 @@ d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
 
  ;; CL indentation instead of Emacs Lisp indentation :
  (add-hook 'lisp-mode-hook
-	   (lambda ()
-	     (set (make-local-variable lisp-indent-function)
-		  'common-lisp-indent-function)))
+           (lambda ()
+             (set (make-local-variable lisp-indent-function)
+                  'common-lisp-indent-function)))
  ;; see https://lispcookbook.github.io/cl-cookbook/emacs-ide.html
 
  ;; (3) Common:
@@ -5804,12 +5804,12 @@ d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
        "source: https://github.com/digikar99/emacs-noob/blob/slime-company/init.el"
        (let ((bufname (slime-buffer-name :description)))
          (slime-with-popup-buffer (bufname :package package
-					   :connection t
-					   :select slime-description-autofocus)
-	                          (when (string= bufname "*slime-description*")
-	                            (with-current-buffer bufname (slime-company-doc-mode)))
-	                          (princ string)
-	                          (goto-char (point-min))))))
+                                           :connection t
+                                           :select slime-description-autofocus)
+                                  (when (string= bufname "*slime-description*")
+                                    (with-current-buffer bufname (slime-company-doc-mode)))
+                                  (princ string)
+                                  (goto-char (point-min))))))
    (my-init--message-package-loaded "slime-company"))
 
  ;; and activate slime-company in slime below
@@ -6885,8 +6885,8 @@ C-c C-M-a align only visible part
  (if (my-init--file-exists-p *sumatra-program*)
      (setq *pdf-viewer-program*
            (list (list
-	          "Sumatra PDF"
-	          (concat "\"" *sumatra-program* "\" -reuse-instance %o"))))
+                  "Sumatra PDF"
+                  (concat "\"" *sumatra-program* "\" -reuse-instance %o"))))
    (my-init--warning "!! *sumatra-program* is nil or does not exist: %s" *sumatra-program*))
 
  (when (null *pdf-viewer-program*)
@@ -6955,10 +6955,10 @@ To be called from hydra."
    (setq TeX-PDF-mode t)                ; PDF output by default
    (setq TeX-view-program-list *pdf-viewer-program*) ; Sumatra as PDF viewer
    (setq TeX-view-program-selection
-	 '(((output-dvi style-pstricks) "dvips and start")
-	   (output-dvi "Yap")
-	   (output-pdf "Sumatra PDF")
-	   (output-html "start")))
+         '(((output-dvi style-pstricks) "dvips and start")
+           (output-dvi "Yap")
+           (output-pdf "Sumatra PDF")
+           (output-html "start")))
    ;; RefTeX:
    (add-hook 'LaTeX-mode-hook 'turn-on-reftex)
    (setq reftex-plug-into-auctex t)
@@ -7031,7 +7031,7 @@ c : occur
    :config
    (my-init--message-package-loaded "gnuplot-mode")
    ;; (setq auto-mode-alist 
-   ;; 	(append '(("\\.\\(gp\\|gnuplot\\)$" . gnuplot-mode)) auto-mode-alist))
+   ;;   (append '(("\\.\\(gp\\|gnuplot\\)$" . gnuplot-mode)) auto-mode-alist))
    )
 
  ;; babel for Gnuplot:
@@ -7123,20 +7123,20 @@ outline : _o_ hide & _a_ show-all
 For instance: abc/def --> abc\\def"
                  (replace-regexp-in-string  "/" "\\\\" path)))
      (let* ((files-list (dired-get-marked-files))
-	    (file-full-name (car files-list))
-	    (file-full-name-slash-OK-accents-OK (replace-linux-slash-with-two-windows-slashes file-full-name))
-	    (file-directory (file-name-directory file-full-name))
-	    (file-name (file-name-nondirectory file-full-name))
-	    (file-name-without-extension (file-name-base file-full-name))
-	    (output-directory
-	     (if (y-or-n-p "Create directory?")
-	         (concat file-directory (read-string "create directory: " file-name-without-extension))
-	       file-directory))
-	    (output-directory-slash-OK-accents-OK (replace-linux-slash-with-two-windows-slashes output-directory))
-	    (cmd (concat "\"" *unzip-program* "\""
-		         " x " "\"" file-full-name-slash-OK-accents-OK "\""
-		         " -aou -y"
-		         " -o" "\"" output-directory-slash-OK-accents-OK "\""))
+            (file-full-name (car files-list))
+            (file-full-name-slash-OK-accents-OK (replace-linux-slash-with-two-windows-slashes file-full-name))
+            (file-directory (file-name-directory file-full-name))
+            (file-name (file-name-nondirectory file-full-name))
+            (file-name-without-extension (file-name-base file-full-name))
+            (output-directory
+             (if (y-or-n-p "Create directory?")
+                 (concat file-directory (read-string "create directory: " file-name-without-extension))
+               file-directory))
+            (output-directory-slash-OK-accents-OK (replace-linux-slash-with-two-windows-slashes output-directory))
+            (cmd (concat "\"" *unzip-program* "\""
+                         " x " "\"" file-full-name-slash-OK-accents-OK "\""
+                         " -aou -y"
+                         " -o" "\"" output-directory-slash-OK-accents-OK "\""))
             ;; Example of cmd line: 7z e "C:\Users\...\Downloads\emacs-26.2.tar" -y -o"C:\Users\...\Downloads\emacs-26.2"
             ;; https://info.nrao.edu/computing/guide/file-access-and-archiving/7zip/7z-7za-command-line-guide
             )
@@ -7159,13 +7159,13 @@ For instance: abc/def --> abc\\def"
 For instance: abc/def --> abc\\def"
                  (replace-regexp-in-string  "/" "\\\\" path)))
      (let* ((current-directory-slash-OK-accents-OK (replace-linux-slash-with-two-windows-slashes default-directory))
-	    (archive-name (concat (read-string "Archive name (without zip suffix): " "archive") ".zip"))
-	    (cmd (concat "\"" *unzip-program* "\""
-		         " a -tzip "
-		         "\"" current-directory-slash-OK-accents-OK archive-name "\""
-		         " "
-		         "\"" current-directory-slash-OK-accents-OK "*.*\""
-		         " -r"))
+            (archive-name (concat (read-string "Archive name (without zip suffix): " "archive") ".zip"))
+            (cmd (concat "\"" *unzip-program* "\""
+                         " a -tzip "
+                         "\"" current-directory-slash-OK-accents-OK archive-name "\""
+                         " "
+                         "\"" current-directory-slash-OK-accents-OK "*.*\""
+                         " -r"))
             ;; Example of cmd line: "c:\Users\...\7-ZipPortable\App\7-Zip64\7z.exe" a -tzip "c:\Users\...\Downloads\test\archive.zip" "c:\Users\...\Downloads\test\*.*" -r
             ;; https://info.nrao.edu/computing/guide/file-access-and-archiving/7zip/7z-7za-command-line-guide
             )
@@ -7190,11 +7190,11 @@ For instance: abc/def --> abc\\def"
 For instance: abc/def --> abc\\def"
                  (replace-regexp-in-string  "/" "\\\\" path)))
      (let* ((files-list (dired-get-marked-files))
-	    (file-full-name (car files-list))
-	    (file-full-name-slash-OK-accents-OK (replace-linux-slash-with-two-windows-slashes file-full-name))
-	    (file-name (file-name-nondirectory file-full-name))
-	    (cmd (concat "\"" *unzip-program* "\""
-		         " l " "\"" file-full-name-slash-OK-accents-OK "\"")))
+            (file-full-name (car files-list))
+            (file-full-name-slash-OK-accents-OK (replace-linux-slash-with-two-windows-slashes file-full-name))
+            (file-name (file-name-nondirectory file-full-name))
+            (cmd (concat "\"" *unzip-program* "\""
+                         " l " "\"" file-full-name-slash-OK-accents-OK "\"")))
        (message "Listing content of %s by %s..." file-name (file-name-nondirectory *unzip-program*))
        ;; (shell-command-to-string cmd)
        (shell-command cmd nil nil)
@@ -7215,37 +7215,37 @@ Attention: overwrite.
      (when (null files-to-add)
        (error "Trying to add to zip archive but no file selected."))
      (let* ((files-to-add-no-path (mapcar #'file-name-nondirectory files-to-add))
-	    (all-zip-files (directory-files default-directory nil "\\.zip$"))
-	    (potential-zip-files (cl-set-difference all-zip-files files-to-add-no-path :test #'string=)))
+            (all-zip-files (directory-files default-directory nil "\\.zip$"))
+            (potential-zip-files (cl-set-difference all-zip-files files-to-add-no-path :test #'string=)))
        (message "files to add: %s" files-to-add-no-path)
        (message "all zip files: %s" all-zip-files)
        (message "potential zip files: %s" potential-zip-files)
        (when (null all-zip-files)
-	 (error "Impossible to add to archive since no zip file in the directory."))
+         (error "Impossible to add to archive since no zip file in the directory."))
        (when (null potential-zip-files)
-	 (error "Impossible to add to archive since all zip files are in the list of files to add."))
+         (error "Impossible to add to archive since all zip files are in the list of files to add."))
        (let* ((chosen-zip-file
-	       (completing-read
-	        "Choose archive file: "
-	        potential-zip-files))
-	      (target (concat default-directory chosen-zip-file))
-	      (target-accents-OK target))
-	 (message "chosen zip file: %s" chosen-zip-file)
-	 (message "default directory: %s" default-directory)
-	 (dolist (file-to-add files-to-add)
-	   (let* ((file-to-add-accents-OK file-to-add)
-		  (cmd
-		   (concat "\"" *unzip-program* "\""
-			   " a -aot "
-			   "\"" target-accents-OK "\""
-			   " "
-			   "\"" file-to-add-accents-OK "\""
-			   " -r")))
-	     (message "- Adding %s to %s" file-to-add target)
-	     (message "%s" (shell-command-to-string cmd))
-	     (message "... addition OK.")))
-	 (revert-buffer)
-	 (message "All additions finished.")))))
+               (completing-read
+                "Choose archive file: "
+                potential-zip-files))
+              (target (concat default-directory chosen-zip-file))
+              (target-accents-OK target))
+         (message "chosen zip file: %s" chosen-zip-file)
+         (message "default directory: %s" default-directory)
+         (dolist (file-to-add files-to-add)
+           (let* ((file-to-add-accents-OK file-to-add)
+                  (cmd
+                   (concat "\"" *unzip-program* "\""
+                           " a -aot "
+                           "\"" target-accents-OK "\""
+                           " "
+                           "\"" file-to-add-accents-OK "\""
+                           " -r")))
+             (message "- Adding %s to %s" file-to-add target)
+             (message "%s" (shell-command-to-string cmd))
+             (message "... addition OK.")))
+         (revert-buffer)
+         (message "All additions finished.")))))
 
  ) ; end of init section
 
@@ -7280,19 +7280,19 @@ Attention: overwrite.
 For instance: abc/def --> abc\\def"
                  (replace-regexp-in-string  "/" "\\\\" path)))
      (let* ((files-list (dired-get-marked-files))
-	    (file-full-name (car files-list))
-	    (file-full-name-slash-OK-accents-OK (replace-linux-slash-with-two-windows-slashes file-full-name))
-	    (file-directory (file-name-directory file-full-name))
-	    (file-name (file-name-nondirectory file-full-name))
-	    (file-name-slash-OK-accents-OK (replace-linux-slash-with-two-windows-slashes file-name))
-	    ;; (file-name-without-extension (file-name-base file-full-name))
-	    (output-directory file-directory)
-	    (output-directory-slash-OK-accents-OK (replace-linux-slash-with-two-windows-slashes output-directory))
-	    (cmd (concat "\"" *pdftk-program* "\""
-		         " "
-		         "\"" file-full-name-slash-OK-accents-OK "\""
-		         " burst output "
-		         "\"" output-directory-slash-OK-accents-OK "page_%03d_of_" file-name-slash-OK-accents-OK "\""))
+            (file-full-name (car files-list))
+            (file-full-name-slash-OK-accents-OK (replace-linux-slash-with-two-windows-slashes file-full-name))
+            (file-directory (file-name-directory file-full-name))
+            (file-name (file-name-nondirectory file-full-name))
+            (file-name-slash-OK-accents-OK (replace-linux-slash-with-two-windows-slashes file-name))
+            ;; (file-name-without-extension (file-name-base file-full-name))
+            (output-directory file-directory)
+            (output-directory-slash-OK-accents-OK (replace-linux-slash-with-two-windows-slashes output-directory))
+            (cmd (concat "\"" *pdftk-program* "\""
+                         " "
+                         "\"" file-full-name-slash-OK-accents-OK "\""
+                         " burst output "
+                         "\"" output-directory-slash-OK-accents-OK "page_%03d_of_" file-name-slash-OK-accents-OK "\""))
             ;; Example of cmd line: "c:/Users/.../PDFTKBuilderPortable/App/pdftkbuilder/pdftk.exe" "c:/Users/.../Downloads/test.pdf" burst output "c:/Users/.../Downloads/page_%03d_of_XYZ.pdf"
             )
        (when (not (or (string= (file-name-extension file-full-name) "pdf")
@@ -7317,21 +7317,21 @@ For instance: abc/def --> abc\\def"
 For instance: abc/def --> abc\\def"
                  (replace-regexp-in-string  "/" "\\\\" path)))
      (let* ((first-page (read-string "First page: "))
-	    (last-page (read-string "Last page: "))
-	    (files-list (dired-get-marked-files))
-	    (file-full-name (car files-list))
-	    (file-full-name-slash-OK-accents-OK (replace-linux-slash-with-two-windows-slashes file-full-name))
-	    (file-directory (file-name-directory file-full-name))
-	    (file-name (file-name-nondirectory file-full-name))
-	    (file-name-slash-OK-accents-OK (replace-linux-slash-with-two-windows-slashes file-name))
-	    ;; (file-name-without-extension (file-name-base file-full-name))
-	    (output-directory file-directory)
-	    (output-directory-slash-OK-accents-OK (replace-linux-slash-with-two-windows-slashes output-directory))
-	    (cmd (concat "\"" *pdftk-program* "\""
-		         " "
-		         "A=\"" file-full-name-slash-OK-accents-OK "\""
-		         " cat A" first-page "-" last-page " output "
-		         "\"" output-directory-slash-OK-accents-OK "page_" first-page "_to_" last-page "_of_" file-name-slash-OK-accents-OK "\""))
+            (last-page (read-string "Last page: "))
+            (files-list (dired-get-marked-files))
+            (file-full-name (car files-list))
+            (file-full-name-slash-OK-accents-OK (replace-linux-slash-with-two-windows-slashes file-full-name))
+            (file-directory (file-name-directory file-full-name))
+            (file-name (file-name-nondirectory file-full-name))
+            (file-name-slash-OK-accents-OK (replace-linux-slash-with-two-windows-slashes file-name))
+            ;; (file-name-without-extension (file-name-base file-full-name))
+            (output-directory file-directory)
+            (output-directory-slash-OK-accents-OK (replace-linux-slash-with-two-windows-slashes output-directory))
+            (cmd (concat "\"" *pdftk-program* "\""
+                         " "
+                         "A=\"" file-full-name-slash-OK-accents-OK "\""
+                         " cat A" first-page "-" last-page " output "
+                         "\"" output-directory-slash-OK-accents-OK "page_" first-page "_to_" last-page "_of_" file-name-slash-OK-accents-OK "\""))
             ;; Example of cmd line: "c:/Users/.../PDFTKBuilderPortable/App/pdftkbuilder/pdftk.exe" A="c:/Users/.../Downloads/test.pdf" cat A2-4 output "c:/Users/.../Downloads/page_2_to_4_of_XYZ.pdf"
             )
        (when (not (or (string= (file-name-extension file-full-name) "pdf")
@@ -7356,12 +7356,12 @@ If necessary : M-x read-only-mode
 For instance: abc/def --> abc\\def"
                  (replace-regexp-in-string  "/" "\\\\" path)))
      (let* ((output-file (read-string "Output file (default: output.pdf): " nil nil "output.pdf"))
-	    (files-list (cl-sort (dired-get-marked-files) 'string-lessp))
-	    (first-file-full-name (car files-list))
-	    (files-directory (file-name-directory first-file-full-name))
-	    (output-directory files-directory)
-	    (output-directory-slash-OK-accents-OK (replace-linux-slash-with-two-windows-slashes output-directory))
-	    (cmd (concat "\"" *pdftk-program* "\""))
+            (files-list (cl-sort (dired-get-marked-files) 'string-lessp))
+            (first-file-full-name (car files-list))
+            (files-directory (file-name-directory first-file-full-name))
+            (output-directory files-directory)
+            (output-directory-slash-OK-accents-OK (replace-linux-slash-with-two-windows-slashes output-directory))
+            (cmd (concat "\"" *pdftk-program* "\""))
             ;; Example of cmd line: "c:/Users/.../PDFTKBuilderPortable/App/pdftkbuilder/pdftk.exe" "c:/Users/.../Downloads/1.pdf" "c:/Users/.../Downloads/2.pdf" cat output "c:/Users/.../Downloads/output.pdf"
             )
        (dolist (file-full-name files-list)
@@ -7369,7 +7369,7 @@ For instance: abc/def --> abc\\def"
                         (string= (file-name-extension file-full-name) "PDF")))
            (error "Trying to join a non-PDF file: %S" file-full-name))
          (let ((file-full-name-slash-OK-accents-OK (replace-linux-slash-with-two-windows-slashes file-full-name)))
-	   (setq cmd (concat cmd " " "\"" file-full-name-slash-OK-accents-OK "\""))))
+           (setq cmd (concat cmd " " "\"" file-full-name-slash-OK-accents-OK "\""))))
        (setq cmd (concat cmd " cat output " "\"" output-directory-slash-OK-accents-OK output-file "\""))
        ;;(message "cmd: %s" cmd)
        (message "Joining PDF files with %s" *pdftk-program-name*)
@@ -7425,19 +7425,19 @@ To be called from hydra."
    (interactive)
    
    (cond ((string-equal major-mode "dired-mode")
-	  (let ((proc (start-process "cmd" nil "cmd.exe" "/C" "start" "cmd.exe" "/K" "cd" default-directory)))
-	    (set-process-query-on-exit-flag proc nil)
-	    (my-init--message2 "Native cmd window opened in %s directory" default-directory)))
+          (let ((proc (start-process "cmd" nil "cmd.exe" "/C" "start" "cmd.exe" "/K" "cd" default-directory)))
+            (set-process-query-on-exit-flag proc nil)
+            (my-init--message2 "Native cmd window opened in %s directory" default-directory)))
 
-	 ((not (null (buffer-file-name)))
-	  (let ((proc (start-process "cmd" nil "cmd.exe" "/C" "start" "cmd.exe" "/K" "cd" (file-name-directory (buffer-file-name)))))
-	    (set-process-query-on-exit-flag proc nil)
-	    (my-init--message2 "Native cmd window opened in directory where %S is located " buffer-file-name)))
+         ((not (null (buffer-file-name)))
+          (let ((proc (start-process "cmd" nil "cmd.exe" "/C" "start" "cmd.exe" "/K" "cd" (file-name-directory (buffer-file-name)))))
+            (set-process-query-on-exit-flag proc nil)
+            (my-init--message2 "Native cmd window opened in directory where %S is located " buffer-file-name)))
 
-	 (t
-	  (let ((proc (start-process "cmd" nil "cmd.exe" "/C" "start" "cmd.exe")))
-	    (set-process-query-on-exit-flag proc nil)
-	    (my-init--message2 "Native cmd window opened")))))
+         (t
+          (let ((proc (start-process "cmd" nil "cmd.exe" "/C" "start" "cmd.exe")))
+            (set-process-query-on-exit-flag proc nil)
+            (my-init--message2 "Native cmd window opened")))))
  
  ) ; end of init section
 
@@ -7959,12 +7959,12 @@ For instance: abc/def --> abc\\def"
                  (replace-regexp-in-string  "/" "\\\\" path)))
      
      (let* ((files-list (dired-get-marked-files))
-	    (file-full-name (car files-list))
-	    (file-full-name-slash-OK-accents-OK (replace-linux-slash-with-two-windows-slashes file-full-name))
-	    ;; (file-directory (file-name-directory file-full-name))
-	    (file-name (file-name-nondirectory file-full-name))
-	    ;; (file-name-slash-OK-accents-OK (replace-linux-slash-with-two-windows-slashes file-name))
-	    ;; (file-name-without-extension (file-name-base file-full-name))
+            (file-full-name (car files-list))
+            (file-full-name-slash-OK-accents-OK (replace-linux-slash-with-two-windows-slashes file-full-name))
+            ;; (file-directory (file-name-directory file-full-name))
+            (file-name (file-name-nondirectory file-full-name))
+            ;; (file-name-slash-OK-accents-OK (replace-linux-slash-with-two-windows-slashes file-name))
+            ;; (file-name-without-extension (file-name-base file-full-name))
 
             (cmd1 (concat "\"" *imagemagick-convert-program* "\" " "-density 300x300 " "\"" file-full-name-slash-OK-accents-OK "\"" " " *temp-directory* "zabcd-%03d.jpg"))
             )
@@ -8438,12 +8438,12 @@ For instance: abc/def --> abc\\def"
        (error "Trying to add dates at the beginning of several files."))
      
      (let* ((files-list (dired-get-marked-files))
-	    (file-full-name (car files-list))
-	    (file-full-name-slash-OK-accents-OK (replace-linux-slash-with-two-windows-slashes file-full-name))
-	    (file-directory (file-name-directory file-full-name))
-	    (file-name (file-name-nondirectory file-full-name))
-	    (file-name-slash-OK-accents-OK (replace-linux-slash-with-two-windows-slashes file-name))
-	    ;; (file-name-without-extension (file-name-base file-full-name))
+            (file-full-name (car files-list))
+            (file-full-name-slash-OK-accents-OK (replace-linux-slash-with-two-windows-slashes file-full-name))
+            (file-directory (file-name-directory file-full-name))
+            (file-name (file-name-nondirectory file-full-name))
+            (file-name-slash-OK-accents-OK (replace-linux-slash-with-two-windows-slashes file-name))
+            ;; (file-name-without-extension (file-name-base file-full-name))
             (date-line nil))
        (when (not (or (string= (file-name-extension file-full-name) "eml") (string= (file-name-extension file-full-name) "EML") ))
          (error "Trying to extract date from a non-EML fil: %S" file-full-name))
