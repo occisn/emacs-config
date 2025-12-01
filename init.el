@@ -5806,10 +5806,10 @@ d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
          (slime-with-popup-buffer (bufname :package package
 					   :connection t
 					   :select slime-description-autofocus)
-	                          (when (string= bufname "*slime-description*")
-	                            (with-current-buffer bufname (slime-company-doc-mode)))
-	                          (princ string)
-	                          (goto-char (point-min))))))
+	   (when (string= bufname "*slime-description*")
+	     (with-current-buffer bufname (slime-company-doc-mode)))
+	   (princ string)
+	   (goto-char (point-min))))))
    (my-init--message-package-loaded "slime-company"))
 
  ;; and activate slime-company in slime below
@@ -6036,17 +6036,17 @@ Modified from official 'slime-call-defun'"
          (if (symbolp toplevel)
              (error "Not in a function definition")
            (slime-dcase toplevel
-                        (((:defun :defgeneric :defmacro :define-compiler-macro) symbol)
-                         (insert-call symbol))
-                        ((:defmethod symbol &rest args)
-                         ;; (declare (ignore args))
-                         (insert-call symbol))
-                        (((:defparameter :defvar :defconstant) symbol)
-                         (insert-call symbol :function nil))
-                        (((:defclass) symbol)
-                         (insert-call symbol :defclass t))
-                        (t
-                         (error "Not in a function definition")))))))
+             (((:defun :defgeneric :defmacro :define-compiler-macro) symbol)
+              (insert-call symbol))
+             ((:defmethod symbol &rest args)
+              ;; (declare (ignore args))
+              (insert-call symbol))
+             (((:defparameter :defvar :defconstant) symbol)
+              (insert-call symbol :function nil))
+             (((:defclass) symbol)
+              (insert-call symbol :defclass t))
+             (t
+              (error "Not in a function definition")))))))
 
    (define-key slime-mode-map (kbd "C-c C-x")  #'my/slime-call-defun--with-time-monitoring)
 
@@ -6327,6 +6327,19 @@ With Electric Indent Mode enabled, inserts a newline and indents
  (add-hook 'lisp-mode-hook #'imenu-add-menubar-index)
 
  ;; ===
+ ;; === (EL+CL) Find defun: imenu-list (sidebar)
+
+ (use-package imenu-list
+   :bind ((:map c-mode-map
+                ("C-'" . imenu-list-smart-toggle))
+          (:map lisp-mode-map
+                ("C-'" . imenu-list-smart-toggle))
+          (:map emacs-lisp-mode-map
+                ("C-'" . imenu-list-smart-toggle)))
+   :config
+   (my-init--message-package-loaded "imenu-list"))
+
+ ;; ===
  ;; === (EL+CL) Outline
 
  (add-hook 'emacs-lisp-mode-hook 
@@ -6568,8 +6581,8 @@ Return NIL if no system found.
      (if (null asdf-system-name)
          (message "No ASDF system found.")
        (slime-eval-async `(asdf:load-system ,asdf-system-name :force t)
-                         (lambda (_result)
-                           (message "System %s has been force-reloaded" asdf-system-name))))))
+         (lambda (_result)
+           (message "System %s has been force-reloaded" asdf-system-name))))))
 
  (defun my/asdf-force-test-system-corresponding-to-current-buffer ()
    "Force test current ASDF system.
@@ -6580,8 +6593,8 @@ Return NIL if no system found.
      (if (null asdf-system-name)
          (message "No ASDF system found.")
        (slime-eval-async `(asdf:test-system ,asdf-system-name :force t)
-                         (lambda (_result)
-                           (message "System %s has been force-tested" asdf-system-name))))))
+         (lambda (_result)
+           (message "System %s has been force-tested" asdf-system-name))))))
 
  ;; ===
  ;; === abbrev
@@ -6654,7 +6667,7 @@ Navigate sexp: M-LEFT ou -RIGHT navigate
                C-M-up           go to beginning of (...) or higher one
                C-M-f            go to closing parenthesis
                C-M-down         go to inner (...)
-Navigate code: _m_: i_m_enu || M-x occur (M-s o) || _c_ : my occur
+Navigate code: _m_: i_m_enu || M-x occur (M-s o) || _c_ : my occur || C-' (list in sidebar)
                [Outline: _o_utline-hide-body vs outline-show-_a_ll ; collapse/expand: _h_ide vs _s_how]
                M-. and M-, to navigate to definition and come back (elisp-slime-nav)
 Select: C-= to expand region (expand-region) || C-M-h to put region around whole current or following defun (mark-defun)
@@ -6704,7 +6717,7 @@ Navigate sexp: M-LEFT ou -RIGHT navigate
                C-M-up           go to beginning of (...) or higher one
                C-M-f            go to closing parenthesis
                C-M-down         go to inner (...)
-Navigate code: _m_: i_m_enu || M-x occur (M-s o) ||  _c_ : my occur ; [selective display: https://stackoverflow.com/questions/1085170/]
+Navigate code: _m_: i_m_enu || M-x occur (M-s o) ||  _c_ : my occur ; [selective display: https://stackoverflow.com/questions/1085170/] || C-' (list in sidebar)
                M-. and M-, to navigate to definition and come back
                _o_utline-hide-body vs outline-show-all ; collapse/expand: _h_ide vs hs-show-all | hs-toggle-hiding
 Select: C-= to expand region (expand-region) || C-M-h to put region around whole current or following defun (mark-defun)
@@ -8078,7 +8091,8 @@ For instance: abc/def --> abc\\def"
 
  ;; === Indentation
 
- (defun my/indent-c-buffer ()
+ ;; better: (eglot-format-buffer)
+ (defun my/basic-indent-c-buffer ()
    "Indent the entire buffer."
    (interactive)
    (save-excursion
@@ -8240,6 +8254,14 @@ For instance: abc/def --> abc\\def"
      :hook (eglot-managed-mode . company-mode)
      :config (my-init--message-package-loaded "company")))
 
+ ;; === expand-region
+
+ ;; expand-region package already loaded in lisp section
+
+ ;; === imenu list in side bar
+
+ ;; imenu-list package already loaded in lisp section
+ 
  ;; === yasnippet... no since abbrev
 
  (when nil
@@ -8255,12 +8277,15 @@ For instance: abc/def --> abc\\def"
 ^C hydra:
 ^--------
 
-M-. M-, : goto function/variable definition, and back (M-x xref-find-definitions)
-M-? : find references (M-x xref-find-references)
-documentation : bottom of screen (automatic) and more with _d_ (M-x eldoc-doc-buffer)
-_r_efactor : (M-x eglot-rename)
-_i_ndent
-_c_ : occur
+move among top-level expressions: C-M-a, C-M-e C-M-h
+select sexp: C-= (expand-region)
+M-. M-, : goto function/variable definition, and back (xref-find-definitions via eglot)
+M-? : find all references (xref-find-references via eglot)
+_r_efactor symbol at point (eglot-rename)
+_i_ndent (eglot-format-buffer)
+_c_ : occur | M-x imenu | C-' (list in sidebar)
+C-M-i   completion (eglot)
+comment: M-; for end of line or selection | C-x C-; for line | M-x comment-region | M-x uncomment-region
 
 ONE FILE with compile:
    C-c C-r: save, compile and run
@@ -8276,11 +8301,12 @@ PROJECT with projectile:
    compile : C-c p c c (make)
    execute : C-c p u   (make run)
 
-(end)
-"
+documentation : bottom of screen (automatic) and more with _d_ (M-x eldoc-doc-buffer) or C-h .
+
+M-x eglot-shutdown | M-x eglot-reconnect {end}"
    ("c" #'my-c-occur)
    ("d" #'eldoc-doc-buffer)
-   ("i" #'my/indent-c-buffer) ; previously indent & format via #'eglot-format
+   ("i" #'eglot-format-buffer) 
    
    ("r" #'eglot-rename)
    ("s" (lambda ()
