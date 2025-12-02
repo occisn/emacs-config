@@ -752,6 +752,8 @@ d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
 
        *gcc-path* "C:/.../bin"
        *clangd-path* "c:/.../clangd_21.1.0/bin/"
+       *c-tree-sitter-dll* "c:/.../.emacs.d/tree-sitter/libtree-sitter-c.dll"
+       *cpp-tree-sitter-dll* "c:/.../.emacs.d/tree-sitter/libtree-sitter-cpp.dll"
        
        ) ; end of setq
  
@@ -8182,6 +8184,25 @@ For instance: abc/def --> abc\\def"
      (my-init--add-to-path-and-exec-path "clangd" *clangd-path*)
    (my-init--warning "!! *clangd-path* is nil or does not exist: %s" *clangd-path*))
 
+ ;; === treesitter installation
+
+ ;; (treesit-library-abi-version) --> 14 ; expects version 14
+ 
+ (setq treesit-language-source-alist
+       '((c "https://github.com/tree-sitter/tree-sitter-c" "v0.20.6") ; "v0.20.6" corresponds to v14 ; if ommitted, v15 is installed
+         (cpp "https://github.com/tree-sitter/tree-sitter-cpp")
+         ))
+
+ ;; M-x treesit-install-language-grammar RET c RET
+ ;; to compile and install
+ 
+ (if (my-init--file-exists-p *c-tree-sitter-dll*)
+     ;; Remap c-mode to c-ts-mode (Tree-sitter version):
+     (add-to-list 'major-mode-remap-alist '(c-mode . c-ts-mode))
+   (my-init--warning "!! c tree-sitter dll not found: %s" *c-tree-sitter-dll*))
+ (unless (my-init--file-exists-p *cpp-tree-sitter-dll*)
+   (my-init--warning "!! cpp tree-sitter dll not found: %s" *cpp-tree-sitter-dll*))
+
  ;; === lsp (alternative to eglot)
 
  (when nil
@@ -8231,18 +8252,19 @@ For instance: abc/def --> abc\\def"
  (when t
    
    (add-hook 'c-mode-hook 'eglot-ensure)
-
+   (add-hook 'c-ts-mode-hook 'eglot-ensure)
+   
    (use-package eglot
-     :defer t ; Load Eglot only when one of the hooks is run
+     :defer t           ; Load Eglot only when one of the hooks is run
      :hook
      ;; This is the main line: start Eglot for C/C++ modes
-     ((c-mode) . eglot-ensure)
+     ((c-mode c-ts-mode) . eglot-ensure)
 
      :config
      ;; Optional: Add clangd to the server list explicitly if Emacs doesn't find it.
      ;; If clangd is in your PATH, this may not be strictly necessary.
      (add-to-list 'eglot-server-programs
-                  '((c-mode) . ("clangd")))
+                  '((c-mode c-ts-mode) . ("clangd")))
 
      ;; Optional: Enable snippet completion (requires yasnippet to be active)
      (when nil
@@ -8279,7 +8301,10 @@ For instance: abc/def --> abc\\def"
 ^C hydra:
 ^--------
 
-move among top-level expressions: C-M-a, C-M-e C-M-h
+move among top-level expressions + select: C-M-a, C-M-e C-M-h
+forward/backward expression: C-M-f, C-M-b
+next/previous sibling C-M-n, C-M-p
+up/down in tree C-M-u C-M-d
 select sexp: C-= (expand-region)
 M-. M-, : goto function/variable definition, and back (xref-find-definitions via eglot)
 M-? : find all references (xref-find-references via eglot)
@@ -8791,6 +8816,7 @@ Undo : C-j to cut undo chain? {end}
    (interactive)
    (cond
     ((eql major-mode 'c-mode) (hydra-c/body))
+    ((eql major-mode 'c-ts-mode) (hydra-c/body))
     ((eql major-mode 'calc-mode) (hydra-calc/body))
     ((eql major-mode 'compilation-mode) (hydra-compilation/body))
     ((eql major-mode 'csv-mode) (hydra-csv/body))
