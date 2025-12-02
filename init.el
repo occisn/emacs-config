@@ -6334,6 +6334,8 @@ With Electric Indent Mode enabled, inserts a newline and indents
  (use-package imenu-list
    :bind ((:map c-mode-map
                 ("C-'" . imenu-list-smart-toggle))
+          (:map c-ts-mode-map
+                ("C-'" . imenu-list-smart-toggle))
           (:map lisp-mode-map
                 ("C-'" . imenu-list-smart-toggle))
           (:map emacs-lisp-mode-map
@@ -8025,7 +8027,7 @@ For instance: abc/def --> abc\\def"
  
  ;; === Display line number
  
- (dolist (mode '(c-mode-hook))
+ (dolist (mode '(c-mode-hook c-ts-mode-hook))
    (add-hook mode (lambda () (display-line-numbers-mode 1))))
 
  ;; === Babel
@@ -8055,6 +8057,9 @@ For instance: abc/def --> abc\\def"
        (message "Buffer is not visiting a file!"))))
 
  (add-hook 'c-mode-hook
+           (lambda ()
+             (local-set-key (kbd "C-c C-r") #'c-save-compile-and-run-c-file)))
+ (add-hook 'c-ts-mode-hook
            (lambda ()
              (local-set-key (kbd "C-c C-r") #'c-save-compile-and-run-c-file)))
 
@@ -8090,6 +8095,9 @@ For instance: abc/def --> abc\\def"
  (add-hook 'c-mode-hook
            (lambda ()
              (local-set-key (kbd "C-c C-m") #'c-save-compile-and-run-c-file)))
+ (add-hook 'c-ts-mode-hook
+           (lambda ()
+             (local-set-key (kbd "C-c C-m") #'c-save-compile-and-run-c-file)))
 
  ;; === Indentation
 
@@ -8116,60 +8124,68 @@ For instance: abc/def --> abc\\def"
  
  ;; === Abbrev for C
 
+ (defun my-init--c-abbrev ()
+
+   (abbrev-mode 1)
+
+   (define-skeleton c-main-skeleton 
+     "C main skeleton"
+     nil
+     "int main(void)\n{\n" > _ "\n" > "return EXIT_SUCCESS;\n" > "}\n")
+
+   
+   (define-skeleton c-while-loop-skeleton
+     "Insert a while loop structure"
+     nil
+     > "while (" _ ") {" \n
+     > \n
+     "}" >)
+
+   
+   (define-skeleton c-for-loop-skeleton
+     "Insert a for loop structure"
+     nil
+     > "for (" _ "; ; ) {" \n
+     > \n
+     "}" >)
+
+   
+   (define-skeleton c-include-skeleton
+     "Insert includes"
+     nil
+     "#include <stdlib.h>\n#include <stdio.h>\n#include <string.h>\n#include <stdbool.h>\n\n")
+
+   
+   (define-skeleton c-if-skeleton
+     "Insert an if structure"
+     nil
+     > "if (" _ ") {" \n > \n "}" >)
+
+   
+   (define-skeleton c-if-else-skeleton
+     "Insert an if structure"
+     nil
+     > "if (" _ ") {" \n > \n > "} else {" \n \n "}" >))
+
  (add-hook 'c-mode-hook
-
            (lambda ()
-
-             (abbrev-mode 1)
-
-             (define-skeleton c-main-skeleton 
-               "C main skeleton"
-               nil
-               "int main(void)\n{\n" > _ "\n" > "return EXIT_SUCCESS;\n" > "}\n")
-
-             (define-abbrev c-mode-abbrev-table "cmain"
-               "" 'c-main-skeleton)
-
-             (define-skeleton c-while-loop-skeleton
-               "Insert a while loop structure"
-               nil
-               > "while (" _ ") {" \n
-               > \n
-               "}" >)
-
+             (my-init--c-abbrev)
+             (define-abbrev c-mode-abbrev-table "cmain" "" 'c-main-skeleton)
              (define-abbrev c-mode-abbrev-table "cwhile" "" 'c-while-loop-skeleton)
-
-             (define-skeleton c-for-loop-skeleton
-               "Insert a for loop structure"
-               nil
-               > "for (" _ "; ; ) {" \n
-               > \n
-               "}" >)
-
              (define-abbrev c-mode-abbrev-table "cfor" "" 'c-for-loop-skeleton)
-
-             (define-skeleton c-include-skeleton
-               "Insert includes"
-               nil
-               "#include <stdlib.h>\n#include <stdio.h>\n#include <string.h>\n#include <stdbool.h>\n\n")
-
              (define-abbrev c-mode-abbrev-table "cinclude" "" 'c-include-skeleton)
-
-             (define-skeleton c-if-skeleton
-               "Insert an if structure"
-               nil
-               > "if (" _ ") {" \n > \n "}" >)
-
              (define-abbrev c-mode-abbrev-table "cif" "" 'c-if-skeleton)
-
-             (define-skeleton c-if-else-skeleton
-               "Insert an if structure"
-               nil
-               > "if (" _ ") {" \n > \n > "} else {" \n \n "}" >)
-
-             (define-abbrev c-mode-abbrev-table "cifelse" "" 'c-if-else-skeleton)
-             
-             ))
+             (define-abbrev c-mode-abbrev-table "cifelse" "" 'c-if-else-skeleton)))
+ 
+ (add-hook 'c-ts-mode-hook
+           (lambda ()
+             (my-init--c-abbrev)
+             (define-abbrev c-ts-mode-abbrev-table "cmain" "" 'c-main-skeleton)
+             (define-abbrev c-ts-mode-abbrev-table "cwhile" "" 'c-while-loop-skeleton)
+             (define-abbrev c-ts-mode-abbrev-table "cfor" "" 'c-for-loop-skeleton)
+             (define-abbrev c-ts-mode-abbrev-table "cinclude" "" 'c-include-skeleton)
+             (define-abbrev c-ts-mode-abbrev-table "cif" "" 'c-if-skeleton)
+             (define-abbrev c-ts-mode-abbrev-table "cifelse" "" 'c-if-else-skeleton)))
  
  ;; === Occur
 
@@ -8224,7 +8240,7 @@ For instance: abc/def --> abc\\def"
      :hook
      ;; Start lsp-mode (specifically `lsp-deferred`) for C and C++ major modes.
      ;; `lsp-deferred` waits a moment before starting, preventing Emacs from hanging.
-     ((c-mode) . lsp-deferred)))
+     ((c-mode c-ts-mode) . lsp-deferred)))
 
  (when nil
    (use-package lsp-ui
