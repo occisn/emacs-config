@@ -2402,7 +2402,9 @@ M-x keycast-mode: show current key and its meaning on the command line
  ;; - green-is-the-new-black-theme
 
  ;; The theme which is chosen:
- (my/load-shade-of-purple-customized)
+ (my--load-theme-by-name "Moe Light")
+ ;;(my/load-shade-of-purple-customized)
+
  ;; I like also:
  (when nil
 
@@ -2410,7 +2412,7 @@ M-x keycast-mode: show current key and its meaning on the command line
    (my--load-theme-by-name "Leuven") ; perhaps to be repeated at the end of init file
                                         ; otherwise effects are missing: note titles, color or =xxx=, etc.
    ;; standard light tinted
-   (my--load-theme-by-name "Moe Light") 
+   (my--load-theme-by-name "Moe Light")
    
    ;; DARK:
    (my--load-theme-by-name "Shades of purple")
