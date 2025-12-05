@@ -8750,6 +8750,26 @@ _3_ : copy from markdown to clipboard, under org-mode format
  ) ; end of init section
 
 ;;; ===
+;;; ====================
+;;; === PROFESSIONAL ===
+;;; ====================
+
+(my-init--with-duration-measured-section 
+ t
+ "Professional"
+
+ (defhydra hydra-professional (:exit t :hint nil)
+   "
+^void
+")
+
+ (my-init--load-additional-init-file "personal--professional.el")
+ 
+ ) ; end of init section
+
+
+
+;;; ===
 ;;; ============================
 ;;; === THREE GENERAL HYDRAS ===
 ;;; ============================
@@ -8790,7 +8810,7 @@ Macros : F3 and F4 | M-x kmacro-name-last-macro gives a name to the last defined
          repeat macro until error (M-0 C-x e) = my/repeat-macro-until-error | register store C-x C-k x r (kmacro-to-register) | call C-x r j r
 Packages: M-x package-install                 | C-x M-: repeat last M-x
 Tests: ERT _t_ests associated with init files (my/launch-tests)
-Other hydras: _A_ppearance, _F_onts, _T_hemes, _H_elp & documentation, _M_ode-dependent (C-c d), _P_roject (C-c p h), _W_indows (C-c w), _S_hells, Mails (C-c m)
+Other hydras: _A_ppearance, _F_onts, _T_hemes, _H_elp & documentation, _M_ode-dependent (C-c d), _P_roject (C-c p h), _W_indows (C-c w),, _I_=professional _S_hells, Mails (C-c m)
 Undo : C-j to cut undo chain? {end}
 "
    ;; ("c" #'my/ready-to-calc) ;; to remove
@@ -8809,6 +8829,7 @@ Undo : C-j to cut undo chain? {end}
    ("A" #'hydra-appearance/body)
    ("F" #'my/generate-personal-font-buffer)
    ("H" #'hydra-help/body)
+   ("I" #'hydra-professional/body)
    ("M" #'context-hydra-launcher)
    ("P" #'hydra-project/body)
    ("S" #'hydra-shells/body)
