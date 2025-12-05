@@ -8298,12 +8298,25 @@ For instance: abc/def --> abc\\def"
      :config (my-init--message-package-loaded "company")))
 
  ;; === hideshow
- 
- (add-hook 'c-ts-mode-hook 'hs-minor-mode)
- (add-hook 'c-mode-hook 'hs-minor-mode)
- 
- (setq hs-hide-comments-when-hiding-all t)
- (setq hs-isearch-open t) ; Automatically open folded code during isearch
+
+ (when t
+   (add-hook 'c-ts-mode-hook 'hs-minor-mode)
+   (add-hook 'c-mode-hook 'hs-minor-mode)
+   
+   (setq hs-hide-comments-when-hiding-all t)
+   (setq hs-isearch-open t)  ; Automatically open folded code during isearch
+
+   ;; Key bindings
+   (global-set-key (kbd "C-c f t") 'hs-toggle-hiding)
+   (global-set-key (kbd "C-c f r") 'hs-hide-level-recursive)
+   (global-set-key (kbd "C-c f s") 'hs-show-block)
+   (global-set-key (kbd "C-c f h") 'hs-hide-block)
+   (global-set-key (kbd "C-c f S") 'hs-show-all)
+   (global-set-key (kbd "C-c f H") 'hs-hide-all))
+
+ ;; === alternative: ts-fold (not available with use-package)
+
+ ;; oid
  
  ;; === expand-region
 
@@ -8341,8 +8354,8 @@ _c_ : occur | M-x imenu | C-' (list in sidebar)
 C-M-i   completion (eglot)
 comment: M-; for end of line or selection | C-x C-; for line | M-x comment-region | M-x uncomment-region
 
-hideshow : C-c @ C-h hide current block | C-c @ C-s show | C-c @ C-t toggle
-           C-c @ C-M-h hide all blocks | C-c @ C-M-s show all blocks in buffer
+hideshow : C-c f h / s / t : hide / show / toggle current block
+           C-c f H / S     : hide / show all
 
 ONE FILE with compile:
    C-c C-r: save, compile and run
