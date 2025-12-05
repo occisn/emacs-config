@@ -8212,6 +8212,7 @@ For instance: abc/def --> abc\\def"
          ))
 
  ;; M-x treesit-install-language-grammar RET c RET
+ ;; and c++
  ;; to compile and install
  
  (if (my-init--file-exists-p *c-tree-sitter-dll*)
@@ -8296,6 +8297,14 @@ For instance: abc/def --> abc\\def"
      :hook (eglot-managed-mode . company-mode)
      :config (my-init--message-package-loaded "company")))
 
+ ;; === hideshow
+ 
+ (add-hook 'c-ts-mode-hook 'hs-minor-mode)
+ (add-hook 'c-mode-hook 'hs-minor-mode)
+ 
+ (setq hs-hide-comments-when-hiding-all t)
+ (setq hs-isearch-open t) ; Automatically open folded code during isearch
+ 
  ;; === expand-region
 
  ;; expand-region package already loaded in lisp section
@@ -8312,7 +8321,7 @@ For instance: abc/def --> abc\\def"
      :config
      (yas-global-mode 1)))
 
- ;; === Hydra
+ ;; === C hydra
  
  (defhydra hydra-c (:exit t :hint nil)
    "
@@ -8331,6 +8340,9 @@ _i_ndent (eglot-format-buffer)
 _c_ : occur | M-x imenu | C-' (list in sidebar)
 C-M-i   completion (eglot)
 comment: M-; for end of line or selection | C-x C-; for line | M-x comment-region | M-x uncomment-region
+
+hideshow : C-c @ C-h hide current block | C-c @ C-s show | C-c @ C-t toggle
+           C-c @ C-M-h hide all blocks | C-c @ C-M-s show all blocks in buffer
 
 ONE FILE with compile:
    C-c C-r: save, compile and run
