@@ -671,9 +671,9 @@ d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
 
        *imagemagick-convert-program* "c:/.../ImageMagick-7.0.11-4-portable-Q16-x64/convert.exe"
 
-       *python-executable-in-libre-office* "c:/.../LibreOfficePortable/App/libreoffice/program/python.exe"
-       *python-in-libre-office-path-1* "c:/.../LibreOfficePortable/App/libreoffice/program"
-       *python-in-libre-office-path-2* "c:/.../LibreOfficePortable/App/libreoffice/program/python-core-3.7.7/bin"
+       *python-executable--in-libreoffice-for-unoconv* "c:/.../LibreOfficePortable/App/libreoffice/program/python.exe"
+       *python-path-1--in-libreoffice-for-unoconv* "c:/.../LibreOfficePortable/App/libreoffice/program"
+       *python-path-2--in-libreoffice-for-unoconv* "c:/.../LibreOfficePortable/App/libreoffice/program/python-core-3.7.7/bin"
 
        *gs-program* "c:/.../Ghostscript/bin/gswin64c.exe"
        *gs-bin-directory* "C:/.../Ghostscript/bin"
@@ -4678,21 +4678,22 @@ Attach file to mail: C-c RET C-a (gnus-dired-attach) {end}"
  ;; The Store opens automatically when you type python in the command line.
  ;; Solution: go to “App execution aliases” (French: "Alias d'exécution d'application") and disable Python.
 
- 
- (unless (my-init--file-exists-p *python-executable-in-libre-office*)
-   (my-init--warning "!! *python-executable-in-libre-office* is nil or does not exist: %s" *python-executable-in-libre-office*))
+ ;; For unoconv, we shall use the Python provided by LibreOffice
 
- (if (my-init--directory-exists-p *python-in-libre-office-path-1*)
-     (progn
-       (my-init--add-to-path "Python in Libre office (1)" *python-in-libre-office-path-1*)
-       (my-init--add-to-exec-path "Python in Libre office (1)" *python-in-libre-office-path-1*))
-   (my-init--warning "!! *python-in-libre-office-path-1* is nil or does not exist: %s" *python-in-libre-office-path-1*))
+ (unless (my-init--file-exists-p *python-executable--in-libreoffice-for-unoconv*)
+   (my-init--warning "!! *python-executable--in-libreoffice-for-unoconv* is nil or does not exist: %s" *python-executable--in-libreoffice-for-unoconv*))
 
- (if (my-init--directory-exists-p *python-in-libre-office-path-2*)
+ (if (my-init--directory-exists-p *python-path-1--in-libreoffice-for-unoconv*)
      (progn
-       (my-init--add-to-path "Python in Libre Office (2)" *python-in-libre-office-path-2*)
-       (my-init--add-to-exec-path "Python in Libre office (2)" *python-in-libre-office-path-2*))
-   (my-init--warning "!! *python-in-libre-office-path-2* is nil or does not exist: %s" *python-in-libre-office-path-2*))
+       (my-init--add-to-path "Python path (1) [in Libre Office, for unoconv]" *python-path-1--in-libreoffice-for-unoconv*)
+       (my-init--add-to-exec-path "Python path (1) [in Libre Office, for unoconv]" *python-path-1--in-libreoffice-for-unoconv*))
+   (my-init--warning "!! *python-path-1--in-libreoffice-for-unoconv* is nil or does not exist: %s" *python-path-1--in-libreoffice-for-unoconv*))
+
+ (if (my-init--directory-exists-p *python-path-2--in-libreoffice-for-unoconv*)
+     (progn
+       (my-init--add-to-path "Python path (2) [in Libre Office, for unoconv]" *python-path-2--in-libreoffice-for-unoconv*)
+       (my-init--add-to-exec-path "Python path (2) [in Libre Office, for unoconv]" *python-path-2--in-libreoffice-for-unoconv*))
+   (my-init--warning "!! *python-path-2--in-libreoffice-for-unoconv* is nil or does not exist: %s" *python-path-2--in-libreoffice-for-unoconv*))
  
  ) ; end of init section
 
@@ -4722,7 +4723,8 @@ Attach file to mail: C-c RET C-a (gnus-dired-attach) {end}"
      (my-init--add-to-exec-path "dvipdf" (my-init--replace-linux-slash-with-two-windows-slashes *gs-lib-directory*))
    (my-init--warning "!! *gs-lib-directory* is nil or does not exist: %s" *gs-lib-directory*))
  ;; To check: (executable-find doc-view-dvipdf-program)
-
+ ;; do not seem to work on pro1 computer (2025-12-07)
+ 
  ;; Python:
  ;; It is necessary for unoconv
  ;; See "PYTHON IN PATH" section above
@@ -4741,7 +4743,7 @@ Attach file to mail: C-c RET C-a (gnus-dired-attach) {end}"
    (my-init--warning "!! *libreoffice-directory* is nil or does not exist: %s" *libreoffice-directory*))
  ;;
  ;; test 1: "python unoconv -h" on command line shall give the list of possible unoconv arguments
- ;; test 2 : put a test fil next to unoconv
+ ;; test 2 : put a test file next to unoconv
  ;;     "python unoconv -f pdf test_powerpoint_pptx.pptx"
  ;;     on command line shall convert the file into pdf
 
@@ -8471,11 +8473,12 @@ M-x eglot-shutdown | M-x eglot-reconnect {end}"
    (add-to-list 'org-babel-load-languages '(python . t))
    (org-babel-do-load-languages 'org-babel-load-languages org-babel-load-languages))
 
- (if (my-init--file-exists-p *python-executable-in-libre-office*)
+ ;; \/\/ or choose 'main' Python
+ (if (my-init--file-exists-p *python-executable--in-libreoffice-for-unoconv*)
      (progn
-       (setq python-shell-interpreter *python-executable-in-libre-office*)
-       (setq org-babel-python-command (format "\"%s\"" *python-executable-in-libre-office*)))
-   (my-init--warning "!! *python-executable-in-libre-office* is nil or does not exist: %s" *python-executable-in-libre-office*))
+       (setq python-shell-interpreter *python-executable--in-libreoffice-for-unoconv*)
+       (setq org-babel-python-command (format "\"%s\"" *python-executable--in-libreoffice-for-unoconv*)))
+   (my-init--warning "!! *python-executable--in-libreoffice-for-unoconv* is nil or does not exist: %s" *python-executable--in-libreoffice-for-unoconv*))
  
  (defhydra hydra-python (:exit t :hint nil)
    "
