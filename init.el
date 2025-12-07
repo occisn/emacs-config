@@ -8096,11 +8096,30 @@ For instance: abc/def --> abc\\def"
 
  (add-hook 'c-mode-hook
            (lambda ()
-             (local-set-key (kbd "C-c C-m") #'c-save-compile-and-run-c-file)))
+             (local-set-key (kbd "C-c C-m") #'compile-and-run-makefile-project)))
  (add-hook 'c-ts-mode-hook
            (lambda ()
-             (local-set-key (kbd "C-c C-m") #'c-save-compile-and-run-c-file)))
+             (local-set-key (kbd "C-c C-m") #'compile-and-run-makefile-project)))
 
+ (defun test-makefile-project ()
+   "Test using the Makefile."
+   (interactive)
+   (let* ((makefile-dir (locate-dominating-file default-directory "Makefile"))
+          (default-directory (or makefile-dir default-directory))
+          (compile-command "make test"))
+     (if makefile-dir
+         (progn
+           (save-some-buffers t)
+           (compile compile-command))
+       (message "No Makefile found in current or parent directories!"))))
+
+ (add-hook 'c-mode-hook
+           (lambda ()
+             (local-set-key (kbd "C-c C-t") #'test-makefile-project)))
+ (add-hook 'c-ts-mode-hook
+           (lambda ()
+             (local-set-key (kbd "C-c C-t") #'test-makefile-project)))
+ 
  ;; === Indentation
 
  ;; better: (eglot-format-buffer)
@@ -8155,7 +8174,7 @@ For instance: abc/def --> abc\\def"
    (define-skeleton c-include-skeleton
      "Insert includes"
      nil
-     "#include <stdlib.h>\n#include <stdio.h>\n#include <string.h>\n#include <stdbool.h>\n\n")
+     "#include <stdlib.h>\n#include <stdio.h>\n#include <string.h>\n\n")
 
    
    (define-skeleton c-if-skeleton
@@ -8201,6 +8220,9 @@ For instance: abc/def --> abc\\def"
  (if (my-init--directory-exists-p *clangd-path*)
      (my-init--add-to-path-and-exec-path "clangd" *clangd-path*)
    (my-init--warning "!! *clangd-path* is nil or does not exist: %s" *clangd-path*))
+
+ ;; Treat all .h files as C by default
+ (add-to-list 'auto-mode-alist '("\\.h\\'" . c-mode))
 
  ;; === treesitter installation
 
@@ -8289,7 +8311,9 @@ For instance: abc/def --> abc\\def"
      (when nil
        (when (featurep 'yasnippet)
          (setq eglot-snippet-insertion 'yasnippet)))
-     (my-init--message-package-loaded "eglot"))
+     (my-init--message-package-loaded "eglot")
+
+     (define-key eglot-mode-map (kbd "C-c a") #'eglot-code-actions))
 
    ;; normally already loaded:
    (use-package company
@@ -8316,7 +8340,7 @@ For instance: abc/def --> abc\\def"
 
  ;; === alternative: ts-fold (not available with use-package)
 
- ;; oid
+ ;; void
  
  ;; === expand-region
 
@@ -8353,19 +8377,21 @@ _i_ndent (eglot-format-buffer)
 _c_ : occur | M-x imenu | C-' (list in sidebar)
 C-M-i   completion (eglot)
 comment: M-; for end of line or selection | C-x C-; for line | M-x comment-region | M-x uncomment-region
+C-c a to implement eglot proposed action / correction (eglot-code-actions)
 
 hideshow : C-c f h / s / t : hide / show / toggle current block
            C-c f H / S     : hide / show all
 
 ONE FILE with compile:
-   C-c C-r: save, compile and run
+   C-c C-r: save, compile and run (gcc ...)
 
 ONE FILE with shell:
    _s_ : show eshell
-   _x_ : compile & execute in shell
+   _x_ : compile & execute in shell (gcc ...)
 
 PROJECT with compile:
-   C-c C-m, save compile and run
+   C-c C-m, save compile and run (M-x compile > make && make run)
+   C-c C-t, save and test (M-x compile > make test)
 
 PROJECT with projectile:
    compile : C-c p c c (make)
@@ -8376,8 +8402,16 @@ documentation : bottom of screen (automatic) and more with _d_ (M-x eldoc-doc-bu
 M-x eglot-shutdown | M-x eglot-reconnect {end}"
    ("c" #'my-c-occur)
    ("d" #'eldoc-doc-buffer)
-   ("i" #'eglot-format-buffer) 
-   
+   ("i" (lambda ()
+          (interactive)
+          (save-excursion
+            (save-restriction
+              (let ((window-start (window-start))
+                    (point (point)))
+                (eglot-format-buffer)   ; <-- the actual function
+                (goto-char point)
+                (set-window-start nil window-start t))))))
+   ;; all the above to avoid a jump in viewport, but does not work
    ("r" #'eglot-rename)
    ("s" (lambda ()
           "Delete other windows, split right, open eshell on right, return to left."
@@ -8388,7 +8422,8 @@ M-x eglot-shutdown | M-x eglot-reconnect {end}"
           (eshell)
           (other-window -1)))
    ("x" #'my/compile-and-execute-current-c-buffer-in-eshell)
-   )) ; end of init section
+   ) ; end of hydra
+ ) ; end of init section
 
 
 
