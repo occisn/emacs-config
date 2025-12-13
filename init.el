@@ -5812,10 +5812,10 @@ d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
          (slime-with-popup-buffer (bufname :package package
                                            :connection t
                                            :select slime-description-autofocus)
-                                  (when (string= bufname "*slime-description*")
-                                    (with-current-buffer bufname (slime-company-doc-mode)))
-                                  (princ string)
-                                  (goto-char (point-min))))))
+           (when (string= bufname "*slime-description*")
+             (with-current-buffer bufname (slime-company-doc-mode)))
+           (princ string)
+           (goto-char (point-min))))))
    (my-init--message-package-loaded "slime-company"))
 
  ;; and activate slime-company in slime below
@@ -6042,17 +6042,17 @@ Modified from official 'slime-call-defun'"
          (if (symbolp toplevel)
              (error "Not in a function definition")
            (slime-dcase toplevel
-                        (((:defun :defgeneric :defmacro :define-compiler-macro) symbol)
-                         (insert-call symbol))
-                        ((:defmethod symbol &rest args)
-                         ;; (declare (ignore args))
-                         (insert-call symbol))
-                        (((:defparameter :defvar :defconstant) symbol)
-                         (insert-call symbol :function nil))
-                        (((:defclass) symbol)
-                         (insert-call symbol :defclass t))
-                        (t
-                         (error "Not in a function definition")))))))
+             (((:defun :defgeneric :defmacro :define-compiler-macro) symbol)
+              (insert-call symbol))
+             ((:defmethod symbol &rest args)
+              ;; (declare (ignore args))
+              (insert-call symbol))
+             (((:defparameter :defvar :defconstant) symbol)
+              (insert-call symbol :function nil))
+             (((:defclass) symbol)
+              (insert-call symbol :defclass t))
+             (t
+              (error "Not in a function definition")))))))
 
    (define-key slime-mode-map (kbd "C-c C-x")  #'my/slime-call-defun--with-time-monitoring)
 
@@ -6589,8 +6589,8 @@ Return NIL if no system found.
      (if (null asdf-system-name)
          (message "No ASDF system found.")
        (slime-eval-async `(asdf:load-system ,asdf-system-name :force t)
-                         (lambda (_result)
-                           (message "System %s has been force-reloaded" asdf-system-name))))))
+         (lambda (_result)
+           (message "System %s has been force-reloaded" asdf-system-name))))))
 
  (defun my/asdf-force-test-system-corresponding-to-current-buffer ()
    "Force test current ASDF system.
