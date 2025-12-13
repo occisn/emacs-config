@@ -8133,8 +8133,11 @@ For instance: abc/def --> abc\\def"
    (save-excursion
      (indent-region (point-min) (point-max) nil)))
 
- (setq c-default-style "gnu"  ; "linux, "gnu", "k&r", "bsd", "stroustrup"
-       c-basic-offset 4)        ; tab width
+ (add-hook 'c-mode-hook
+           (lambda ()
+             (setq c-default-style "gnu" ; "linux, "gnu", "k&r", "bsd", "stroustrup"
+                   c-basic-offset 4) ; tab width
+             ))       
  
  ;; already stated elsewhere in this file:
  ;; (setq-default indent-tabs-mode nil)
@@ -8142,11 +8145,6 @@ For instance: abc/def --> abc\\def"
  ;; normally default:
  ;; (global-font-lock-mode t)
 
- (add-hook 'c-mode-hook
-           (lambda ()
-             ;; Automatically switch to the correct style when opening a C file
-             (c-set-style "gnu")))
- 
  ;; === Abbrev for C
 
  (defun my-init--c-abbrev ()
@@ -8224,7 +8222,7 @@ For instance: abc/def --> abc\\def"
  ;;     (i) .clangd
  ;;    (ii) compile_commands.json
  ;; The second file is generated from Makefile by this cmd line
- ;;    C:\portable-programs\Python\Python314\Scripts\compiledb make
+ ;;    C:\portable-programs\Python\Python314\Scripts\compiledb --overwrite make
 
  ;; It requires compiledb to be available.
  ;; Python shall be available on the system
@@ -8411,8 +8409,8 @@ PROJECT with compile:
    C-c C-t, save and test (M-x compile > make test)
 
 PROJECT with projectile:
-   compile : C-c p c c (make)
-   execute : C-c p u   (make run)
+   compile : C-c p c c > make, make run, make test
+   execute : C-c p u   > make run
 
 documentation : bottom of screen (automatic) and more with _d_ (M-x eldoc-doc-buffer) or C-h .
 
