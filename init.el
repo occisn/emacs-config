@@ -6601,8 +6601,8 @@ Return NIL if no system found.
      (if (null asdf-system-name)
          (message "No ASDF system found.")
        (slime-eval-async `(asdf:test-system ,asdf-system-name :force t)
-                         (lambda (_result)
-                           (message "System %s has been force-tested" asdf-system-name))))))
+         (lambda (_result)
+           (message "System %s has been force-tested" asdf-system-name))))))
 
  ;; ===
  ;; === abbrev
@@ -8028,6 +8028,8 @@ For instance: abc/def --> abc\\def"
  (if (my-init--directory-exists-p *gcc-path*)
      (my-init--add-to-path-and-exec-path "gcc" *gcc-path*)
    (my-init--warning "!! *gcc-path* is nil or does not exist: %s" *gcc-path*))
+
+ ;; Note: I have noticed that it is better to avoid space in the path leading to gcc
  
  ;; === Display line number
  
@@ -8172,7 +8174,6 @@ For instance: abc/def --> abc\\def"
      > \n
      "}" >)
 
-   
    (define-skeleton c-include-skeleton
      "Insert includes"
      nil
@@ -8218,6 +8219,20 @@ For instance: abc/def --> abc\\def"
    (other-window 1))
 
  ;; === clangd
+
+ ;; clangd will use both files for projects
+ ;;     (i) .clangd
+ ;;    (ii) compile_commands.json
+ ;; The second file is generated from Makefile by this cmd line
+ ;;    C:\portable-programs\Python\Python314\Scripts\compiledb make
+
+ ;; It requires compiledb to be available.
+ ;; Python shall be available on the system
+ ;; To install compiledb:
+ ;;   (1) download from https://github.com/nickdiego/compiledb
+ ;;   (2) [cmd] cd C:\portable-programs\Python\Python314\Scripts
+ ;;   (3) [cmd] pip install compiledb
+ ;;   (4) test: [cmd] compiledb -h
 
  (if (my-init--directory-exists-p *clangd-path*)
      (my-init--add-to-path-and-exec-path "clangd" *clangd-path*)
@@ -8379,7 +8394,7 @@ _i_ndent (eglot-format-buffer)
 _c_ : occur | M-x imenu | C-' (list in sidebar)
 C-M-i   completion (eglot)
 comment: M-; for end of line or selection | C-x C-; for line | M-x comment-region | M-x uncomment-region
-C-c a to implement eglot proposed action / correction (eglot-code-actions)
+C-c a to implement eglot proposed action / correction (eglot-code-actions) | C-h . to access to overlaid eglot/clangd warning
 
 hideshow : C-c f h / s / t : hide / show / toggle current block
            C-c f H / S     : hide / show all
