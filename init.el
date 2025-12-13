@@ -751,6 +751,8 @@ d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
        *chrome-executable "C:/.../chrome.exe"
 
        *gcc-path* "C:/.../bin"
+       *gpp-path* "C:/.../bin"
+       *gpp-exe* "C:/.../bin/g++.exe"
        *clangd-path* "c:/.../clangd_21.1.0/bin/"
        *c-tree-sitter-dll* "c:/.../.emacs.d/tree-sitter/libtree-sitter-c.dll"
        *cpp-tree-sitter-dll* "c:/.../.emacs.d/tree-sitter/libtree-sitter-cpp.dll"
@@ -8036,6 +8038,15 @@ For instance: abc/def --> abc\\def"
  (dolist (mode '(c-mode-hook c-ts-mode-hook))
    (add-hook mode (lambda () (display-line-numbers-mode 1))))
 
+ ;; === Disable auto-fill in C++ mode (to avoid break lines @ 70)
+
+ (when nil
+   (add-hook 'c++-mode-hook
+             (lambda ()
+               (auto-fill-mode -1)
+               (setq fill-column 120))))
+ ;; actually handled by eglot/clangd
+
  ;; === Babel
 
  (with-eval-after-load 'org
@@ -8242,11 +8253,13 @@ For instance: abc/def --> abc\\def"
  ;; === treesitter installation
 
  ;; (treesit-library-abi-version) --> 14 ; expects version 14
+
+ (unless (boundp 'treesit-language-source-alist)
+   (setq treesit-language-source-alist '()))
  
- (setq treesit-language-source-alist
-       '((c "https://github.com/tree-sitter/tree-sitter-c" "v0.20.6") ; "v0.20.6" corresponds to v14 ; if ommitted, v15 is installed
-         (cpp "https://github.com/tree-sitter/tree-sitter-cpp")
-         ))
+ (add-to-list 'treesit-language-source-alist
+              '(c "https://github.com/tree-sitter/tree-sitter-c" "v0.20.6"))
+ ;; "v0.20.6" corresponds to v14 ; if ommitted, v15 is installed
 
  ;; M-x treesit-install-language-grammar RET c RET
  ;; and c++
@@ -8256,8 +8269,6 @@ For instance: abc/def --> abc\\def"
      ;; Remap c-mode to c-ts-mode (Tree-sitter version):
      (add-to-list 'major-mode-remap-alist '(c-mode . c-ts-mode))
    (my-init--warning "!! c tree-sitter dll not found: %s" *c-tree-sitter-dll*))
- (unless (my-init--file-exists-p *cpp-tree-sitter-dll*)
-   (my-init--warning "!! cpp tree-sitter dll not found: %s" *cpp-tree-sitter-dll*))
 
  ;; === lsp (alternative to eglot)
 
@@ -8314,7 +8325,7 @@ For instance: abc/def --> abc\\def"
      :defer t           ; Load Eglot only when one of the hooks is run
      :hook
      ;; This is the main line: start Eglot for C/C++ modes
-     ((c-mode c-ts-mode) . eglot-ensure)
+     ((c-mode c-ts-mode c++-mode c++-ts-mode) . eglot-ensure)
 
      :config
      ;; Optional: Add clangd to the server list explicitly if Emacs doesn't find it.
@@ -8441,6 +8452,281 @@ M-x eglot-shutdown | M-x eglot-reconnect {end}"
  ) ; end of init section
 
 
+;;; ================
+;;; === C++, CPP ===
+;;; ================
+
+(my-init--with-duration-measured-section 
+ t
+ "C++ programming language"
+
+ ;; === gcc in path
+ 
+ (if (my-init--directory-exists-p *gpp-path*)
+     (my-init--add-to-path-and-exec-path "gpp" *gpp-path*)
+   (my-init--warning "!! *gpp-path* is nil or does not exist: %s" *gpp-path*))
+
+ ;; === Display line number
+ 
+ (dolist (mode '(c++-mode-hook c++-ts-mode-hook))
+   (add-hook mode (lambda () (display-line-numbers-mode 1))))
+
+ ;; === Disable auto-fill in C++ mode (to avoid break lines @ 70)
+
+ (when nil
+   (add-hook 'c++-mode-hook
+             (lambda ()
+               (auto-fill-mode -1)
+               (setq fill-column 120))))
+ ;; actually handled by eglot/clangd
+ 
+ ;; === Babel
+
+ ;; the following is wrong : (C . t) is enough for C and C++
+ (when nil
+   (with-eval-after-load 'org
+     (add-to-list 'org-babel-load-languages '(C++ . t))
+     (org-babel-do-load-languages 'org-babel-load-languages org-babel-load-languages)))
+
+ ;; === stand-alone & compile
+
+ (defun cpp-save-compile-and-run-c-file ()
+   "Compile and execute the current C++ file using g++ on Windows."
+   (interactive)
+   (let* ((flags "-Wall -Wextra -std=c++17")
+          (source-file (buffer-file-name))
+          (file-name (file-name-nondirectory source-file))
+          (exe-file (concat (file-name-sans-extension file-name) ".exe"))
+          (compile-command (format "g++ %s -o %s %s && %s" 
+                                   flags
+                                   exe-file 
+                                   file-name 
+                                   exe-file)))
+     (if source-file
+         (progn
+           (save-buffer)
+           (compile compile-command))
+       (message "Buffer is not visiting a file!"))))
+
+ (add-hook 'c++-mode-hook
+           (lambda ()
+             (local-set-key (kbd "C-c C-r") #'cpp-save-compile-and-run-c-file)))
+ (add-hook 'c++-ts-mode-hook
+           (lambda ()
+             (local-set-key (kbd "C-c C-r") #'cpp-save-compile-and-run-c-file)))
+
+ ;; === stand-alone & shell
+
+ (defun my/compile-and-execute-current-cpp-buffer-in-eshell ()
+   "Save and compile current C++ file in eshell"
+   (interactive)
+   (save-buffer)
+   (my--eshell-cd-to-directory-of-current-buffer-if-not-the-case)
+   (let* (
+          ;; (eshell-buffer (get-buffer "*eshell*"))
+          (flags "-Wall -Wextra -std=c++17")
+          (file-name (file-name-nondirectory buffer-file-name))
+          (file-name-without-extension (file-name-sans-extension file-name))
+          (cmd (concat "g++ " file-name " " flags " -o " file-name-without-extension " && time ./" file-name-without-extension ".exe")))
+     (my--eshell-send-cmd cmd)))
+
+ ;; === project & compile
+
+ ;; function 'compile-and-run-makefile-project' defined above
+
+ (add-hook 'c++-mode-hook
+           (lambda ()
+             (local-set-key (kbd "C-c C-m") #'compile-and-run-makefile-project)))
+ (add-hook 'c++-ts-mode-hook
+           (lambda ()
+             (local-set-key (kbd "C-c C-m") #'compile-and-run-makefile-project)))
+
+ ;; function 'test-makefile-project' defined above
+ 
+ (add-hook 'c++-mode-hook
+           (lambda ()
+             (local-set-key (kbd "C-c C-t") #'test-makefile-project)))
+ (add-hook 'c++-ts-mode-hook
+           (lambda ()
+             (local-set-key (kbd "C-c C-t") #'test-makefile-project)))
+ 
+ ;; === Indentation
+
+ (add-hook 'c++-mode-hook
+           (lambda ()
+             (c-set-style "stroustrup")
+             (setq c-basic-offset 4)))
+ 
+ ;; already stated elsewhere in this file:
+ ;; (setq-default indent-tabs-mode nil)
+
+ ;; normally default:
+ ;; (global-font-lock-mode t)
+
+ ;; === Abbrev for C++
+
+ ;; void
+ 
+ ;; === Occur
+
+ (defun my-c-occur ()
+   (interactive)
+   (occur "^[A-Za-z]\\|// ===")
+   (other-window 1))
+
+ ;; === clangd
+
+ (if (my-init--directory-exists-p *clangd-path*)
+     (my-init--add-to-path-and-exec-path "clangd" *clangd-path*)
+   (my-init--warning "!! *clangd-path* is nil or does not exist: %s" *clangd-path*))
+
+ ;; === treesitter installation
+
+ ;; (treesit-library-abi-version) --> 14 ; expects version 14
+
+ (unless (boundp 'treesit-language-source-alist)
+   (setq treesit-language-source-alist '()))
+ 
+ (add-to-list 'treesit-language-source-alist
+              '(cpp "https://github.com/tree-sitter/tree-sitter-cpp"))
+
+ ;; M-x treesit-install-language-grammar RET c RET
+ ;; and c++
+ ;; to compile and install
+ 
+ (if (my-init--file-exists-p *cpp-tree-sitter-dll*)
+     ;; Remap c++-mode to c++-ts-mode (Tree-sitter version):
+     (add-to-list 'major-mode-remap-alist '(c++-mode . c++-ts-mode))
+   (my-init--warning "!! cpp tree-sitter dll not found: %s" *cpp-tree-sitter-dll*))
+ 
+ ;; === lsp (alternative to eglot)
+
+ ;; void
+ 
+ ;; === Eglot (alternative to lsp)
+
+ (if (my-init--file-exists-p *gpp-exe*)
+     (with-eval-after-load 'eglot
+       (add-to-list
+        'eglot-server-programs
+        `((c++-mode c-mode)
+          "clangd"
+          ,(concat "--query-driver=" *gpp-exe*))))
+   (my-init--warning "!! g++.exe not found: %s" *gpp-exe*))
+
+ (add-hook 'c++-mode-hook 'eglot-ensure)
+ (add-hook 'c++-ts-mode-hook 'eglot-ensure)
+
+ ;; use-package eglot
+ ;; see C above
+ 
+ ;; use-package company
+ ;; see C above
+ 
+ ;; === hideshow
+
+ (when t
+   (add-hook 'c++-ts-mode-hook 'hs-minor-mode)
+   (add-hook 'c++-mode-hook 'hs-minor-mode)
+   
+   (setq hs-hide-comments-when-hiding-all t)
+   (setq hs-isearch-open t) ; Automatically open folded code during isearch
+
+   ;; Key bindings
+   (global-set-key (kbd "C-c f t") 'hs-toggle-hiding)
+   (global-set-key (kbd "C-c f r") 'hs-hide-level-recursive)
+   (global-set-key (kbd "C-c f s") 'hs-show-block)
+   (global-set-key (kbd "C-c f h") 'hs-hide-block)
+   (global-set-key (kbd "C-c f S") 'hs-show-all)
+   (global-set-key (kbd "C-c f H") 'hs-hide-all))
+
+ ;; === alternative: ts-fold (not available with use-package)
+
+ ;; void
+ 
+ ;; === expand-region
+
+ ;; expand-region package already loaded in lisp section
+
+ ;; === imenu list in side bar
+
+ ;; imenu-list package already loaded in lisp section
+ 
+ ;; === yasnippet... no since abbrev
+
+ (when nil
+   (use-package yasnippet
+     :ensure t
+     :config
+     (yas-global-mode 1)))
+
+ ;; === C++ hydra
+ 
+ (defhydra hydra-cpp (:exit t :hint nil)
+   "
+^C++ hydra:
+^----------
+
+move among top-level expressions + select: C-M-a, C-M-e C-M-h
+forward/backward expression: C-M-f, C-M-b
+next/previous sibling C-M-n, C-M-p
+up/down in tree C-M-u C-M-d
+select sexp: C-= (expand-region)
+M-. M-, : goto function/variable definition, and back (xref-find-definitions via eglot)
+M-? : find all references (xref-find-references via eglot)
+_r_efactor symbol at point (eglot-rename)
+_i_ndent (eglot-format-buffer)
+_c_ : occur | M-x imenu | C-' (list in sidebar)
+C-M-i   completion (eglot)
+comment: M-; for end of line or selection | C-x C-; for line | M-x comment-region | M-x uncomment-region
+C-c a to implement eglot proposed action / correction (eglot-code-actions) | C-h . to access to overlaid eglot/clangd warning
+
+hideshow : C-c f h / s / t : hide / show / toggle current block
+           C-c f H / S     : hide / show all
+
+ONE FILE with compile:
+   C-c C-r: save, compile and run (g++ ...)
+
+ONE FILE with shell:
+   _s_ : show eshell
+   _x_ : compile & execute in shell (g++ ...)
+
+PROJECT with M-x compile:
+   C-c C-m, save compile and run (M-x compile > make && make run)
+   C-c C-t, save and test (M-x compile > make test)
+
+PROJECT with projectile
+   compile : C-c p c c > make, make run, make test
+   execute : C-c p u   > make run
+
+documentation : bottom of screen (automatic) and more with _d_ (M-x eldoc-doc-buffer) or C-h .
+
+M-x eglot-shutdown | M-x eglot-reconnect {end}"
+   ("c" #'my-c-occur)
+   ("d" #'eldoc-doc-buffer)
+   ("i" (lambda ()
+          (interactive)
+          (save-excursion
+            (save-restriction
+              (let ((window-start (window-start))
+                    (point (point)))
+                (eglot-format-buffer)   ; <-- the actual function
+                (goto-char point)
+                (set-window-start nil window-start t))))))
+   ;; all the above to avoid a jump in viewport, but does not work
+   ("r" #'eglot-rename)
+   ("s" (lambda ()
+          "Delete other windows, split right, open eshell on right, return to left."
+          (interactive)
+          (delete-other-windows)
+          (split-window-right)
+          (other-window 1)
+          (eshell)
+          (other-window -1)))
+   ("x" #'my/compile-and-execute-current-cpp-buffer-in-eshell)
+   
+   ); end of hydra
+ ) ; end of init section
 
 ;;; ===
 ;;; ===========================
@@ -8931,6 +9217,8 @@ Undo : C-j to cut undo chain? {end}
    (cond
     ((eql major-mode 'c-mode) (hydra-c/body))
     ((eql major-mode 'c-ts-mode) (hydra-c/body))
+    ((eql major-mode 'c++-mode) (hydra-cpp/body))
+    ((eql major-mode 'c++-ts-mode) (hydra-cpp/body))
     ((eql major-mode 'calc-mode) (hydra-calc/body))
     ((eql major-mode 'compilation-mode) (hydra-compilation/body))
     ((eql major-mode 'csv-mode) (hydra-csv/body))
