@@ -5830,10 +5830,10 @@ d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
          (slime-with-popup-buffer (bufname :package package
                                            :connection t
                                            :select slime-description-autofocus)
-                                  (when (string= bufname "*slime-description*")
-                                    (with-current-buffer bufname (slime-company-doc-mode)))
-                                  (princ string)
-                                  (goto-char (point-min))))))
+           (when (string= bufname "*slime-description*")
+             (with-current-buffer bufname (slime-company-doc-mode)))
+           (princ string)
+           (goto-char (point-min))))))
    (my-init--message-package-loaded "slime-company"))
 
  ;; and activate slime-company in slime below
@@ -6060,17 +6060,17 @@ Modified from official 'slime-call-defun'"
          (if (symbolp toplevel)
              (error "Not in a function definition")
            (slime-dcase toplevel
-                        (((:defun :defgeneric :defmacro :define-compiler-macro) symbol)
-                         (insert-call symbol))
-                        ((:defmethod symbol &rest args)
-                         ;; (declare (ignore args))
-                         (insert-call symbol))
-                        (((:defparameter :defvar :defconstant) symbol)
-                         (insert-call symbol :function nil))
-                        (((:defclass) symbol)
-                         (insert-call symbol :defclass t))
-                        (t
-                         (error "Not in a function definition")))))))
+             (((:defun :defgeneric :defmacro :define-compiler-macro) symbol)
+              (insert-call symbol))
+             ((:defmethod symbol &rest args)
+              ;; (declare (ignore args))
+              (insert-call symbol))
+             (((:defparameter :defvar :defconstant) symbol)
+              (insert-call symbol :function nil))
+             (((:defclass) symbol)
+              (insert-call symbol :defclass t))
+             (t
+              (error "Not in a function definition")))))))
 
    (define-key slime-mode-map (kbd "C-c C-x")  #'my/slime-call-defun--with-time-monitoring)
 
@@ -6607,8 +6607,8 @@ Return NIL if no system found.
      (if (null asdf-system-name)
          (message "No ASDF system found.")
        (slime-eval-async `(asdf:load-system ,asdf-system-name :force t)
-                         (lambda (_result)
-                           (message "System %s has been force-reloaded" asdf-system-name))))))
+         (lambda (_result)
+           (message "System %s has been force-reloaded" asdf-system-name))))))
 
  (defun my/asdf-force-test-system-corresponding-to-current-buffer ()
    "Force test current ASDF system.
@@ -6619,8 +6619,8 @@ Return NIL if no system found.
      (if (null asdf-system-name)
          (message "No ASDF system found.")
        (slime-eval-async `(asdf:test-system ,asdf-system-name :force t)
-                         (lambda (_result)
-                           (message "System %s has been force-tested" asdf-system-name))))))
+         (lambda (_result)
+           (message "System %s has been force-tested" asdf-system-name))))))
 
  ;; ===
  ;; === abbrev
@@ -8077,6 +8077,60 @@ For instance: abc/def --> abc\\def"
    (add-to-list 'org-babel-load-languages '(C . t))
    (org-babel-do-load-languages 'org-babel-load-languages org-babel-load-languages))
 
+ ;; === switch/toggle among source, header and test files
+
+ (defun my/toggle-c-h ()
+   "Toggle between C/C++ source and header files in the same directory.
+   Supports: .c <-> .h and .cpp <-> .hpp"
+   (interactive)
+   (let* ((filename (buffer-file-name))
+          (extension (file-name-extension filename))
+          (base (file-name-sans-extension filename))
+          (new-file nil))
+     (cond
+      ((string= extension "c")
+       (setq new-file (concat base ".h")))
+      ((string= extension "h")
+       (setq new-file (concat base ".c")))
+      ((string= extension "cpp")
+       (setq new-file (concat base ".hpp")))
+      ((string= extension "hpp")
+       (setq new-file (concat base ".cpp")))
+      (t
+       (message "Current file is not a .c/.h or .cpp/.hpp file")))
+     (if (and new-file (file-exists-p new-file))
+         (find-file new-file)
+       (when new-file
+         (message "File %s does not exist" new-file)))))
+
+ (defun my/toggle-source-test ()
+   "Toggle between C/C++ source files in src/ and test files in tests/.
+   Test files are named test_<filename> and located in tests/ directory."
+   (interactive)
+   (let* ((filename (buffer-file-name))
+          (basename (file-name-nondirectory filename))
+          (extension (file-name-extension filename))
+          (dir (file-name-directory filename))
+          (project-root (locate-dominating-file dir "src"))
+          (new-file nil))
+     (unless project-root
+       (error "Cannot find project root (no src/ directory found)"))
+     (cond
+      ;; Current file is in src/ -> go to tests/
+      ((string-match "/src/" filename)
+       (setq new-file (concat project-root "tests/test_" basename)))
+      ;; Current file is in tests/ and starts with test_ -> go to src/
+      ((and (string-match "/tests/" filename)
+            (string-prefix-p "test_" basename))
+       (let ((source-name (substring basename 5))) ; Remove "test_" prefix
+         (setq new-file (concat project-root "src/" source-name))))
+      (t
+       (message "Current file is not in src/ or tests/ directory")))
+     (if (and new-file (file-exists-p new-file))
+         (find-file new-file)
+       (when new-file
+         (message "File %s does not exist" new-file)))))
+
  ;; === stand-alone & compile
 
  (defun c-save-compile-and-run-c-file ()
@@ -8443,7 +8497,7 @@ For instance: abc/def --> abc\\def"
    "
 ^C hydra:
 ^--------
-FILES: [...]
+FILES: _h_: switch between source and header files | _t_: switch between source and test files
 MOVEMENT :
    move among top-level expressions + select: C-M-a, C-M-e C-M-h
    forward/backward expression: C-M-f, C-M-b
@@ -8476,17 +8530,19 @@ SPECIFIC: M-x eglot-shutdown | M-x eglot-reconnect
 {end}"
    ("c" #'my-c-occur)
    ("d" #'eldoc-doc-buffer)
+   ("h" #'my/toggle-c-h)
    ("i" #'my/indent-eglot-buffer)
    ("r" #'eglot-rename)
    ("s" #'my/create-shell-window)
+   ("t" #'my/toggle-source-test)
    ("x" #'my/compile-and-execute-current-c-buffer-in-eshell)
    ) ; end of hydra
  ) ; end of init section
 
 
-;;; ================
-;;; === C++, CPP ===
-;;; ================
+;;; =====================
+;;; === C++, CPP, Cpp ===
+;;; =====================
 
 (my-init--with-duration-measured-section 
  t
@@ -8520,6 +8576,10 @@ SPECIFIC: M-x eglot-shutdown | M-x eglot-reconnect
      (add-to-list 'org-babel-load-languages '(C++ . t))
      (org-babel-do-load-languages 'org-babel-load-languages org-babel-load-languages)))
 
+ ;; === switch/toggle among source, header and test files
+
+ ;; see above (C)
+ 
  ;; === stand-alone & compile
 
  ;; function 'my/create-shell-window' defined above
@@ -8590,11 +8650,8 @@ SPECIFIC: M-x eglot-shutdown | M-x eglot-reconnect
  
  ;; === Occur
 
- (defun my-c-occur ()
-   (interactive)
-   (occur "^[A-Za-z]\\|// ===")
-   (other-window 1))
-
+ ;; Function 'my-c-occur' is defined above.
+ 
  ;; === clangd
 
  (if (my-init--directory-exists-p *clangd-path*)
@@ -8702,7 +8759,7 @@ SPECIFIC: M-x eglot-shutdown | M-x eglot-reconnect
    "
 ^C++ hydra:
 ^----------
-FILES: [...]
+FILES: _h_: switch between source and header files | _t_: switch between source and test files
 MOVEMENT:
    move among top-level expressions + select: C-M-a, C-M-e C-M-h
    forward/backward expression: C-M-f, C-M-b
@@ -8735,9 +8792,11 @@ SPECIFIC: M-x eglot-shutdown | M-x eglot-reconnect
 {end}"
    ("c" #'my-c-occur)
    ("d" #'eldoc-doc-buffer)
+   ("h" #'my/toggle-c-h)
    ("i" #'my/indent-eglot-buffer)
    ("r" #'eglot-rename)
    ("s" #'my/create-shell-window)
+   ("t" #'my/toggle-source-test)
    ("x" #'my/compile-and-execute-current-cpp-buffer-in-eshell)
    
    ) ; end of hydra
