@@ -6682,37 +6682,42 @@ _f_ilter 'float to pointer coercion' notes
    "
 ^Emacs Lisp hydra:
 ^-----------------
-Documentation : 'C-h i m elisp' or 'C-h r TAB ENT' elisp manual, then 'i' for index -- 'or M-x elisp-index-search'
-                'M-x info-apropos' search in all info documents || M-x elisp-index-search
-                C-h f {incl. under cursor}, C-h v, C-h S (symbol in doc), M-x suggest
-Indent: C-M-q on current sexp || _i_: _i_ndent-buffer (M-x my/indent-lisp-buffer)
-Navigate top-level sexp : C-UP and C-DOWN to move within top-level sexps
-                          C-M-a/e to move to beginning/end of current or preceding defun (beginning-of-defun, end-of-defun)
-Navigate sexp: M-LEFT ou -RIGHT navigate
-               C-M-f/b          navigate among sexp siblings
-               C-M-up           go to beginning of (...) or higher one
-               C-M-f            go to closing parenthesis
-               C-M-down         go to inner (...)
-Navigate code: _m_: i_m_enu || M-x occur (M-s o) || _c_ : my occur || C-' (list in sidebar)
-               [Outline: _o_utline-hide-body vs outline-show-_a_ll ; collapse/expand: _h_ide vs _s_how]
-               M-. and M-, to navigate to definition and come back (elisp-slime-nav)
-Select: C-= to expand region (expand-region) || C-M-h to put region around whole current or following defun (mark-defun)
-Abbrev: M-x unexpand-abbrev
-Complete: C-: counsel-company (mini-buffer)
+FILES: n/a
+MOVEMENT:
+   Navigate top-level sexp : C-UP and C-DOWN to move within top-level sexps
+                             C-M-a/e to move to beginning/end of current or preceding defun (beginning-of-defun, end-of-defun)
+   Navigate sexp: M-LEFT ou -RIGHT navigate
+                  C-M-f/b          navigate among sexp siblings
+                  C-M-up           go to beginning of (...) or higher one
+                  C-M-f            go to closing parenthesis
+                  C-M-down         go to inner (...)
+JUMP TO TOP-LEVEL EXP: _m_: i_m_enu || M-x occur (M-s o) || _c_ : my occur || C-' (list in sidebar)
+SELECT: C-= to expand region (expand-region) || C-M-h to put region around whole current or following defun (mark-defun)
+MANIPULATE EXP: M-(              wrap an sexp (paredit)
+                M-UP             splice (remove delimiter of current sexp) and kill previous
+                M-r              raise and delete siblings
+                M-s              splice (remove delimiter of current sexp)
+                C-q ) or C-u DEL force add/delete parenthesis
+                C-LEFT or C-}    barf out (force a closing parenthesis) ; (a b|c d e f) --> (a b) c d e f
+                C-RIGHT or C-)   slurp in next sexp (paredit) ; (a b|c) d --> (a b c d)
+                C-M-t            transpose sexps or make them circulate
+COLLAPSE: [Outline: _o_utline-hide-body vs outline-show-_a_ll ; collapse/expand: _h_ide vs _s_how]
+MACROS: Macro expander: C-c m ou C-c e || q
+INDENT: C-M-q on current sexp || _i_: _i_ndent-buffer (M-x my/indent-lisp-buffer)
+COMMENT: region M-; to comment/uncomment (paredit)
+DOCUMENTATION: 'C-h i m elisp' or 'C-h r TAB ENT' elisp manual, then 'i' for index -- 'or M-x elisp-index-search'
+               'M-x info-apropos' search in all info documents || M-x elisp-index-search
+               C-h f {incl. under cursor}, C-h v, C-h S (symbol in doc), M-x suggest
+REFERENCES: M-. and M-, to navigate to definition and come back (elisp-slime-nav)
+            [who calls, etc.]
+ABBREV: M-x unexpand-abbrev
+COMPLETE: C-: counsel-company (mini-buffer)
           C-M-i company-complete (at point) ; C-d to see doc ; M-. to jump to source ; q to come back
-Other sexp commands: M-(              wrap an sexp (paredit)
-                     M-UP             splice (remove delimiter of current sexp) and kill previous
-                     M-r              raise and delete siblings
-                     M-s              splice (remove delimiter of current sexp)
-                     C-q ) or C-u DEL force add/delete parenthesis
-                     C-LEFT or C-}    barf out (force a closing parenthesis) ; (a b|c d e f) --> (a b) c d e f
-                     C-RIGHT or C-)   slurp in next sexp (paredit) ; (a b|c) d --> (a b c d)
-                     C-M-t            transpose sexps or make them circulate
-Comment: region M-; to comment/uncomment (paredit)
-Macro expander: C-c m ou C-c e || q
-Eval: C-M-x to eval defun (M-x eval-defun) || C-x C-e to eval last sexp || C-c C-k = M-x eval-buffer
-REPL (IELM): C-c C-z (jump to REPL) | C-c C-y (send function to REPL) | C-c C-x (idem with time measurement) | C-c M-x to execute (M-x)
-Debug: (1) unexpected : c(ontinue), e(val), q(uit) (2) edebug: C-u C-M-x --> SPACE, h, f, o i, ? (3) (debug) within code
+REFACTOR: [...]
+EXECUTE: 
+   Eval: C-M-x to eval defun (M-x eval-defun) || C-x C-e to eval last sexp || C-c C-k = M-x eval-buffer
+   REPL (IELM): C-c C-z (jump to REPL) | C-c C-y (send function to REPL) | C-c C-x (idem with time measurement) | C-c M-x to execute (M-x)
+DEBUG: (1) unexpected : c(ontinue), e(val), q(uit) (2) edebug: C-u C-M-x --> SPACE, h, f, o i, ? (3) (debug) within code
 {end}"
    ("a" #'outline-show-all)
    ("c" #'my-elisp-occur)
@@ -6730,43 +6735,46 @@ Debug: (1) unexpected : c(ontinue), e(val), q(uit) (2) edebug: C-u C-M-x --> SPA
    "
 ^Common Lisp hydra:
 ^------------------
-Files: _s_witch between src and tests | go to _a_sd | go to _p_ackage
-Documentation: docstring global var: C-c C-d d, (describe var) || fields (inspect var), q || hyperspec C-c C-d h || (apropos 'ts-get') || C-h m [l to go back]
-Clear screen: C-c M-o              ||   q to hide compilation window
-References: who calls a fn : C-c < ; who is called C-c > ; who refers global var C-c C-w r 
-Slime: _e_ : slime || M-x slime || ,quit
-Indent: C-M-q on current sexp || _i_: _i_ndent-buffer (M-x my/indent-lisp-buffer)
-Navigate top-level sexp : C-UP and C-DOWN to move within top-level sexps
-                          C-M-a/e to move to beginning/end of current or preceding defun (beginning-of-defun, end-of-defun)
-Navigate sexp: M-LEFT ou -RIGHT navigate
-               C-M-f/b          navigate among sexp siblings
-               C-M-up           go to beginning of (...) or higher one
-               C-M-f            go to closing parenthesis
-               C-M-down         go to inner (...)
-Navigate code: _m_: i_m_enu || M-x occur (M-s o) ||  _c_ : my occur ; [selective display: https://stackoverflow.com/questions/1085170/] || C-' (list in sidebar)
-               M-. and M-, to navigate to definition and come back
-               _o_utline-hide-body vs outline-show-all ; collapse/expand: _h_ide vs hs-show-all | hs-toggle-hiding
-Select: C-= to expand region (expand-region) || C-M-h to put region around whole current or following defun (mark-defun)
-Abbrev: M-x unexpand-abbrev
-Complete: C-:     counsel-company (mini-buffer)
+FILES: _s_witch between src and tests | go to _a_sd | go to _p_ackage
+MOVEMENT:
+   Navigate top-level sexp : C-UP and C-DOWN to move within top-level sexps
+                             C-M-a/e to move to beginning/end of current or preceding defun (beginning-of-defun, end-of-defun)
+   Navigate sexp: M-LEFT ou -RIGHT navigate
+                  C-M-f/b          navigate among sexp siblings
+                  C-M-up           go to beginning of (...) or higher one
+                  C-M-f            go to closing parenthesis
+                  C-M-down         go to inner (...)
+JUMP TO TOP-LEVEL EXP: _m_: i_m_enu || M-x occur (M-s o) ||  _c_ : my occur || C-' (list in sidebar) 
+SELECT: C-= to expand region (expand-region) || C-M-h to put region around whole current or following defun (mark-defun)
+MANIPULATE EXP: M-(              wrap an sexp (paredit)
+                M-UP             splice (remove delimiter of current sexp) and kill previous
+                M-r              raise and delete siblings
+                M-s              splice (remove delimiter of current sexp)
+                C-q ) ou C-u DEL force add/delete parenthesis
+                C-LEFT or C-}    barf out (force closing parenthesis) ; (a b|c d e f) --> (a b) c d e f
+                C-RIGHT or C-)   slurp in next sexp (paredit) ; (a b|c) d --> (a b c d)
+                C-M-t            transpose sexps or make them circulate
+COLLAPSE: _o_utline-hide-body vs outline-show-all ; collapse/expand: _h_ide vs hs-show-all | hs-toggle-hiding
+MACROS: Macro expander: C-c RETURN || C-c C-m || C-c M-m to fully expand
+INDENT: C-M-q on current sexp || _i_: _i_ndent-buffer (M-x my/indent-lisp-buffer)
+COMMENT: region M-; to comment/uncomment (paredit)
+DOCUMENTATION: docstring global var: C-c C-d d, (describe var) || fields (inspect var), q || hyperspec C-c C-d h || (apropos 'ts-get') || C-h m [l to go back]
+REFERENCES: M-. and M-, to navigate to definition and come back
+            who calls a fn : C-c < ; who is called C-c > ; who refers global var C-c C-w r 
+ABBREV: M-x unexpand-abbrev
+COMPLETE: C-:     counsel-company (mini-buffer)
           C-M-i   company-complete, replacing complete-symbol ; C-d to see doc ; M-. to jump to source ; q to come back
           C-c M-i  fuzzy   ||   C-c TAB completion at point
-Other sexp commands: M-(              wrap an sexp (paredit)
-                     M-UP             splice (remove delimiter of current sexp) and kill previous
-                     M-r              raise and delete siblings
-                     M-s              splice (remove delimiter of current sexp)
-                     C-q ) ou C-u DEL force add/delete parenthesis
-                     C-LEFT or C-}    barf out (force closing parenthesis) ; (a b|c d e f) --> (a b) c d e f
-                     C-RIGHT or C-)   slurp in next sexp (paredit) ; (a b|c) d --> (a b c d)
-                     C-M-t            transpose sexps or make them circulate
-Comment: region M-; to comment/uncomment (paredit)
-Macro expander: C-c RETURN || C-c C-m || C-c M-m to fully expand
-REPL: C-c C-z to jump in REPL || C-c C-j to execute in REPL || M-n || M-p || *,** || /,// || (foo M-p
-Eval: C-c C-c compile defun || C-M-x eval defun || C-x C-e to eval last sexp || C-c C-k || C-c C-y to send to REPL || C-c C-x idem with (time...)
-ASDF : _f_l force load | _f_t force test
-Test in REPL: C-c SPC || _j_ump to slime compilation report || delete fasl (from dired): M-x my/delete-fasl-files
-Debug: q || v to jump into code, RETURN, M-., i, e, r
-Disassemble : C-c M-d | Inspect : C-c I 'foo ; l to go back   | Trace: C-c C-t on the symbol | Navigate within warnings/errors: M-n, M-p
+REFACTOR: [projectile]
+EXECUTE: 
+   Eval: C-c C-c compile defun || C-M-x eval defun || C-x C-e to eval last sexp || C-c C-k || C-c C-y to send to REPL || C-c C-x idem with (time...)
+   REPL: C-c C-z to jump in REPL || C-c C-j to execute in REPL || M-n || M-p || *,** || /,// || (foo M-
+   ASDF : _f_l force load | _f_t force test
+   Test in REPL: C-c SPC || _j_ump to slime compilation report || delete fasl (from dired): M-x my/delete-fasl-files
+   Clear screen: C-c M-o              ||   q to hide compilation window
+DEBUG: Debug: q || v to jump into code, RETURN, M-., i, e, r
+       Disassemble : C-c M-d | Inspect : C-c I 'foo ; l to go back   | Trace: C-c C-t on the symbol | Navigate within warnings/errors: M-n, M-p
+SPECIFIC: Slime: _e_ : slime || M-x slime || ,quit
 {end}"
    ("a" #'my/go-to-asd)
    ("c" #'my-cl-occur)
@@ -8435,42 +8443,37 @@ For instance: abc/def --> abc\\def"
    "
 ^C hydra:
 ^--------
-
-move among top-level expressions + select: C-M-a, C-M-e C-M-h
-forward/backward expression: C-M-f, C-M-b
-next/previous sibling C-M-n, C-M-p
-up/down in tree C-M-u C-M-d
-select sexp: C-= (expand-region)
-M-. M-, : goto function/variable definition, and back (xref-find-definitions via eglot)
-M-? : find all references (xref-find-references via eglot)
-_r_efactor symbol at point (eglot-rename)
-_i_ndent (eglot-format-buffer)
-_c_ : occur | M-x imenu | C-' (list in sidebar)
-C-M-i   completion (eglot)
-comment: M-; for end of line or selection | C-x C-; for line | M-x comment-region | M-x uncomment-region
-C-c a to implement eglot proposed action / correction (eglot-code-actions) | C-h . to access to overlaid eglot/clangd warning
-
-hideshow : C-c f h / s / t : hide / show / toggle current block
-           C-c f H / S     : hide / show all
-
-ONE FILE with compile:
-   C-c C-r: save, compile and run (gcc ...)
-
-ONE FILE with shell:
-   _s_ : show eshell
-   _x_ : compile & execute in shell (gcc ...)
-
-PROJECT with compile:
-   C-c C-m, save compile and run (M-x compile > make && make run)
-   C-c C-t, save and test (M-x compile > make test)
-
-PROJECT with projectile:
-   compile : C-c p c c > make, make run, make test
-   execute : C-c p u   > make run
-
-documentation : bottom of screen (automatic) and more with _d_ (M-x eldoc-doc-buffer) or C-h .
-
-M-x eglot-shutdown | M-x eglot-reconnect {end}"
+FILES: [...]
+MOVEMENT :
+   move among top-level expressions + select: C-M-a, C-M-e C-M-h
+   forward/backward expression: C-M-f, C-M-b
+   next/previous sibling C-M-n, C-M-p
+   up/down in tree C-M-u C-M-d
+JUMP TO TOP-LEVEL EXP: _c_ : occur | M-x imenu | C-' (list in sidebar)
+MANIPULATE EXP: [...]
+SELECT: select sexp: C-= (expand-region)
+COLLAPSE: hideshow : C-c f h / s / t : hide / show / toggle current block
+                     C-c f H / S     : hide / show all
+MACROS: [...]
+INDENT: _i_ndent (eglot-format-buffer)
+COMMENT: M-; for end of line or selection | C-x C-; for line | M-x comment-region | M-x uncomment-region
+DOCUMENTATION: bottom of screen (automatic) and more with _d_ (M-x eldoc-doc-buffer) or C-h .
+REFERENCES: M-. M-, : goto function/variable definition, and back (xref-find-definitions via eglot)
+            M-? : find all references (xref-find-references via eglot)
+ABBREV: [...]
+COMPLETE: C-M-i   completion (eglot)
+REFACTOR: _r_efactor symbol at point (eglot-rename) | [projectile]
+EXECUTE:
+   ONE FILE with compile: C-c C-r: save, compile and run (gcc ...)
+   ONE FILE with shell: _s_ : show eshell
+                        _x_ : compile & execute in shell (gcc ...)
+   PROJECT with compile: C-c C-m, save compile and run (M-x compile > make && make run)
+                         C-c C-t, save and test (M-x compile > make test)
+   PROJECT with projectile: compile : C-c p c c > make, make run, make test
+                             execute : C-c p u   > make run
+DEBUG: C-c a to implement eglot proposed action / correction (eglot-code-actions) | C-h . to access to overlaid eglot/clangd warning
+SPECIFIC: M-x eglot-shutdown | M-x eglot-reconnect
+{end}"
    ("c" #'my-c-occur)
    ("d" #'eldoc-doc-buffer)
    ("i" #'my/indent-eglot-buffer)
@@ -8699,42 +8702,37 @@ M-x eglot-shutdown | M-x eglot-reconnect {end}"
    "
 ^C++ hydra:
 ^----------
-
-move among top-level expressions + select: C-M-a, C-M-e C-M-h
-forward/backward expression: C-M-f, C-M-b
-next/previous sibling C-M-n, C-M-p
-up/down in tree C-M-u C-M-d
-select sexp: C-= (expand-region)
-M-. M-, : goto function/variable definition, and back (xref-find-definitions via eglot)
-M-? : find all references (xref-find-references via eglot)
-_r_efactor symbol at point (eglot-rename)
-_i_ndent (eglot-format-buffer)
-_c_ : occur | M-x imenu | C-' (list in sidebar)
-C-M-i   completion (eglot)
-comment: M-; for end of line or selection | C-x C-; for line | M-x comment-region | M-x uncomment-region
-C-c a to implement eglot proposed action / correction (eglot-code-actions) | C-h . to access to overlaid eglot/clangd warning
-
-hideshow : C-c f h / s / t : hide / show / toggle current block
-           C-c f H / S     : hide / show all
-
-ONE FILE with compile:
-   C-c C-r: save, compile and run (g++ ...)
-
-ONE FILE with shell:
-   _s_ : show eshell
-   _x_ : compile & execute in shell (g++ ...)
-
-PROJECT with M-x compile:
-   C-c C-m, save compile and run (M-x compile > make && make run)
-   C-c C-t, save and test (M-x compile > make test)
-
-PROJECT with projectile
-   compile : C-c p c c > make, make run, make test
-   execute : C-c p u   > make run
-
-documentation : bottom of screen (automatic) and more with _d_ (M-x eldoc-doc-buffer) or C-h .
-
-M-x eglot-shutdown | M-x eglot-reconnect {end}"
+FILES: [...]
+MOVEMENT:
+   move among top-level expressions + select: C-M-a, C-M-e C-M-h
+   forward/backward expression: C-M-f, C-M-b
+   next/previous sibling C-M-n, C-M-p
+   up/down in tree C-M-u C-M-d
+JUMP TO TOP-LEVEL EXP: _c_ : occur | M-x imenu | C-' (list in sidebar)
+SELECT: select sexp: C-= (expand-region)
+MANIPULATE EXP: [...]
+COLLAPSE: hideshow : C-c f h / s / t : hide / show / toggle current block
+                     C-c f H / S     : hide / show all
+MACROS: [...]
+INDENT: _i_ndent (eglot-format-buffer)
+COMMENT: M-; for end of line or selection | C-x C-; for line | M-x comment-region | M-x uncomment-region
+DOCUMENTATION: bottom of screen (automatic) and more with _d_ (M-x eldoc-doc-buffer) or C-h .
+REFERENCES: M-. M-, : goto function/variable definition, and back (xref-find-definitions via eglot)
+            M-? : find all references (xref-find-references via eglot)
+ABBREV: [...]
+COMPLETE: C-M-i   completion (eglot)
+REFACTOR: _r_efactor symbol at point (eglot-rename) | [projectile]
+EXECUTE:
+   ONE FILE with compile: C-c C-r: save, compile and run (g++ ...)
+   ONE FILE with shell: _s_ : show eshell
+                        _x_ : compile & execute in shell (g++ ...)
+   PROJECT with M-x compile: C-c C-m, save compile and run (M-x compile > make && make run)
+                             C-c C-t, save and test (M-x compile > make test)
+   PROJECT with projectile: compile : C-c p c c > make, make run, make test
+                            execute : C-c p u   > make run
+DEBUG: C-c a to implement eglot proposed action / correction (eglot-code-actions) | C-h . to access to overlaid eglot/clangd warning
+SPECIFIC: M-x eglot-shutdown | M-x eglot-reconnect
+{end}"
    ("c" #'my-c-occur)
    ("d" #'eldoc-doc-buffer)
    ("i" #'my/indent-eglot-buffer)
@@ -8742,7 +8740,7 @@ M-x eglot-shutdown | M-x eglot-reconnect {end}"
    ("s" #'my/create-shell-window)
    ("x" #'my/compile-and-execute-current-cpp-buffer-in-eshell)
    
-   ); end of hydra
+   ) ; end of hydra
  ) ; end of init section
 
 ;;; ===
