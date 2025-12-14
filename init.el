@@ -5023,7 +5023,7 @@ M-x doc-view-clear-cache   _c_lears cache
    (when nil
      (ivy-set-actions
       'counsel-projectile-switch-project
-      '(("z" (lambda (x) (message "coucou")) "coucou"))))
+      '(("z" (lambda (x) (message "hello")) "hello"))))
    ;; for C-c p p, addition of "open dired at the root of the project"
    
    (counsel-projectile-modify-action
@@ -5707,11 +5707,27 @@ d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
  (dolist (mode '(emacs-lisp-mode-hook lisp-mode-hook))
    (add-hook mode (lambda () (electric-indent-local-mode 1))))
 
- (defun my/indent-buffer ()
-   "Indent buffer."
+ (defun my/indent-lisp-buffer ()
+   "Indent Lisp buffer."
    (interactive)
-   (indent-region (point-min) (point-max))
-   (recenter-top-bottom))
+   (save-excursion
+     (let ((nb-tabs (count-matches "\t")))
+
+       ;; (1) untabify if necessary:
+       (when (> nb-tabs 0)
+         (if (= nb-tabs 1)
+             (message "1 tab identified... untabifying buffer")
+           (message "%d tabs identified... untabifying buffer" nb-tabs))
+         (goto-char (point-min))
+         (push-mark)
+         (goto-char (point-max))
+         (untabify (point) (mark))
+         (pop-mark))
+
+       ;; (2) indent:       
+       (indent-region (point-min) (point-max))
+
+       (recenter-top-bottom))))
 
  (when nil
    (use-package aggressive-indent
@@ -6669,7 +6685,7 @@ _f_ilter 'float to pointer coercion' notes
 Documentation : 'C-h i m elisp' or 'C-h r TAB ENT' elisp manual, then 'i' for index -- 'or M-x elisp-index-search'
                 'M-x info-apropos' search in all info documents || M-x elisp-index-search
                 C-h f {incl. under cursor}, C-h v, C-h S (symbol in doc), M-x suggest
-Indent: C-M-q on current sexp || _i_: _i_ndent-buffer (M-x my/indent-buffer)
+Indent: C-M-q on current sexp || _i_: _i_ndent-buffer (M-x my/indent-lisp-buffer)
 Navigate top-level sexp : C-UP and C-DOWN to move within top-level sexps
                           C-M-a/e to move to beginning/end of current or preceding defun (beginning-of-defun, end-of-defun)
 Navigate sexp: M-LEFT ou -RIGHT navigate
@@ -6701,7 +6717,7 @@ Debug: (1) unexpected : c(ontinue), e(val), q(uit) (2) edebug: C-u C-M-x --> SPA
    ("a" #'outline-show-all)
    ("c" #'my-elisp-occur)
    ("h" #'hs-hide-all)
-   ("i" #'my/indent-buffer)
+   ("i" #'my/indent-lisp-buffer)
    ("m" #'imenu)
    ("o" #'outline-hide-body)
    ("s" #'hs-show-all)
@@ -6719,7 +6735,7 @@ Documentation: docstring global var: C-c C-d d, (describe var) || fields (inspec
 Clear screen: C-c M-o              ||   q to hide compilation window
 References: who calls a fn : C-c < ; who is called C-c > ; who refers global var C-c C-w r 
 Slime: _e_ : slime || M-x slime || ,quit
-Indent: C-M-q on current sexp || _i_: _i_ndent-buffer (M-x my/indent-buffer)
+Indent: C-M-q on current sexp || _i_: _i_ndent-buffer (M-x my/indent-lisp-buffer)
 Navigate top-level sexp : C-UP and C-DOWN to move within top-level sexps
                           C-M-a/e to move to beginning/end of current or preceding defun (beginning-of-defun, end-of-defun)
 Navigate sexp: M-LEFT ou -RIGHT navigate
@@ -6763,7 +6779,7 @@ Disassemble : C-c M-d | Inspect : C-c I 'foo ; l to go back   | Trace: C-c C-t o
              ((eq key ?t) (my/asdf-force-test-system-corresponding-to-current-buffer)))))
     "submenu f")
    ("h" #'hs-hide-all)
-   ("i" #'my/indent-buffer)
+   ("i" #'my/indent-lisp-buffer)
    ("j" #'my/jump-to-slime-compilation)
    ("m" #'imenu)
    ("o" #'outline-hide-body)
@@ -8082,6 +8098,15 @@ For instance: abc/def --> abc\\def"
 
  ;; === stand-alone & shell
 
+ (defun my/create-shell-window ()
+   "Delete other windows, split right, open eshell on right, return to left."
+   (interactive)
+   (delete-other-windows)
+   (split-window-right)
+   (other-window 1)
+   (eshell)
+   (other-window -1))
+
  (defun my/compile-and-execute-current-c-buffer-in-eshell ()
    "Save and compile current C file in eshell"
    (interactive)
@@ -8135,27 +8160,6 @@ For instance: abc/def --> abc\\def"
            (lambda ()
              (local-set-key (kbd "C-c C-t") #'test-makefile-project)))
  
- ;; === Indentation
-
- ;; better: (eglot-format-buffer)
- (defun my/basic-indent-c-buffer ()
-   "Indent the entire buffer."
-   (interactive)
-   (save-excursion
-     (indent-region (point-min) (point-max) nil)))
-
- (add-hook 'c-mode-hook
-           (lambda ()
-             (setq c-default-style "gnu" ; "linux, "gnu", "k&r", "bsd", "stroustrup"
-                   c-basic-offset 4) ; tab width
-             ))       
- 
- ;; already stated elsewhere in this file:
- ;; (setq-default indent-tabs-mode nil)
-
- ;; normally default:
- ;; (global-font-lock-mode t)
-
  ;; === Abbrev for C
 
  (defun my-init--c-abbrev ()
@@ -8347,6 +8351,47 @@ For instance: abc/def --> abc\\def"
      :hook (eglot-managed-mode . company-mode)
      :config (my-init--message-package-loaded "company")))
 
+ ;; === Indentation
+ 
+ (add-hook 'c-mode-hook
+           (lambda ()
+             (setq c-default-style "gnu" ; "linux, "gnu", "k&r", "bsd", "stroustrup"
+                   c-basic-offset 4)     ; tab width
+             ))       
+ 
+ ;; already stated elsewhere in this file:
+ ;; (setq-default indent-tabs-mode nil)
+
+ ;; normally default:
+ ;; (global-font-lock-mode t)
+
+ (defun my/indent-eglot-buffer ()
+   "Indent eglot buffer (C/C++)."
+   (interactive)
+   (save-excursion
+     (let ((nb-tabs (count-matches "\t")))
+
+       ;; (1) untabify if necessary:
+       (when (> nb-tabs 0)
+         (if (= nb-tabs 1)
+             (message "1 tab identified... untabifying buffer")
+           (message "%d tabs identified... untabifying buffer" nb-tabs))
+         (goto-char (point-min))
+         (push-mark)
+         (goto-char (point-max))
+         (untabify (point) (mark))
+         (pop-mark))
+
+       ;; (2) indent:
+       (let ((window-start (window-start))
+             (point (point)))
+         (eglot-format-buffer)       ; <-- the actual function
+         (goto-char point)
+         (set-window-start nil window-start t))
+       ;; all the above to avoid a jump in viewport, but does not work
+       
+       (recenter-top-bottom))))
+
  ;; === hideshow
 
  (when t
@@ -8354,7 +8399,7 @@ For instance: abc/def --> abc\\def"
    (add-hook 'c-mode-hook 'hs-minor-mode)
    
    (setq hs-hide-comments-when-hiding-all t)
-   (setq hs-isearch-open t)  ; Automatically open folded code during isearch
+   (setq hs-isearch-open t) ; Automatically open folded code during isearch
 
    ;; Key bindings
    (global-set-key (kbd "C-c f t") 'hs-toggle-hiding)
@@ -8428,25 +8473,9 @@ documentation : bottom of screen (automatic) and more with _d_ (M-x eldoc-doc-bu
 M-x eglot-shutdown | M-x eglot-reconnect {end}"
    ("c" #'my-c-occur)
    ("d" #'eldoc-doc-buffer)
-   ("i" (lambda ()
-          (interactive)
-          (save-excursion
-            (save-restriction
-              (let ((window-start (window-start))
-                    (point (point)))
-                (eglot-format-buffer)   ; <-- the actual function
-                (goto-char point)
-                (set-window-start nil window-start t))))))
-   ;; all the above to avoid a jump in viewport, but does not work
+   ("i" #'my/indent-eglot-buffer)
    ("r" #'eglot-rename)
-   ("s" (lambda ()
-          "Delete other windows, split right, open eshell on right, return to left."
-          (interactive)
-          (delete-other-windows)
-          (split-window-right)
-          (other-window 1)
-          (eshell)
-          (other-window -1)))
+   ("s" #'my/create-shell-window)
    ("x" #'my/compile-and-execute-current-c-buffer-in-eshell)
    ) ; end of hydra
  ) ; end of init section
@@ -8489,6 +8518,8 @@ M-x eglot-shutdown | M-x eglot-reconnect {end}"
      (org-babel-do-load-languages 'org-babel-load-languages org-babel-load-languages)))
 
  ;; === stand-alone & compile
+
+ ;; function 'my/create-shell-window' defined above
 
  (defun cpp-save-compile-and-run-c-file ()
    "Compile and execute the current C++ file using g++ on Windows."
@@ -8550,19 +8581,6 @@ M-x eglot-shutdown | M-x eglot-reconnect {end}"
            (lambda ()
              (local-set-key (kbd "C-c C-t") #'test-makefile-project)))
  
- ;; === Indentation
-
- (add-hook 'c++-mode-hook
-           (lambda ()
-             (c-set-style "stroustrup")
-             (setq c-basic-offset 4)))
- 
- ;; already stated elsewhere in this file:
- ;; (setq-default indent-tabs-mode nil)
-
- ;; normally default:
- ;; (global-font-lock-mode t)
-
  ;; === Abbrev for C++
 
  ;; void
@@ -8623,6 +8641,21 @@ M-x eglot-shutdown | M-x eglot-reconnect {end}"
  ;; use-package company
  ;; see C above
  
+ ;; === Indentation
+ 
+ (add-hook 'c++-mode-hook
+           (lambda ()
+             (c-set-style "stroustrup")
+             (setq c-basic-offset 4)))
+
+ ;; already stated elsewhere in this file:
+ ;; (setq-default indent-tabs-mode nil)
+
+ ;; normally default:
+ ;; (global-font-lock-mode t)
+
+ ;; function my/indent-eglot-buffer defined above
+
  ;; === hideshow
 
  (when t
@@ -8704,25 +8737,9 @@ documentation : bottom of screen (automatic) and more with _d_ (M-x eldoc-doc-bu
 M-x eglot-shutdown | M-x eglot-reconnect {end}"
    ("c" #'my-c-occur)
    ("d" #'eldoc-doc-buffer)
-   ("i" (lambda ()
-          (interactive)
-          (save-excursion
-            (save-restriction
-              (let ((window-start (window-start))
-                    (point (point)))
-                (eglot-format-buffer)   ; <-- the actual function
-                (goto-char point)
-                (set-window-start nil window-start t))))))
-   ;; all the above to avoid a jump in viewport, but does not work
+   ("i" #'my/indent-eglot-buffer)
    ("r" #'eglot-rename)
-   ("s" (lambda ()
-          "Delete other windows, split right, open eshell on right, return to left."
-          (interactive)
-          (delete-other-windows)
-          (split-window-right)
-          (other-window 1)
-          (eshell)
-          (other-window -1)))
+   ("s" #'my/create-shell-window)
    ("x" #'my/compile-and-execute-current-cpp-buffer-in-eshell)
    
    ); end of hydra
