@@ -5830,10 +5830,10 @@ d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
          (slime-with-popup-buffer (bufname :package package
                                            :connection t
                                            :select slime-description-autofocus)
-           (when (string= bufname "*slime-description*")
-             (with-current-buffer bufname (slime-company-doc-mode)))
-           (princ string)
-           (goto-char (point-min))))))
+                                  (when (string= bufname "*slime-description*")
+                                    (with-current-buffer bufname (slime-company-doc-mode)))
+                                  (princ string)
+                                  (goto-char (point-min))))))
    (my-init--message-package-loaded "slime-company"))
 
  ;; and activate slime-company in slime below
@@ -6060,17 +6060,17 @@ Modified from official 'slime-call-defun'"
          (if (symbolp toplevel)
              (error "Not in a function definition")
            (slime-dcase toplevel
-             (((:defun :defgeneric :defmacro :define-compiler-macro) symbol)
-              (insert-call symbol))
-             ((:defmethod symbol &rest args)
-              ;; (declare (ignore args))
-              (insert-call symbol))
-             (((:defparameter :defvar :defconstant) symbol)
-              (insert-call symbol :function nil))
-             (((:defclass) symbol)
-              (insert-call symbol :defclass t))
-             (t
-              (error "Not in a function definition")))))))
+                        (((:defun :defgeneric :defmacro :define-compiler-macro) symbol)
+                         (insert-call symbol))
+                        ((:defmethod symbol &rest args)
+                         ;; (declare (ignore args))
+                         (insert-call symbol))
+                        (((:defparameter :defvar :defconstant) symbol)
+                         (insert-call symbol :function nil))
+                        (((:defclass) symbol)
+                         (insert-call symbol :defclass t))
+                        (t
+                         (error "Not in a function definition")))))))
 
    (define-key slime-mode-map (kbd "C-c C-x")  #'my/slime-call-defun--with-time-monitoring)
 
@@ -6607,8 +6607,8 @@ Return NIL if no system found.
      (if (null asdf-system-name)
          (message "No ASDF system found.")
        (slime-eval-async `(asdf:load-system ,asdf-system-name :force t)
-         (lambda (_result)
-           (message "System %s has been force-reloaded" asdf-system-name))))))
+                         (lambda (_result)
+                           (message "System %s has been force-reloaded" asdf-system-name))))))
 
  (defun my/asdf-force-test-system-corresponding-to-current-buffer ()
    "Force test current ASDF system.
@@ -6619,8 +6619,8 @@ Return NIL if no system found.
      (if (null asdf-system-name)
          (message "No ASDF system found.")
        (slime-eval-async `(asdf:test-system ,asdf-system-name :force t)
-         (lambda (_result)
-           (message "System %s has been force-tested" asdf-system-name))))))
+                         (lambda (_result)
+                           (message "System %s has been force-tested" asdf-system-name))))))
 
  ;; ===
  ;; === abbrev
@@ -8081,7 +8081,8 @@ For instance: abc/def --> abc\\def"
 
  (defun my/toggle-c-h ()
    "Toggle between C/C++ source and header files in the same directory.
-   Supports: .c <-> .h and .cpp <-> .hpp"
+Supports: .c <-> .h and .cpp <-> .hpp
+Creates the file if it doesn't exist."
    (interactive)
    (let* ((filename (buffer-file-name))
           (extension (file-name-extension filename))
@@ -8098,14 +8099,16 @@ For instance: abc/def --> abc\\def"
        (setq new-file (concat base ".cpp")))
       (t
        (message "Current file is not a .c/.h or .cpp/.hpp file")))
-     (if (and new-file (file-exists-p new-file))
+     (when new-file
+       (if (file-exists-p new-file)
+           (find-file new-file)
          (find-file new-file)
-       (when new-file
-         (message "File %s does not exist" new-file)))))
+         (message "Created new file: %s" new-file)))))
 
  (defun my/toggle-source-test ()
    "Toggle between C/C++ source files in src/ and test files in tests/.
-   Test files are named test_<filename> and located in tests/ directory."
+  Test files are named test_<filename> and located in tests/ directory.
+  Creates the file if it doesn't exist, but errors if the directory doesn't exist."
    (interactive)
    (let* ((filename (buffer-file-name))
           (basename (file-name-nondirectory filename))
@@ -8126,10 +8129,15 @@ For instance: abc/def --> abc\\def"
          (setq new-file (concat project-root "src/" source-name))))
       (t
        (message "Current file is not in src/ or tests/ directory")))
-     (if (and new-file (file-exists-p new-file))
-         (find-file new-file)
-       (when new-file
-         (message "File %s does not exist" new-file)))))
+     (when new-file
+       ;; Check if directory exists
+       (let ((new-dir (file-name-directory new-file)))
+         (unless (file-exists-p new-dir)
+           (message "Directory does not exist: %s" new-dir)))
+       ;; Open the file (creates it if doesn't exist)
+       (find-file new-file)
+       (unless (file-exists-p new-file)
+         (message "Created new file: %s" new-file)))))
 
  ;; === stand-alone & compile
 
@@ -8587,7 +8595,7 @@ SPECIFIC: M-x eglot-shutdown | M-x eglot-reconnect
  (defun cpp-save-compile-and-run-c-file ()
    "Compile and execute the current C++ file using g++ on Windows."
    (interactive)
-   (let* ((flags "-Wall -Wextra -std=c++17")
+   (let* ((flags "-Wall -Wextra -std=c++17 -O3")
           (source-file (buffer-file-name))
           (file-name (file-name-nondirectory source-file))
           (exe-file (concat (file-name-sans-extension file-name) ".exe"))
@@ -8618,7 +8626,7 @@ SPECIFIC: M-x eglot-shutdown | M-x eglot-reconnect
    (my--eshell-cd-to-directory-of-current-buffer-if-not-the-case)
    (let* (
           ;; (eshell-buffer (get-buffer "*eshell*"))
-          (flags "-Wall -Wextra -std=c++17")
+          (flags "-Wall -Wextra -std=c++17 -O3")
           (file-name (file-name-nondirectory buffer-file-name))
           (file-name-without-extension (file-name-sans-extension file-name))
           (cmd (concat "g++ " file-name " " flags " -o " file-name-without-extension " && time ./" file-name-without-extension ".exe")))
