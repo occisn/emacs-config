@@ -5840,10 +5840,10 @@ d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
          (slime-with-popup-buffer (bufname :package package
                                            :connection t
                                            :select slime-description-autofocus)
-                                  (when (string= bufname "*slime-description*")
-                                    (with-current-buffer bufname (slime-company-doc-mode)))
-                                  (princ string)
-                                  (goto-char (point-min))))))
+           (when (string= bufname "*slime-description*")
+             (with-current-buffer bufname (slime-company-doc-mode)))
+           (princ string)
+           (goto-char (point-min))))))
    (my-init--message-package-loaded "slime-company"))
 
  ;; and activate slime-company in slime below
@@ -6070,17 +6070,17 @@ Modified from official 'slime-call-defun'"
          (if (symbolp toplevel)
              (error "Not in a function definition")
            (slime-dcase toplevel
-                        (((:defun :defgeneric :defmacro :define-compiler-macro) symbol)
-                         (insert-call symbol))
-                        ((:defmethod symbol &rest args)
-                         ;; (declare (ignore args))
-                         (insert-call symbol))
-                        (((:defparameter :defvar :defconstant) symbol)
-                         (insert-call symbol :function nil))
-                        (((:defclass) symbol)
-                         (insert-call symbol :defclass t))
-                        (t
-                         (error "Not in a function definition")))))))
+             (((:defun :defgeneric :defmacro :define-compiler-macro) symbol)
+              (insert-call symbol))
+             ((:defmethod symbol &rest args)
+              ;; (declare (ignore args))
+              (insert-call symbol))
+             (((:defparameter :defvar :defconstant) symbol)
+              (insert-call symbol :function nil))
+             (((:defclass) symbol)
+              (insert-call symbol :defclass t))
+             (t
+              (error "Not in a function definition")))))))
 
    (define-key slime-mode-map (kbd "C-c C-x")  #'my/slime-call-defun--with-time-monitoring)
 
@@ -6495,13 +6495,17 @@ With a prefix argument, perform `macroexpand-all' instead."
          (find-file (concat directory "../" (car asd-files)))))))
 
  (defun my/go-to-package ()
-   "Open unique package file in current directory."
+   "Open unique package file in the parent directory."
    (interactive)
-   (let* ((directory (file-name-directory (buffer-file-name)))
-          (package-files (directory-files directory nil "^package")))
-     (when (null package-files) (error "No package file in current directory"))
-     (when (> (length package-files) 1) (error "More than one package file in current directory"))
-     (find-file (concat directory (car package-files)))))
+   (let* ((current-dir (file-name-directory (buffer-file-name)))
+          (parent-dir  (file-name-directory
+                        (directory-file-name current-dir)))
+          (package-files (directory-files parent-dir nil "^package")))
+     (when (null package-files)
+       (error "No package file in parent directory"))
+     (when (> (length package-files) 1)
+       (error "More than one package file in parent directory"))
+     (find-file (expand-file-name (car package-files) parent-dir))))
 
  ;; ===
  ;; === (CL) delete fasl files
@@ -6617,8 +6621,8 @@ Return NIL if no system found.
      (if (null asdf-system-name)
          (message "No ASDF system found.")
        (slime-eval-async `(asdf:load-system ,asdf-system-name :force t)
-                         (lambda (_result)
-                           (message "System %s has been force-reloaded" asdf-system-name))))))
+         (lambda (_result)
+           (message "System %s has been force-reloaded" asdf-system-name))))))
 
  (defun my/asdf-force-test-system-corresponding-to-current-buffer ()
    "Force test current ASDF system.
