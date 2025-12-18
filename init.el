@@ -6629,8 +6629,127 @@ Return NIL if no system found.
      (if (null asdf-system-name)
          (message "No ASDF system found.")
        (slime-eval-async `(asdf:test-system ,asdf-system-name :force t)
-                         (lambda (_result)
-                           (message "System %s has been force-tested" asdf-system-name))))))
+         (lambda (_result)
+           (message "System %s has been force-tested" asdf-system-name))))))
+
+ ;; ===
+ ;; === my/dired-clean-build-artifacts
+
+ (defun my/delete-to-recycle-bin (file)
+   "Move FILE to Windows Recycle Bin using PowerShell.
+Returns t on success, nil on failure.
+Note: (setq delete-by-moving-to-trash t) does not seem enough.
+(v1, available in occisn/emacs-utils GitHub repository, 2025-12-27)"
+   (let* ((file-path (convert-standard-filename file))
+          (ps-command (format 
+                       "Add-Type -AssemblyName Microsoft.VisualBasic; [Microsoft.VisualBasic.FileIO.FileSystem]::DeleteFile('%s', 'OnlyErrorDialogs', 'SendToRecycleBin')"
+                       file-path)))
+     (condition-case err
+         (progn
+           (call-process "powershell.exe" nil nil nil
+                         "-NoProfile" "-NonInteractive" "-Command" ps-command)
+           (not (file-exists-p file)))
+       (error nil))))
+
+
+ (defun dired-clean--find-files-recursively (dir extensions exceptions)
+   "Recursively find files with EXTENSIONS in DIR, excluding EXCEPTIONS.
+Returns a flat list of matching files."
+   (let ((result '()))
+     (dolist (file (directory-files dir t))
+       (let ((basename (file-name-nondirectory file)))
+         (unless (member basename '("." ".."))
+           (cond
+            ;; If it's a directory, recurse into it
+            ((file-directory-p file)
+             (setq result (append (dired-clean--find-files-recursively file extensions exceptions) result)))
+            
+            ;; If it's a regular file matching our criteria
+            ((and (file-regular-p file)
+                  (member (file-name-extension file) extensions)
+                  (not (member basename exceptions)))
+             (push file result))))))
+     result))
+
+ (defun dired-clean--get-immediate-subdir (file root-dir)
+   "Get the immediate subdirectory of ROOT-DIR that contains FILE.
+Returns the immediate subdirectory path, or nil if FILE is directly in ROOT-DIR."
+   (let* ((relative (file-relative-name file root-dir))
+          (parts (split-string relative "/")))
+     (when (> (length parts) 1)
+       (expand-file-name (car parts) root-dir))))
+
+ (defun my/dired-clean-build-artifacts ()
+   "Delete .o, .fasl, and .exe files recursively in subdirectories.
+EXCEPTIONS are defined within the function.
+Files are moved to Windows Recycle Bin.
+Results are grouped by immediate subdirectory."
+   (interactive)
+   (let* ((dir (dired-current-directory))
+          (extensions '("o" "fasl" "exe"))
+          (exception-list '("cloc-2.06.exe" "scc.exe"))
+          (deleted-files '())
+          (failed-files '())
+          (buffer-name "*Deleted Build Artifacts*"))
+     
+     ;; Validate we're in a dired buffer
+     (unless (derived-mode-p 'dired-mode)
+       (error "This command must be run from a dired buffer"))
+     
+     (message "Recursively scanning directories and moving files to Recycle Bin...")
+     
+     ;; Find all matching files recursively
+     (let ((all-files (dired-clean--find-files-recursively dir extensions exception-list)))
+       
+       ;; Try to delete each file and group by immediate subdirectory
+       (dolist (file all-files)
+         (let ((immediate-subdir (dired-clean--get-immediate-subdir file dir)))
+           (when immediate-subdir
+             (if (my/delete-to-recycle-bin file)
+                 (let ((existing (assoc immediate-subdir deleted-files)))
+                   (if existing
+                       (setcdr existing (cons file (cdr existing)))
+                     (push (cons immediate-subdir (list file)) deleted-files)))
+               (push file failed-files))))))
+     
+     ;; Display results
+     (with-current-buffer (get-buffer-create buffer-name)
+       (erase-buffer)
+       (insert (format "Build Artifacts Cleanup Report\n"))
+       (insert (format "Directory: %s\n" dir))
+       (insert (format "Search: Recursive (grouped by immediate subdirectory)\n"))
+       (insert (format "Time: %s\n" (current-time-string)))
+       (insert (make-string 70 ?=) "\n\n")
+       
+       (if deleted-files
+           (progn
+             (insert (format "Successfully moved to Recycle Bin (%d files from %d subdirectories):\n\n"
+                             (apply #'+ (mapcar (lambda (x) (length (cdr x))) deleted-files))
+                             (length deleted-files)))
+             (dolist (subdir-entry (sort deleted-files 
+                                         (lambda (a b) (string< (car a) (car b)))))
+               (let* ((subdir (car subdir-entry))
+                      (files (cdr subdir-entry))
+                      (subdir-name (file-name-nondirectory (directory-file-name subdir))))
+                 (insert (format "\n%s/ (%d files):\n" subdir-name (length files)))
+                 (dolist (file (sort files #'string<))
+                   (let ((relative (file-relative-name file dir)))
+                     (insert (format "  ✓ %s\n" relative)))))))
+         (insert "No build artifact files found to delete.\n\n"))
+       
+       (when failed-files
+         (insert (format "\n\nFailed to move (%d files):\n" (length failed-files)))
+         (dolist (file failed-files)
+           (insert (format "  ✗ %s\n" (file-relative-name file dir)))))
+       
+       (goto-char (point-min))
+       (display-buffer (current-buffer)))
+     
+     (if deleted-files
+         (message "Moved %d files to Recycle Bin from %d immediate subdirectories. Check Recycle Bin!"
+                  (apply #'+ (mapcar (lambda (x) (length (cdr x))) deleted-files))
+                  (length deleted-files))
+       (message "No build artifact files found to delete"))))
 
  ;; ===
  ;; === abbrev
@@ -6784,6 +6903,7 @@ EXECUTE:
    Clear screen: C-c M-o              ||   q to hide compilation window
 DEBUG: Debug: q || v to jump into code, RETURN, M-., i, e, r
        Disassemble : C-c M-d | Inspect : C-c I 'foo ; l to go back   | Trace: C-c C-t on the symbol | Navigate within warnings/errors: M-n, M-p
+CLEAN: my/dired-clean-build-artifacts
 SPECIFIC: Slime: _e_ : slime || M-x slime || ,quit
 {end}"
    ("a" #'my/go-to-asd)
@@ -8149,6 +8269,65 @@ Creates the file if it doesn't exist."
        (unless (file-exists-p new-file)
          (message "Created new file: %s" new-file)))))
 
+ ;;; === jump to main
+
+ (defun my/jump-to-c-main ()
+   "Jump to main.c or main.cpp based on current file extension.
+  .c or .h files jump to main.c
+  .cpp or .hpp files jump to main.cpp
+  Errors if the file doesn't exist or extension is not recognized."
+   (interactive)
+   (let* ((current-file (buffer-file-name))
+          (current-dir (file-name-directory current-file))
+          (extension (file-name-extension current-file))
+          (main-file nil))
+     (cond
+      ((member extension '("c" "h"))
+       (setq main-file (concat current-dir "main.c")))
+      ((member extension '("cpp" "hpp"))
+       (setq main-file (concat current-dir "main.cpp")))
+      (t
+       (error "Unsupported file extension: .%s (expected .c, .h, .cpp, or .hpp)" extension)))
+     (if (file-exists-p main-file)
+         (find-file main-file)
+       (error "File does not exist: %s" main-file))))
+
+ (add-hook 'c-mode-hook
+           (lambda ()
+             (local-set-key (kbd "C-c m") #'my/jump-to-c-main)))
+
+ (add-hook 'c-ts-mode-hook
+           (lambda ()
+             (local-set-key (kbd "C-c m") #'my/jump-to-c-main)))
+
+ ;; === add h header guard
+
+ (defun my/insert-cpp-header-guard ()
+   "Insert C++ header guard based on current buffer's file name.
+If filename begins with a digit, prefix with X_."
+   (interactive)
+   (let* ((filename (file-name-nondirectory (buffer-file-name)))
+          (guard-base (upcase (replace-regexp-in-string "[.-]" "_" filename)))
+          (guard-name (if (string-match "^[0-9]" guard-base)
+                          (concat "X_" guard-base)
+                        guard-base)))
+     (save-excursion
+       (goto-char (point-min))
+       (insert (format "#ifndef %s\n" guard-name))
+       (insert (format "#define %s\n\n" guard-name))
+       (goto-char (point-max))
+       (insert (format "\n\n#endif // %s\n" guard-name)))
+     (goto-char (point-min))
+     (forward-line 2)))
+
+ (add-hook 'c-mode-hook
+           (lambda ()
+             (local-set-key (kbd "C-c h") #'my/insert-cpp-header-guard)))
+
+ (add-hook 'c-ts-mode-hook
+           (lambda ()
+             (local-set-key (kbd "C-c h") #'my/insert-cpp-header-guard)))
+
  ;; === stand-alone & compile
 
  (defun c-save-compile-and-run-c-file ()
@@ -8202,6 +8381,25 @@ Creates the file if it doesn't exist."
 
  ;; === project & compile
 
+ (defun compile-makefile-project ()
+   "Compile using make the executable specified in the Makefile."
+   (interactive)
+   (let* ((makefile-dir (locate-dominating-file default-directory "Makefile"))
+          (default-directory (or makefile-dir default-directory))
+          (compile-command "make"))
+     (if makefile-dir
+         (progn
+           (save-some-buffers t)
+           (compile compile-command))
+       (message "No Makefile found in current or parent directories!"))))
+
+ (add-hook 'c-mode-hook
+           (lambda ()
+             (local-set-key (kbd "C-c C-c") #'compile-makefile-project)))
+ (add-hook 'c-ts-mode-hook
+           (lambda ()
+             (local-set-key (kbd "C-c C-c") #'compile-makefile-project)))
+
  (defun compile-and-run-makefile-project ()
    "Compile using make and run the executable specified in the Makefile."
    (interactive)
@@ -8239,6 +8437,10 @@ Creates the file if it doesn't exist."
  (add-hook 'c-ts-mode-hook
            (lambda ()
              (local-set-key (kbd "C-c C-t") #'test-makefile-project)))
+
+ ;; === my/dired-clean-build-artifacts
+
+ ;; defined above
  
  ;; === Abbrev for C
 
@@ -8278,7 +8480,6 @@ Creates the file if it doesn't exist."
      nil
      > "if (" _ ") {" \n > \n "}" >)
 
-   
    (define-skeleton c-if-else-skeleton
      "Insert an if structure"
      nil
@@ -8516,6 +8717,7 @@ Creates the file if it doesn't exist."
 ^C hydra:
 ^--------
 FILES: _h_: switch between source and header files | _t_: switch between source and test files
+       C-c m jump to main | C-c h insert h/hpp header guard
 MOVEMENT :
    move among top-level expressions + select: C-M-a, C-M-e C-M-h
    forward/backward expression: C-M-f, C-M-b
@@ -8539,11 +8741,13 @@ EXECUTE:
    ONE FILE with compile: C-c C-r: save, compile and run (gcc ...)
    ONE FILE with shell: _s_ : show eshell
                         _x_ : compile & execute in shell (gcc ...)
-   PROJECT with compile: C-c C-m, save compile and run (M-x compile > make && make run)
+   PROJECT with compile: C-c C-c, compile project
+                         C-c C-m, save compile and run (M-x compile > make && make run)
                          C-c C-t, save and test (M-x compile > make test)
    PROJECT with projectile: compile : C-c p c c > make, make run, make test
                              execute : C-c p u   > make run
 DEBUG: C-c a to implement eglot proposed action / correction (eglot-code-actions) | C-h . to access to overlaid eglot/clangd warning
+CLEAN: my/dired-clean-build-artifacts (before resynchronization of Dropbox)
 SPECIFIC: M-x eglot-shutdown | M-x eglot-reconnect
 {end}"
    ("c" #'my-c-occur)
@@ -8597,7 +8801,31 @@ SPECIFIC: M-x eglot-shutdown | M-x eglot-reconnect
  ;; === switch/toggle among source, header and test files
 
  ;; see above (C)
- 
+
+ ;; === jump to main
+
+ ;; function 'my/jump-to-c-main' defined above
+
+ (add-hook 'c++-mode-hook
+           (lambda ()
+             (local-set-key (kbd "C-c m") #'my/jump-to-c-main)))
+
+ (add-hook 'c++-ts-mode-hook
+           (lambda ()
+             (local-set-key (kbd "C-c m") #'my/jump-to-c-main)))
+
+ ;; === add hpp header guard
+
+ ;; function 'my/insert-cpp-header-guard' defined above
+
+ (add-hook 'c++-mode-hook
+           (lambda ()
+             (local-set-key (kbd "C-c h") #'my/insert-cpp-header-guard)))
+
+ (add-hook 'c++-ts-mode-hook
+           (lambda ()
+             (local-set-key (kbd "C-c h") #'my/insert-cpp-header-guard)))
+
  ;; === stand-alone & compile
 
  ;; function 'my/create-shell-window' defined above
@@ -8644,6 +8872,15 @@ SPECIFIC: M-x eglot-shutdown | M-x eglot-reconnect
 
  ;; === project & compile
 
+ ;; function 'compile-makefile-project' defined above
+
+ (add-hook 'c++-mode-hook
+           (lambda ()
+             (local-set-key (kbd "C-c C-c") #'compile-makefile-project)))
+ (add-hook 'c++-ts-mode-hook
+           (lambda ()
+             (local-set-key (kbd "C-c C-c") #'compile-makefile-project)))
+
  ;; function 'compile-and-run-makefile-project' defined above
 
  (add-hook 'c++-mode-hook
@@ -8661,6 +8898,10 @@ SPECIFIC: M-x eglot-shutdown | M-x eglot-reconnect
  (add-hook 'c++-ts-mode-hook
            (lambda ()
              (local-set-key (kbd "C-c C-t") #'test-makefile-project)))
+
+ ;; === my/dired-clean-build-artifacts
+
+ ;; defined above
  
  ;; === Abbrev for C++
 
@@ -8778,6 +9019,7 @@ SPECIFIC: M-x eglot-shutdown | M-x eglot-reconnect
 ^C++ hydra:
 ^----------
 FILES: _h_: switch between source and header files | _t_: switch between source and test files
+       C-c m jump to main | C-c h insert h/hpp header guard
 MOVEMENT:
    move among top-level expressions + select: C-M-a, C-M-e C-M-h
    forward/backward expression: C-M-f, C-M-b
@@ -8801,11 +9043,13 @@ EXECUTE:
    ONE FILE with compile: C-c C-r: save, compile and run (g++ ...)
    ONE FILE with shell: _s_ : show eshell
                         _x_ : compile & execute in shell (g++ ...)
-   PROJECT with M-x compile: C-c C-m, save compile and run (M-x compile > make && make run)
+   PROJECT with M-x compile: C-c C-c, compile project
+                             C-c C-m, save compile and run (M-x compile > make && make run)
                              C-c C-t, save and test (M-x compile > make test)
    PROJECT with projectile: compile : C-c p c c > make, make run, make test
                             execute : C-c p u   > make run
 DEBUG: C-c a to implement eglot proposed action / correction (eglot-code-actions) | C-h . to access to overlaid eglot/clangd warning
+CLEAN: my/dired-clean-build-artifacts (before resynchronization of Dropbox)
 SPECIFIC: M-x eglot-shutdown | M-x eglot-reconnect
 {end}"
    ("c" #'my-c-occur)
