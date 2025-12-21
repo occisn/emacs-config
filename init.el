@@ -8909,7 +8909,28 @@ SPECIFIC: M-x eglot-shutdown | M-x eglot-reconnect
  
  ;; === Abbrev for C++
 
- ;; void
+ ;; 'my-init--c-abbrev' is defined above
+
+ (add-hook 'c++-mode-hook
+           (lambda ()
+             (my-init--c-abbrev)
+             (define-abbrev c++-mode-abbrev-table "cmain" "" 'c-main-skeleton)
+             (define-abbrev c++-mode-abbrev-table "cwhile" "" 'c-while-loop-skeleton)
+             (define-abbrev c++-mode-abbrev-table "cfor" "" 'c-for-loop-skeleton)
+             (define-abbrev c++-mode-abbrev-table "cinclude" "" 'c-include-skeleton)
+             (define-abbrev c++-mode-abbrev-table "cif" "" 'c-if-skeleton)
+             (define-abbrev c++-mode-abbrev-table "cifelse" "" 'c-if-else-skeleton)))
+ 
+ (add-hook 'c++-ts-mode-hook
+           (lambda ()
+             (my-init--c-abbrev)
+             (define-abbrev c++-ts-mode-abbrev-table "cmain" "" 'c-main-skeleton)
+             (define-abbrev c++-ts-mode-abbrev-table "cwhile" "" 'c-while-loop-skeleton)
+             (define-abbrev c++-ts-mode-abbrev-table "cfor" "" 'c-for-loop-skeleton)
+             (define-abbrev c++-ts-mode-abbrev-table "cinclude" "" 'c-include-skeleton)
+             (define-abbrev c++-ts-mode-abbrev-table "cif" "" 'c-if-skeleton)
+             (define-abbrev c++-ts-mode-abbrev-table "cifelse" "" 'c-if-else-skeleton)))
+ 
  
  ;; === Occur
 
