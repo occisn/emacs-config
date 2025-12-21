@@ -2692,7 +2692,15 @@ Version 2019-12-02"
  ;; then C-x C-i LEFT LEFT LEFT LEFT...
  ;; see https://stackoverflow.com/questions/22388868/how-can-i-indent-a-paragraph-of-plain-text-in-emacs-org-mode
 
- (setq org-startup-indented nil)) ; end of init section
+ (setq org-startup-indented nil)
+
+
+ (setq org-modules nil) ; Stop Org from loading any default extra modules
+ ;; 44% of the org-mode start-up time was spent on org-load-modules-maybe
+ ;; org-modules was containig (ol-doi ol-w3m ol-bbdb ol-bibtex ol-docview ol-gnus ol-info ol-irc ol-mhe ol-rmail ol-eww)
+
+ 
+ ) ; end of init section
 
 
 (my-init--with-duration-measured-section 
