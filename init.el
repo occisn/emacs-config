@@ -3515,12 +3515,18 @@ Paste into org-mode from clipboard under following format:
  ;; https://www.gnu.org/software/emacs/manual/html_node/calc/index.html#Top
 
  (defvar org-babel-load-languages)      ; to avoid compilation warning
- (with-eval-after-load 'org
+
+ (defun my--org-babel-load-calc (&rest _args)
+   (message "Preparing org-mode babel for calc...")
    (add-to-list 'org-babel-load-languages '(calc . t))
-   (org-babel-do-load-languages 'org-babel-load-languages org-babel-load-languages))
+   (org-babel-do-load-languages 'org-babel-load-languages org-babel-load-languages)
+   (advice-remove 'org-babel-execute-src-block #'my--org-babel-load-calc))
+
+ (advice-add 'org-babel-execute-src-block
+             :before #'my--org-babel-load-calc)
  ;; https://www.reddit.com/r/emacs/comments/i6zuau/calc_source_blocks_in_orgmode_best_practices/
  ;; https://github.com/dfeich/org-babel-examples/blob/master/calc/calc.org
-
+ 
  (defun my/calc-read-macro ()
    "Interpret selected region as a Calc macro and jump to Calc stack, where the macro can be executed by pressing X.
 (v2 as of 2024-01-27, v1 as of 2024-01-23)"
@@ -3650,7 +3656,16 @@ reset: M-x calc-reset
  "shells"
 
  ;; === eshell
- 
+
+ (defun my--org-babel-load-eshell (&rest _args)
+   (message "Preparing org-mode babel for eshell...")
+   (add-to-list 'org-babel-load-languages '(eshell . t))
+   (org-babel-do-load-languages 'org-babel-load-languages org-babel-load-languages)
+   (advice-remove 'org-babel-execute-src-block #'my--org-babel-load-eshell))
+
+ (advice-add 'org-babel-execute-src-block
+             :before #'my--org-babel-load-eshell)
+
  (with-eval-after-load 'org
    (add-to-list 'org-babel-load-languages '(eshell . t))
    (org-babel-do-load-languages 'org-babel-load-languages org-babel-load-languages))
@@ -5685,16 +5700,24 @@ d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
  ;; ==
  ;; === (EL+CL) Babel
  
- (with-eval-after-load 'org
-   (defvar org-babel-load-languages) ; to avoid compilation warning
-   (add-to-list 'org-babel-load-languages '(emacs-lisp . t))
-   (org-babel-do-load-languages 'org-babel-load-languages org-babel-load-languages))
-
- (with-eval-after-load 'org
-   (defvar org-babel-load-languages) ; to avoid compilation warning
+ (defun my--org-babel-load-lisp (&rest _args)
+   (message "Preparing org-mode babel for lisp...")
    (add-to-list 'org-babel-load-languages '(lisp . t))
-   (org-babel-do-load-languages 'org-babel-load-languages org-babel-load-languages))
+   (org-babel-do-load-languages 'org-babel-load-languages org-babel-load-languages)
+   (advice-remove 'org-babel-execute-src-block #'my--org-babel-load-lisp))
 
+ (advice-add 'org-babel-execute-src-block
+             :before #'my--org-babel-load-lisp)
+
+ (defun my--org-babel-load-emacs-lisp (&rest _args)
+   (message "Preparing org-mode babel for emacs-lisp...")
+   (add-to-list 'org-babel-load-languages '(emacs-lisp . t))
+   (org-babel-do-load-languages 'org-babel-load-languages org-babel-load-languages)
+   (advice-remove 'org-babel-execute-src-block #'my--org-babel-load-emacs-lisp))
+
+ (advice-add 'org-babel-execute-src-block
+             :before #'my--org-babel-load-emacs-lisp)
+ 
  ;; ===
  ;; === (EL+CL) Show line number on the left
 
@@ -7157,9 +7180,14 @@ To be called from hydra."
    (other-window 1))
 
  ;; babel for LaTeX:
- (with-eval-after-load 'org
+ (defun my--org-babel-load-latex (&rest _args)
+   (message "Preparing org-mode babel for latex...")
    (add-to-list 'org-babel-load-languages '(latex . t))
-   (org-babel-do-load-languages 'org-babel-load-languages org-babel-load-languages))
+   (org-babel-do-load-languages 'org-babel-load-languages org-babel-load-languages)
+   (advice-remove 'org-babel-execute-src-block #'my--org-babel-load-latex))
+
+ (advice-add 'org-babel-execute-src-block
+             :before #'my--org-babel-load-latex)
  
  (setq org-latex-pdf-process
        '("pdflatex -interaction nonstopmode -output-directory %o %f"))
@@ -7211,10 +7239,15 @@ c : occur
    )
 
  ;; babel for Gnuplot:
- (with-eval-after-load 'org
+ (defun my--org-babel-load-gnuplot (&rest _args)
+   (message "Preparing org-mode babel for gnuplot...")
    (add-to-list 'org-babel-load-languages '(gnuplot . t))
-   (org-babel-do-load-languages 'org-babel-load-languages org-babel-load-languages))
- 
+   (org-babel-do-load-languages 'org-babel-load-languages org-babel-load-languages)
+   (advice-remove 'org-babel-execute-src-block #'my--org-babel-load-gnuplot))
+
+ (advice-add 'org-babel-execute-src-block
+             :before #'my--org-babel-load-gnuplot)
+
  ;; ... and Gnuplot package shall be installed
  ;; inspiration: https://emacs.stackexchange.com/questions/59517/org-plot-with-gnuplot-searching-for-program-no-such-file-or-direcotry-aspell 
 
@@ -7810,9 +7843,14 @@ Alt-F4 and Alt-TAB
    (my-init--warning "!! *Rterm-executable* is nil or does not exist: %s" *Rterm-executable*))
 
  ;; Babel:
- (with-eval-after-load 'org
+ (defun my--org-babel-load-R (&rest _args)
+   (message "Preparing org-mode babel for R...")
    (add-to-list 'org-babel-load-languages '(R . t))
-   (org-babel-do-load-languages 'org-babel-load-languages org-babel-load-languages))
+   (org-babel-do-load-languages 'org-babel-load-languages org-babel-load-languages)
+   (advice-remove 'org-babel-execute-src-block #'my--org-babel-load-R))
+
+ (advice-add 'org-babel-execute-src-block
+             :before #'my--org-babel-load-R)
 
  ;; Babl complement:
  (setq org-babel-R-command (format "\"%s\" --slave --no-save" *R-executable* ))
@@ -8215,9 +8253,14 @@ For instance: abc/def --> abc\\def"
 
  ;; === Babel
 
- (with-eval-after-load 'org
+ (defun my--org-babel-load-C (&rest _args)
+   (message "Preparing org-mode babel for C...")
    (add-to-list 'org-babel-load-languages '(C . t))
-   (org-babel-do-load-languages 'org-babel-load-languages org-babel-load-languages))
+   (org-babel-do-load-languages 'org-babel-load-languages org-babel-load-languages)
+   (advice-remove 'org-babel-execute-src-block #'my--org-babel-load-C))
+
+ (advice-add 'org-babel-execute-src-block
+             :before #'my--org-babel-load-C)
 
  ;; === switch/toggle among source, header and test files
 
@@ -8804,12 +8847,8 @@ SPECIFIC: M-x eglot-shutdown | M-x eglot-reconnect
  
  ;; === Babel
 
- ;; the following is wrong : (C . t) is enough for C and C++
- (when nil
-   (with-eval-after-load 'org
-     (add-to-list 'org-babel-load-languages '(C++ . t))
-     (org-babel-do-load-languages 'org-babel-load-languages org-babel-load-languages)))
-
+ ;; (C . t) is enough for C and C++
+ 
  ;; === switch/toggle among source, header and test files
 
  ;; see above (C)
@@ -9113,9 +9152,14 @@ SPECIFIC: M-x eglot-shutdown | M-x eglot-reconnect
  ;; reference: https://orgmode.org/worg/org-contrib/babel/languages/ob-doc-maxima.html
 
  ;; Babel:
- (with-eval-after-load 'org
+ (defun my--org-babel-load-maxima (&rest _args)
+   (message "Preparing org-mode babel for maxima...")
    (add-to-list 'org-babel-load-languages '(maxima . t))
-   (org-babel-do-load-languages 'org-babel-load-languages org-babel-load-languages))
+   (org-babel-do-load-languages 'org-babel-load-languages org-babel-load-languages)
+   (advice-remove 'org-babel-execute-src-block #'my--org-babel-load-maxima))
+
+ (advice-add 'org-babel-execute-src-block
+             :before #'my--org-babel-load-maxima)
 
  ) ; end of init section
 
@@ -9137,9 +9181,14 @@ SPECIFIC: M-x eglot-shutdown | M-x eglot-reconnect
    (my-init--message-package-loaded "elpy"))
 
  ;; Babel:
- (with-eval-after-load 'org
+ (defun my--org-babel-load-python (&rest _args)
+   (message "Preparing org-mode babel for python...")
    (add-to-list 'org-babel-load-languages '(python . t))
-   (org-babel-do-load-languages 'org-babel-load-languages org-babel-load-languages))
+   (org-babel-do-load-languages 'org-babel-load-languages org-babel-load-languages)
+   (advice-remove 'org-babel-execute-src-block #'my--org-babel-load-python))
+
+ (advice-add 'org-babel-execute-src-block
+             :before #'my--org-babel-load-python)
 
  ;; \/\/ or choose 'main' Python
  (if (my-init--file-exists-p *python-executable--in-libreoffice-for-unoconv*)
