@@ -7970,10 +7970,10 @@ Alt-F4 and Alt-TAB
           ("C-x C-g" . magit-status))
    :config (my-init--message-package-loaded "magit"))
 
- (defhydra hydra-magit (:exit t :hint nil)
+ (defhydra hydra-magit-status (:exit t :hint nil)
    "
-^Magit hydra:
-^------------
+^Magit-status hydra:
+^-------------------
 
 C-x g to access the status buffer
 g     to update
@@ -7990,6 +7990,18 @@ c c   to prepare commit, then write info, then C-c C-c
 P p   to push to remote (Github)
 
 clean cache: ':' then complete with 'gc'
+
+(end)
+"
+   ;; ("e" #'a-function)
+   )
+
+ (defhydra hydra-magit-diff (:exit t :hint nil)
+   "
+^Magit-diff hydra:
+^-----------------
+
+M-n and p to navigate sections to stage/unstage
 
 (end)
 "
@@ -9654,7 +9666,8 @@ Undo : C-j to cut undo chain? {end}
     ((eql major-mode 'ielm-mode) (hydra-ielm/body))
     ((eql major-mode 'latex-mode) (hydra-latex/body))
     ((eql major-mode 'lisp-mode) (hydra-common-lisp/body))
-    ((eql major-mode 'magit-status-mode) (hydra-magit/body))
+    ((eql major-mode 'magit-diff-mode) (hydra-magit-diff/body))
+    ((eql major-mode 'magit-status-mode) (hydra-magit-status/body))
     ((eql major-mode 'markdown-mode) (hydra-markdown/body))
     ((eql major-mode 'nov-mode) (hydra-nov/body))
     ((eql major-mode 'org-mode) (hydra-org-mode/body))
