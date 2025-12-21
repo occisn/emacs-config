@@ -650,6 +650,7 @@ d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
  (setq *context* nil)                   ; 'perso, 'pro1 etc.
 
  (setq *dropbox-directory* "C:/Users/.../Dropbox/"
+       *local-repos-directory* "C:/Users/.../local-repos"
        *emacs-config-directory* nil ; directory containing this init.el
        *this-init-file* "C:/.../init.el"
        *downloads-directory* "C:/.../Downloads/"
@@ -7666,7 +7667,7 @@ To be called from hydra."
        (progn
          (message "Opening %s: %s" name path)
          (dired path))
-     (message "Impossible to open %s directory since path is nil or not valid." name)))
+     (message "Impossible to open %s directory since path is nil or not valid: %s" name path)))
 
  (defun my/open-downloads-directory-in-dired ()
    "Open Downloads directory in dired."
@@ -7682,6 +7683,11 @@ To be called from hydra."
    "Open Dropbox directory in dired."
    (interactive)
    (my-init--dired-open-directory-if-valid "Dropbox" *dropbox-directory*))
+
+ (defun my/open-local-repos-directory-in-dired ()
+   "Open 'local repos' directory in dired."
+   (interactive)
+   (my-init--dired-open-directory-if-valid "local repos" *local-repos-directory*))
 
  (when nil
    (defun my/open-shared-drives ()
@@ -9568,7 +9574,7 @@ _3_ : copy from markdown to clipboard, under org-mode format
 ^---------------
 Go: _d_: open _d_ownloads directory        | _e_: open _e_n-cours (on-going) directory
     _x_: open Dropbo_x_ directory in dired | _m_: ielm
-    _s_: open pro1 App1
+    _s_: open pro1 App1                    | _l_: local-repos
 Speedbar: M-x speedbar (b/f = buffers/files, U to go up, SPC)
 Recent files : C-x C-r | recent directories : C-u C-x C-r | frequent files with function keys
 Frame: C-x 5 c to clone current frame in another | C-x 5 2 or 'M-x make-frame' for new frame | C-x 5 0 to close frame
@@ -9600,6 +9606,7 @@ Undo : C-j to cut undo chain? {end}
    ("e" #'my/open-ongoing-directory-in-dired)
    ("f" #'my/dired-open-path-in-clipboard)
    ("k" #'xah-show-kill-ring)
+   ("l" #'my/open-local-repos-directory-in-dired)
    ("m" #'ielm)
    ("p" #'package-list-packages) 
    ;; ("r" #'my/ready-to-move-from-downloads)
