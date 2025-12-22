@@ -3385,7 +3385,7 @@ With prefix argument NO-TOC, suppress table of contents."
    "Paste clipboard content, converting from markdown to org-mode format."
    (interactive)
    (let* ((markdown-text (current-kill 0))
-          (org-text (markdown-to-org-convert markdown-text)))
+          (org-text (my--markdown-to-org-convert markdown-text)))
      (insert org-text)))
 
 
