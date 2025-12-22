@@ -5697,7 +5697,26 @@ d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
  ;; == (CL) Slime
 
  ;; M-x slime should work
- 
+
+ ;; Always show compilation notes buffer
+ ;; (setq slime-compilation-finished-hook 'slime-maybe-show-compilation-log)
+
+ ;; Show compilation buffer even with no errors
+ ;; (setq slime-display-compilation-output t)
+
+ ;; Display compilation notes in the REPL window
+ (setq slime-display-compilation-output t)
+
+ ;; Configure display-buffer to reuse REPL window for compilation notes
+ (add-to-list 'display-buffer-alist
+              '("\\*slime-compilation\\*"
+                (display-buffer-reuse-window display-buffer-same-window)
+                (reusable-frames . t)
+                (inhibit-same-window . nil)))
+
+ ;; if necessary:
+ ;; M-x slime-show-compilation-log
+
  ;; ==
  ;; === (EL+CL) Babel
  
@@ -6833,6 +6852,10 @@ Results are grouped by immediate subdirectory."
 ^Compilation hydra:
 ^------------------
 
+M-n, M-p to navigate
+
+RET to follow link
+
 _f_ilter 'float to pointer coercion' notes
 
 {end}
@@ -6934,7 +6957,7 @@ REFACTOR: [projectile]
 EXECUTE: 
    Eval: C-c C-c compile defun || C-M-x eval defun || C-x C-e to eval last sexp || C-c C-k || C-c C-y to send to REPL || C-c C-x idem with (time...)
    REPL: C-c C-z to jump in REPL || C-c C-j to execute in REPL || M-n || M-p || *,** || /,// || (foo M-
-   ASDF : _f_l force load | _f_t force test
+   ASDF : _f_l force load | _f_t force test           |  M-x slime-compile-system (compiles an ASDF system)
    Test in REPL: C-c SPC || _j_ump to slime compilation report || delete fasl (from dired): M-x my/delete-fasl-files
    Clear screen: C-c M-o              ||   q to hide compilation window
 DEBUG: Debug: q || v to jump into code, RETURN, M-., i, e, r
@@ -6947,7 +6970,7 @@ SPECIFIC: Slime: _e_ : slime || M-x slime || ,quit
    ("e" #'slime)
    ("f" (lambda () 
           (interactive)
-          (let ((key (read-char "l or t: ")))
+          (let ((key (read-char "l (force-reload) or t (force-test): ")))
             (cond 
              ((eq key ?l) (my/asdf-force-reload-system-corresponding-to-current-buffer))
              ((eq key ?t) (my/asdf-force-test-system-corresponding-to-current-buffer)))))
