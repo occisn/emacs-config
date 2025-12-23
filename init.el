@@ -4995,6 +4995,10 @@ M-x doc-view-clear-cache   _c_lears cache
 (my-init--with-duration-measured-section
  t
  "Project and Projectile A (projectile)"
+
+ ;; if a newly created .projectile file is not recognized,
+ ;; try discovering the project explicitly:
+ ;;        M-x projectile-discover-projects-in-directory
  
  (use-package projectile
    ;; projectile = project interaction library for Emacs 
