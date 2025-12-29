@@ -6884,7 +6884,7 @@ MOVEMENT:
                   C-M-up           go to beginning of (...) or higher one
                   C-M-f            go to closing parenthesis
                   C-M-down         go to inner (...)
-JUMP TO TOP-LEVEL EXP: _m_: i_m_enu || M-x occur (M-s o) || _c_ : my occur || C-' (list in sidebar)
+JUMP TO TOP-LEVEL EXP: _m_: i_m_enu (M-g i) || M-x occur (M-s o) || _c_ : my occur || C-' (list in sidebar)
 SELECT: C-= to expand region (expand-region) || C-M-h to put region around whole current or following defun (mark-defun)
 MANIPULATE EXP: M-(              wrap an sexp (paredit)
                 M-UP             splice (remove delimiter of current sexp) and kill previous
@@ -6937,7 +6937,7 @@ MOVEMENT:
                   C-M-up           go to beginning of (...) or higher one
                   C-M-f            go to closing parenthesis
                   C-M-down         go to inner (...)
-JUMP TO TOP-LEVEL EXP: _m_: i_m_enu || M-x occur (M-s o) ||  _c_ : my occur || C-' (list in sidebar) 
+JUMP TO TOP-LEVEL EXP: _m_: i_m_enu (M-g i) || M-x occur (M-s o) ||  _c_ : my occur || C-' (list in sidebar) 
 SELECT: C-= to expand region (expand-region) || C-M-h to put region around whole current or following defun (mark-defun)
 MANIPULATE EXP: M-(              wrap an sexp (paredit)
                 M-UP             splice (remove delimiter of current sexp) and kill previous
@@ -8824,7 +8824,7 @@ MOVEMENT :
    forward/backward expression: C-M-f, C-M-b
    next/previous sibling C-M-n, C-M-p
    up/down in tree C-M-u C-M-d
-JUMP TO TOP-LEVEL EXP: _c_ : occur | M-x imenu | C-' (list in sidebar)
+JUMP TO TOP-LEVEL EXP: _c_ : occur | M-x imenu (M-g i) | C-' (list in sidebar)
 MANIPULATE EXP: [...]
 SELECT: select sexp: C-= (expand-region)
 COLLAPSE: hideshow : C-c f h / s / t : hide / show / toggle current block
@@ -9143,7 +9143,7 @@ MOVEMENT:
    forward/backward expression: C-M-f, C-M-b
    next/previous sibling C-M-n, C-M-p
    up/down in tree C-M-u C-M-d
-JUMP TO TOP-LEVEL EXP: _c_ : occur | M-x imenu | C-' (list in sidebar)
+JUMP TO TOP-LEVEL EXP: _c_ : occur | M-x imenu (M-g i) | C-' (list in sidebar)
 SELECT: select sexp: C-= (expand-region)
 MANIPULATE EXP: [...]
 COLLAPSE: hideshow : C-c f h / s / t : hide / show / toggle current block
