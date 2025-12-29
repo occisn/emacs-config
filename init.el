@@ -4353,6 +4353,7 @@ w   to resize cell
      ("ufemale" "♀")
      ("ufemme" "♀")
      ("umale" "♂")
+     ("umult" "×")
      ("upointmedian" "·")
      ("uquadrillage" "▦") 
      ("urip" "✝")
