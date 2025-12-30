@@ -6050,7 +6050,8 @@ Otherwise, split vertically and start (or show) ielm in the other window."
    
    (setq inferior-lisp-program *inferior-lisp-program*)
    ;; --dynamic-space-size 2048" ; 1024 by default ; otherwis "sbcl --dynamic-space-size 2048" ; "nohup sbcl"?
-
+   ;; (setq inferior-lisp-program "sbcl --dynamic-space-size 16GB")
+   
    (when nil
      (setf asdf:*compile-file-warnings-behaviour* :error))
    ;; ... so that the compilation notes goes foreground
@@ -6516,7 +6517,8 @@ With a prefix argument, perform `macroexpand-all' instead."
  ;; === (CL) Navigate between source and test files
 
  (defun my/switch-between-src-and-tests ()
-   "When in code buffer, switch between src and test files."
+   "When in code buffer, switch between src and test files.
+If the target test file does not exist, create it and report via a message."
    (interactive)
    (let* ((buffer-file-name1 (buffer-file-name)) ; c:/.../abc.lisp
           (directory (file-name-directory buffer-file-name1))
@@ -6534,7 +6536,16 @@ With a prefix argument, perform `macroexpand-all' instead."
          (progn
            (message "Switching to %s file" (if test-file-p "source" "test"))
            (find-file target))
-       (message "No %s file for %s" (if test-file-p "source" "test") file-name))))
+       ;; File doesn't exist
+       (if test-file-p
+           (message "No source file for %s" file-name)
+         ;; It's a test file that doesn't exist; create it
+         (make-directory (file-name-directory target) t) ; ensure directory exists
+         (with-temp-buffer
+           (write-file target))
+         (message "Created new test file: %s" (file-name-nondirectory target))
+         (find-file target)))))
+
 
  (defun my/go-to-asd ()
    "Open unique .asd file in parent directory."
