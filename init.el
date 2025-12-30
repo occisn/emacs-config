@@ -6857,11 +6857,13 @@ Results are grouped by immediate subdirectory."
 ^Compilation hydra:
 ^------------------
 
-M-n, M-p to navigate
+Common Lisp :
+   M-n, M-p to navigate
+   RET to follow link
+   _f_ilter 'float to pointer coercion' notes
 
-RET to follow link
-
-_f_ilter 'float to pointer coercion' notes
+C and C++:
+   C-c C-k to interrupt
 
 {end}
 "
