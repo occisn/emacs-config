@@ -5703,14 +5703,20 @@ d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
 
  ;; M-x slime should work
 
- ;; Always show compilation notes buffer
- ;; (setq slime-compilation-finished-hook 'slime-maybe-show-compilation-log)
+ (with-eval-after-load 'slime
 
- ;; Show compilation buffer even with no errors
- ;; (setq slime-display-compilation-output t)
+   ;; Always show compilation notes buffer
+   (setq slime-compilation-finished-hook 'slime-maybe-show-compilation-log)
 
- ;; Display compilation notes in the REPL window
- (setq slime-display-compilation-output t)
+   ;; Show compilation buffer even with no errors
+   (setq slime-display-compilation-output t)
+
+   (setq slime-compilation-hints-level 'all)
+
+   (setq slime-show-compilation-buffer t)
+
+   ;; Display compilation notes in the REPL window
+   (setq slime-display-compilation-output t))
 
  ;; Configure display-buffer to reuse REPL window for compilation notes
  (add-to-list 'display-buffer-alist
@@ -6591,16 +6597,28 @@ If the target test file does not exist, create it and report via a message."
        (message "No fasl file identfied."))))
 
  ;; ===
- ;; === (CL) show to *slime-compilation* buffer
+ ;; === (CL) show *slime-compilation* buffer
 
- (defun my/jump-to-slime-compilation ()
-   "Jump to *slime-compilation* buffer in other window if it exists, otherwise show error. (2025-11-02)"
-   (interactive)
-   (let ((buffer (get-buffer "*slime-compilation*")))
-     (if buffer
-         (switch-to-buffer-other-window buffer)
-       (message "Buffer *slime-compilation* does not exist"))))
-
+  (defun my/jump-to-slime-compilation ()
+  "Show *slime-compilation* buffer in the same window as the SLIME REPL if possible.
+Otherwise, open in another window. Shows an error if compilation buffer does not exist. (2025-12-30)"
+  (interactive)
+  (let ((comp-buffer (get-buffer "*slime-compilation*"))
+        (repl-buffer (get-buffer "*slime-repl sbcl*")))
+    (if (not (buffer-live-p comp-buffer))
+        (message "Buffer *slime-compilation* does not exist")
+      (if (and (buffer-live-p repl-buffer)
+               (get-buffer-window repl-buffer))
+          ;; show compilation buffer in the same window as the REPL
+          (let ((win (get-buffer-window repl-buffer)))
+            (select-window win)
+            (switch-to-buffer comp-buffer))
+        ;; fallback: other window
+        (switch-to-buffer-other-window comp-buffer)))))
+ 
+ (with-eval-after-load 'slime
+   (define-key slime-mode-map (kbd "C-c C-n")
+               #'my/jump-to-slime-compilation))
  ;; ===
  ;; === (CL) filter compilation report
 
@@ -6644,6 +6662,12 @@ If the target test file does not exist, create it and report via a message."
  ;; ===
  ;; === (CL) ASDF
 
+ ;; if we launch
+;;   (swank:operate-on-system-for-emacs "cl-utils" 'load-op :force t)
+;; from the REPL, it works, but *slime-compilation* does not update
+;; For *slime-compilation* to update, we have to launch the command
+;; from slime:
+
  (defun my/asdf-system-name-from-buffer ()
    "Return the ASDF system name associated with the current buffer (file or dired).
 Ignores any .asd files whose names contain 'test' (case-insensitive).
@@ -6680,6 +6704,24 @@ Return NIL if no system found.
            (setq asdf-system-name (file-name-base asd)))))
      asdf-system-name))
 
+ ;; Alternative:
+ (defun my/asdf-system-shortest-name ()
+  "Return the ASDF system name with the shortest .asd filename."
+  (interactive)
+  (when buffer-file-name
+    (let* ((asd-dir
+            (locate-dominating-file
+             buffer-file-name
+             (lambda (dir)
+               (directory-files dir nil "\\.asd\\'")))))
+      (when asd-dir
+        (car
+         (sort
+          (mapcar #'file-name-base
+                  (directory-files asd-dir nil "\\.asd\\'"))
+          (lambda (a b)
+            (< (length a) (length b)))))))))
+
  (defun my/asdf-force-reload-system-corresponding-to-current-buffer ()
    "Force reload current ASDF system.
 (v1, as of 2025-11-02)"
@@ -6688,9 +6730,22 @@ Return NIL if no system found.
      (if (null asdf-system-name)
          (message "No ASDF system found.")
        (slime-eval-async `(asdf:load-system ,asdf-system-name :force t)
-                         (lambda (_result)
-                           (message "System %s has been force-reloaded" asdf-system-name))))))
+         (lambda (_result)
+           (message "System %s has been force-reloaded" asdf-system-name))))))
 
+ ;; Alternative:
+ (defun my/slime-force-reload-current-system ()
+  "Force reload the ASDF system associated with the current buffer."
+  (interactive)
+  (let ((system (my/asdf-system-shortest-name)))
+    (unless system
+      (error "No ASDF system associated with this buffer"))
+    (slime-oos system 'load-op :force t)))
+
+ (with-eval-after-load 'slime
+   (define-key slime-mode-map (kbd "C-c C-l")
+               #'my/slime-force-reload-current-system))
+ 
  (defun my/asdf-force-test-system-corresponding-to-current-buffer ()
    "Force test current ASDF system.
 (v1, as of 2025-11-02)
@@ -6700,8 +6755,21 @@ Return NIL if no system found.
      (if (null asdf-system-name)
          (message "No ASDF system found.")
        (slime-eval-async `(asdf:test-system ,asdf-system-name :force t)
-                         (lambda (_result)
-                           (message "System %s has been force-tested" asdf-system-name))))))
+         (lambda (_result)
+           (message "System %s has been force-tested" asdf-system-name))))))
+
+ ;; Alternative:
+ (defun my/slime-force-test-current-system ()
+  "Force test the ASDF system associated with the current buffer."
+  (interactive)
+  (let ((system (my/asdf-system-shortest-name)))
+    (unless system
+      (error "No ASDF system associated with this buffer"))
+    (slime-oos system 'test-op :force t)))
+
+ (with-eval-after-load 'slime
+   (define-key slime-mode-map (kbd "C-c C-t")
+               #'my/slime-force-test-current-system))
 
  ;; ===
  ;; === my/dired-clean-build-artifacts
@@ -6975,7 +7043,8 @@ REFACTOR: [projectile]
 EXECUTE: 
    Eval: C-c C-c compile defun || C-M-x eval defun || C-x C-e to eval last sexp || C-c C-k || C-c C-y to send to REPL || C-c C-x idem with (time...)
    REPL: C-c C-z to jump in REPL || C-c C-j to execute in REPL || M-n || M-p || *,** || /,// || (foo M-
-   ASDF : _f_l force load | _f_t force test           |  M-x slime-compile-system (compiles an ASDF system)
+   ASDF: ,load-system etc from REPL
+   SLIME: C-c C-l force load | C-c C-t force test | C-c C-n show compilation notes || M-x slime-compile-system (compiles an ASDF system)
    Test in REPL: C-c SPC || _j_ump to slime compilation report || delete fasl (from dired): M-x my/delete-fasl-files
    Clear screen: C-c M-o              ||   q to hide compilation window
 DEBUG: Debug: q || v to jump into code, RETURN, M-., i, e, r
@@ -6986,13 +7055,13 @@ SPECIFIC: Slime: _e_ : slime || M-x slime || ,quit
    ("a" #'my/go-to-asd)
    ("c" #'my-cl-occur)
    ("e" #'slime)
-   ("f" (lambda () 
-          (interactive)
-          (let ((key (read-char "l (force-reload) or t (force-test): ")))
-            (cond 
-             ((eq key ?l) (my/asdf-force-reload-system-corresponding-to-current-buffer))
-             ((eq key ?t) (my/asdf-force-test-system-corresponding-to-current-buffer)))))
-    "submenu f")
+   ;; ("f" (lambda () 
+   ;;        (interactive)
+   ;;        (let ((key (read-char "l (force-reload) or t (force-test): ")))
+   ;;          (cond 
+   ;;           ((eq key ?l) (my/asdf-force-reload-system-corresponding-to-current-buffer))
+   ;;           ((eq key ?t) (my/asdf-force-test-system-corresponding-to-current-buffer)))))
+   ;;  "submenu f")
    ("h" #'hs-hide-all)
    ("i" #'my/indent-lisp-buffer)
    ("j" #'my/jump-to-slime-compilation)
