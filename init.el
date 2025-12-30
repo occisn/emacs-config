@@ -7041,11 +7041,12 @@ COMPLETE: C-:     counsel-company (mini-buffer)
           C-c M-i  fuzzy   ||   C-c TAB completion at point
 REFACTOR: [projectile]
 EXECUTE: 
-   Eval: C-c C-c compile defun || C-M-x eval defun || C-x C-e to eval last sexp || C-c C-k || C-c C-y to send to REPL || C-c C-x idem with (time...)
+   Eval: C-c C-c compile defun || C-M-x eval defun || C-x C-e to eval last sexp || C-c C-y to send to REPL || C-c C-x idem with (time...)
+   ONE FILE: C-c C-k
    REPL: C-c C-z to jump in REPL || C-c C-j to execute in REPL || M-n || M-p || *,** || /,// || (foo M-
    ASDF: ,load-system etc from REPL
    SLIME: C-c C-l force load | C-c C-t force test | C-c C-n show compilation notes || M-x slime-compile-system (compiles an ASDF system)
-   Test in REPL: C-c SPC || _j_ump to slime compilation report || delete fasl (from dired): M-x my/delete-fasl-files
+   Test in REPL: C-c SPC || delete fasl (from dired): M-x my/delete-fasl-files
    Clear screen: C-c M-o              ||   q to hide compilation window
 DEBUG: Debug: q || v to jump into code, RETURN, M-., i, e, r
        Disassemble : C-c M-d | Inspect : C-c I 'foo ; l to go back   | Trace: C-c C-t on the symbol | Navigate within warnings/errors: M-n, M-p
@@ -7064,7 +7065,6 @@ SPECIFIC: Slime: _e_ : slime || M-x slime || ,quit
    ;;  "submenu f")
    ("h" #'hs-hide-all)
    ("i" #'my/indent-lisp-buffer)
-   ("j" #'my/jump-to-slime-compilation)
    ("m" #'imenu)
    ("o" #'outline-hide-body)
    ("p" #'my/go-to-package)
