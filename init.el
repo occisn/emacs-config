@@ -5902,10 +5902,10 @@ d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
          (slime-with-popup-buffer (bufname :package package
                                            :connection t
                                            :select slime-description-autofocus)
-                                  (when (string= bufname "*slime-description*")
-                                    (with-current-buffer bufname (slime-company-doc-mode)))
-                                  (princ string)
-                                  (goto-char (point-min))))))
+           (when (string= bufname "*slime-description*")
+             (with-current-buffer bufname (slime-company-doc-mode)))
+           (princ string)
+           (goto-char (point-min))))))
    (my-init--message-package-loaded "slime-company"))
 
  ;; and activate slime-company in slime below
@@ -6133,17 +6133,17 @@ Modified from official 'slime-call-defun'"
          (if (symbolp toplevel)
              (error "Not in a function definition")
            (slime-dcase toplevel
-                        (((:defun :defgeneric :defmacro :define-compiler-macro) symbol)
-                         (insert-call symbol))
-                        ((:defmethod symbol &rest args)
-                         ;; (declare (ignore args))
-                         (insert-call symbol))
-                        (((:defparameter :defvar :defconstant) symbol)
-                         (insert-call symbol :function nil))
-                        (((:defclass) symbol)
-                         (insert-call symbol :defclass t))
-                        (t
-                         (error "Not in a function definition")))))))
+             (((:defun :defgeneric :defmacro :define-compiler-macro) symbol)
+              (insert-call symbol))
+             ((:defmethod symbol &rest args)
+              ;; (declare (ignore args))
+              (insert-call symbol))
+             (((:defparameter :defvar :defconstant) symbol)
+              (insert-call symbol :function nil))
+             (((:defclass) symbol)
+              (insert-call symbol :defclass t))
+             (t
+              (error "Not in a function definition")))))))
 
    (define-key slime-mode-map (kbd "C-c C-x")  #'my/slime-call-defun--with-time-monitoring)
 
@@ -6599,22 +6599,22 @@ If the target test file does not exist, create it and report via a message."
  ;; ===
  ;; === (CL) show *slime-compilation* buffer
 
-  (defun my/jump-to-slime-compilation ()
-  "Show *slime-compilation* buffer in the same window as the SLIME REPL if possible.
+ (defun my/jump-to-slime-compilation ()
+   "Show *slime-compilation* buffer in the same window as the SLIME REPL if possible.
 Otherwise, open in another window. Shows an error if compilation buffer does not exist. (2025-12-30)"
-  (interactive)
-  (let ((comp-buffer (get-buffer "*slime-compilation*"))
-        (repl-buffer (get-buffer "*slime-repl sbcl*")))
-    (if (not (buffer-live-p comp-buffer))
-        (message "Buffer *slime-compilation* does not exist")
-      (if (and (buffer-live-p repl-buffer)
-               (get-buffer-window repl-buffer))
-          ;; show compilation buffer in the same window as the REPL
-          (let ((win (get-buffer-window repl-buffer)))
-            (select-window win)
-            (switch-to-buffer comp-buffer))
-        ;; fallback: other window
-        (switch-to-buffer-other-window comp-buffer)))))
+   (interactive)
+   (let ((comp-buffer (get-buffer "*slime-compilation*"))
+         (repl-buffer (get-buffer "*slime-repl sbcl*")))
+     (if (not (buffer-live-p comp-buffer))
+         (message "Buffer *slime-compilation* does not exist")
+       (if (and (buffer-live-p repl-buffer)
+                (get-buffer-window repl-buffer))
+           ;; show compilation buffer in the same window as the REPL
+           (let ((win (get-buffer-window repl-buffer)))
+             (select-window win)
+             (switch-to-buffer comp-buffer))
+         ;; fallback: other window
+         (switch-to-buffer-other-window comp-buffer)))))
  
  (with-eval-after-load 'slime
    (define-key slime-mode-map (kbd "C-c C-n")
@@ -6663,10 +6663,10 @@ Otherwise, open in another window. Shows an error if compilation buffer does not
  ;; === (CL) ASDF
 
  ;; if we launch
-;;   (swank:operate-on-system-for-emacs "cl-utils" 'load-op :force t)
-;; from the REPL, it works, but *slime-compilation* does not update
-;; For *slime-compilation* to update, we have to launch the command
-;; from slime:
+ ;;   (swank:operate-on-system-for-emacs "cl-utils" 'load-op :force t)
+ ;; from the REPL, it works, but *slime-compilation* does not update
+ ;; For *slime-compilation* to update, we have to launch the command
+ ;; from slime:
 
  (defun my/asdf-system-name-from-buffer ()
    "Return the ASDF system name associated with the current buffer (file or dired).
@@ -6706,21 +6706,21 @@ Return NIL if no system found.
 
  ;; Alternative:
  (defun my/asdf-system-shortest-name ()
-  "Return the ASDF system name with the shortest .asd filename."
-  (interactive)
-  (when buffer-file-name
-    (let* ((asd-dir
-            (locate-dominating-file
-             buffer-file-name
-             (lambda (dir)
-               (directory-files dir nil "\\.asd\\'")))))
-      (when asd-dir
-        (car
-         (sort
-          (mapcar #'file-name-base
-                  (directory-files asd-dir nil "\\.asd\\'"))
-          (lambda (a b)
-            (< (length a) (length b)))))))))
+   "Return the ASDF system name with the shortest .asd filename."
+   (interactive)
+   (when buffer-file-name
+     (let* ((asd-dir
+             (locate-dominating-file
+              buffer-file-name
+              (lambda (dir)
+                (directory-files dir nil "\\.asd\\'")))))
+       (when asd-dir
+         (car
+          (sort
+           (mapcar #'file-name-base
+                   (directory-files asd-dir nil "\\.asd\\'"))
+           (lambda (a b)
+             (< (length a) (length b)))))))))
 
  (defun my/asdf-force-reload-system-corresponding-to-current-buffer ()
    "Force reload current ASDF system.
@@ -6735,12 +6735,12 @@ Return NIL if no system found.
 
  ;; Alternative:
  (defun my/slime-force-reload-current-system ()
-  "Force reload the ASDF system associated with the current buffer."
-  (interactive)
-  (let ((system (my/asdf-system-shortest-name)))
-    (unless system
-      (error "No ASDF system associated with this buffer"))
-    (slime-oos system 'load-op :force t)))
+   "Force reload the ASDF system associated with the current buffer."
+   (interactive)
+   (let ((system (my/asdf-system-shortest-name)))
+     (unless system
+       (error "No ASDF system associated with this buffer"))
+     (slime-oos system 'load-op :force t)))
 
  (with-eval-after-load 'slime
    (define-key slime-mode-map (kbd "C-c C-l")
@@ -6760,12 +6760,12 @@ Return NIL if no system found.
 
  ;; Alternative:
  (defun my/slime-force-test-current-system ()
-  "Force test the ASDF system associated with the current buffer."
-  (interactive)
-  (let ((system (my/asdf-system-shortest-name)))
-    (unless system
-      (error "No ASDF system associated with this buffer"))
-    (slime-oos system 'test-op :force t)))
+   "Force test the ASDF system associated with the current buffer."
+   (interactive)
+   (let ((system (my/asdf-system-shortest-name)))
+     (unless system
+       (error "No ASDF system associated with this buffer"))
+     (slime-oos system 'test-op :force t)))
 
  (with-eval-after-load 'slime
    (define-key slime-mode-map (kbd "C-c C-t")
@@ -6942,7 +6942,7 @@ Common Lisp :
    _f_ilter 'float to pointer coercion' notes
 
 C and C++:
-   C-c C-k to interrupt
+   C-c C-k to interrupt compilation or run
 
 {end}
 "
