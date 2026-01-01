@@ -6394,6 +6394,12 @@ With Electric Indent Mode enabled, inserts a newline and indents
  ;; EL : by default
  ;; CL : slime-autodoc
 
+ ;; (add-hook 'slime-mode-hook 'eldoc-mode)
+ ;; (add-hook 'slime-repl-mode-hook 'eldoc-mode)
+
+ ;; suggestion of arglist does not work with (speed 3),
+ ;; since this information is not kept
+ 
  ;; ===
  ;; === (EL) Goto defun
 
@@ -7069,7 +7075,7 @@ DOCUMENTATION: docstring global var: C-c C-d d, (describe var) || fields (inspec
 REFERENCES: M-. and M-, to navigate to definition and come back
             who calls a fn : C-c < ; who is called C-c > ; who refers global var C-c C-w r 
 ABBREV: M-x unexpand-abbrev
-COMPLETE: C-:     counsel-company (mini-buffer)
+COMPLETE: C-:     counsel-company (mini-buffer)       || arglist is proposed if (debug 3) (speed 0)
           C-M-i   company-complete, replacing complete-symbol ; C-d to see doc ; M-. to jump to source ; q to come back
           C-c M-i  fuzzy   ||   C-c TAB completion at point
 REFACTOR: [projectile]
