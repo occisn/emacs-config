@@ -6553,20 +6553,53 @@ If the target test file does not exist, create it and report via a message."
          (find-file target)))))
 
 
+ ;; (defun my/go-to-asd ()
+ ;;   "Open unique .asd file in parent directory."
+ ;;   (interactive)
+ ;;   (let* ((directory (file-name-directory (buffer-file-name)))
+ ;;          (asd-files (directory-files (concat directory "../") nil "\\.asd$")))
+ ;;     (when (null asd-files) (error "No .asd file in parent directory"))
+ ;;     (if (> (length asd-files) 1)
+ ;;         (progn
+ ;;           (message "More than one .asd file in parent directory, jumping to directory")
+ ;;           (dired (concat directory "../")))
+ ;;       (progn
+ ;;         (message "Opening asd file")
+ ;;         (find-file (concat directory "../" (car asd-files)))))))
+
  (defun my/go-to-asd ()
-   "Open unique .asd file in parent directory."
+   "Find and open .asd file, searching current directory and upwards."
    (interactive)
-   (let* ((directory (file-name-directory (buffer-file-name)))
-          (asd-files (directory-files (concat directory "../") nil "\\.asd$")))
-     (when (null asd-files) (error "No .asd file in parent directory"))
+   (let* ((start-directory (file-name-directory (buffer-file-name)))
+          (directory (expand-file-name start-directory))
+          (asd-files nil)
+          (found-dir nil))
+     ;; Search upward until we find .asd files or reach root
+     (while (and (not asd-files) directory)
+       (setq asd-files (sort (directory-files directory nil "\\.asd$") #'string<))
+       (if asd-files
+           (setq found-dir directory)
+         ;; Move to parent directory
+         (let ((parent (file-name-directory (directory-file-name directory))))
+           ;; Stop if we've reached the root (parent equals current)
+           (if (string= parent directory)
+               (setq directory nil)
+             (setq directory parent)))))
+     
+     (when (null asd-files) 
+       (error "No .asd file found in current or parent directories"))
+     
      (if (> (length asd-files) 1)
          (progn
-           (message "More than one .asd file in parent directory, jumping to directory")
-           (dired (concat directory "../")))
+           (let ((shortest-asd (car (sort (copy-sequence asd-files) 
+                                          (lambda (a b) (< (length a) (length b)))))))
+             (message "More than one .asd file in %s, jumping to directory" found-dir)
+             (dired found-dir)
+             (dired-goto-file (expand-file-name shortest-asd found-dir))))
        (progn
-         (message "Opening asd file")
-         (find-file (concat directory "../" (car asd-files)))))))
-
+         (message "Opening asd file in %s" found-dir)
+         (find-file (expand-file-name (car asd-files) found-dir))))))
+ 
  (defun my/go-to-package ()
    "Open unique package file in the parent directory."
    (interactive)
@@ -7044,8 +7077,9 @@ EXECUTE:
    Eval: C-c C-c compile defun || C-M-x eval defun || C-x C-e to eval last sexp || C-c C-y to send to REPL || C-c C-x idem with (time...)
    ONE FILE: C-c C-k
    REPL: C-c C-z to jump in REPL || C-c C-j to execute in REPL || M-n || M-p || *,** || /,// || (foo M-
-   ASDF: ,load-system etc from REPL
+   ASDF: ,load-system etc from REPL (but *slime-compilation* does not update) | C-c C-c to recompile function
    SLIME: C-c C-l force load | C-c C-t force test | C-c C-n show compilation notes || M-x slime-compile-system (compiles an ASDF system)
+          C-c C-c to recompile function | avoid C-c C-k | ,q to stop slime
    Test in REPL: C-c SPC || delete fasl (from dired): M-x my/delete-fasl-files
    Clear screen: C-c M-o              ||   q to hide compilation window
 DEBUG: Debug: q || v to jump into code, RETURN, M-., i, e, r
@@ -7085,6 +7119,7 @@ M-p : previous command
 to come back to last prompt: M-> (with shift), which jumps to the end of buffer
 
 ,restart-inferior-lisp
+,q to stop slime
 
 (end)"
    ;; ("e" #'a-function)
