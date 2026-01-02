@@ -5718,6 +5718,11 @@ d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
 
    (setq slime-show-compilation-buffer t)
 
+   ;; see also:
+   ;; (setq slime-popup-on-compile-notes t)
+   ;; M-x slime-show-compilation-log to bring up the buffer
+   ;; C-c M-c to list compiler notes
+
    ;; Display compilation notes in the REPL window
    (setq slime-display-compilation-output t))
 
@@ -7133,6 +7138,26 @@ to come back to last prompt: M-> (with shift), which jumps to the end of buffer
 (end)"
    ;; ("e" #'a-function)
    ) 
+
+ ;; === Hydra SLDB
+
+ (defhydra hydra-sldb (:exit t :hint nil)
+   "
+^Common Lisp SLDB hydra:
+^-----------------------
+
+Should be (debug 3) (speed 0)
+v to view code
+n, p to navigate frames
+M-n, M-p to navigate frames while giving details and showing code 
+t or RET to toggle details of the frame
+e to evaluate in that frame (setq n 5), then:
+r to restart frame
+q to abort
+
+(end)"
+   ;; ("e" #'a-function)
+   )
  
  ) ; end of init section
 
@@ -9827,6 +9852,7 @@ Undo : C-j to cut undo chain? {end}
     ((eql major-mode 'org-mode) (hydra-org-mode/body))
     ((eql major-mode 'plain-tex-mode) (hydra-tex/body))
     ((eql major-mode 'python-mode) (hydra-python/body))
+    ((eql major-mode 'sldb-mode) (hydra-sldb/body))
     ((eql major-mode 'slime-repl-mode) (hydra-slime-repl/body))
     ((eql major-mode 'ses-mode) (hydra-ses/body))
     ((eql major-mode 'sql-mode) (hydra-sql/body))
