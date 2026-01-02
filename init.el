@@ -4359,6 +4359,9 @@ w   to resize cell
      ("urip" "✝")
      ("uRIP" "✝")
      ("utick" "✓")
+     ("utiret" "—")
+     ("utiretlong" "—")
+     ("utiretcadratin" "—")
      ("uwarning" "⚠")
      
      ;; http://xahlee.info/comp/unicode_index.html
