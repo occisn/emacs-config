@@ -6464,6 +6464,29 @@ With Electric Indent Mode enabled, inserts a newline and indents
              (setq outline-regexp ";; === ")
              (outline-minor-mode)))
 
+
+ ;; ===
+ ;; === (CL) abbrev
+
+ (defun my-init--cl-abbrev ()
+
+   (define-skeleton cl-muffle-skeleton 
+     "CL muffle skeleton"
+     nil
+     "(declare (sb-ext:muffle-conditions sb-ext:compiler-note))\n")
+
+   (define-skeleton cl-defun-skeleton 
+     "CL defun skeleton"
+     nil
+     "(defun (" _ ")\n" > "\"\"\n" > "\n" > ")\n")) ; end of defun my-init--cl-abbrev
+
+ (add-hook 'lisp-mode-hook
+             (lambda ()
+               (my-init--cl-abbrev)
+               (define-abbrev lisp-mode-abbrev-table "clmuffle" "" 'cl-muffle-skeleton)
+               (define-abbrev lisp-mode-abbrev-table "cldefun" "" 'cl-defun-skeleton)
+               ))
+ 
  ;; ===
  ;; === (EL) Emacs C sources
 
@@ -6532,7 +6555,6 @@ With a prefix argument, perform `macroexpand-all' instead."
            (with-output-to-temp-buffer bufname
              (pp expansion)))))))
 
-
  ;; ===
  ;; === (CL) Navigate between source and test files
 
@@ -6543,7 +6565,7 @@ If the target test file does not exist, create it and report via a message."
    (let* ((buffer-file-name1 (buffer-file-name)) ; c:/.../abc.lisp
           (directory (file-name-directory buffer-file-name1))
           (file-name (file-name-nondirectory buffer-file-name1)) ; abc.lisp
-          (file-name-base1 (file-name-base buffer-file-name1)) ; abc
+          (file-name-base1 (file-name-base buffer-file-name1))   ; abc
           (len (length file-name-base1))
           (test-file-p
            (and (> len 6)
@@ -7080,6 +7102,7 @@ MACROS: Macro expander: C-c RETURN || C-c C-m || C-c M-m to fully expand
 INDENT: C-M-q on current sexp || _i_: _i_ndent-buffer (M-x my/indent-lisp-buffer)
 COMMENT: region M-; to comment/uncomment (paredit)
 DOCUMENTATION: docstring global var: C-c C-d d, (describe var) || fields (inspect var), q || hyperspec C-c C-d h || (apropos 'ts-get') || C-h m [l to go back]
+               C-c I (add ') to inspect a symbol
 REFERENCES: M-. and M-, to navigate to definition and come back
             who calls a fn : C-c < ; who is called C-c > ; who refers global var C-c C-w r 
 ABBREV: M-x unexpand-abbrev
@@ -7134,6 +7157,8 @@ to come back to last prompt: M-> (with shift), which jumps to the end of buffer
 
 ,restart-inferior-lisp
 ,q to stop slime
+
+C-c I to inspect a symbol (add ')
 
 (end)"
    ;; ("e" #'a-function)
