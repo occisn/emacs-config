@@ -8894,6 +8894,8 @@ If filename begins with a digit, prefix with X_."
      ;; If clangd is in your PATH, this may not be strictly necessary.
      (add-to-list 'eglot-server-programs
                   '((c-mode c-ts-mode) . ("clangd"
+                                          ;; the following to avoid "too many errors emitted, stopping now"
+                                          "--limit-diagnostics=0"
                                           ;; the 3 following lines for cppcheck:
                                           "--background-index"
                                           "--clang-tidy"
@@ -8915,6 +8917,11 @@ If filename begins with a digit, prefix with X_."
      :config (my-init--message-package-loaded "company")))
 
  ;; === cppcheck
+
+ ;; to be added in .clang:
+ ;; Diagnostics:
+ ;;  ClangTidy:
+ ;;    Add: cppcheck
 
  (use-package flycheck
    :ensure t
