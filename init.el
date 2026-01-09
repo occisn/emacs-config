@@ -8893,7 +8893,12 @@ If filename begins with a digit, prefix with X_."
      ;; Optional: Add clangd to the server list explicitly if Emacs doesn't find it.
      ;; If clangd is in your PATH, this may not be strictly necessary.
      (add-to-list 'eglot-server-programs
-                  '((c-mode c-ts-mode) . ("clangd")))
+                  '((c-mode c-ts-mode) . ("clangd"
+                                          ;; the 3 following lines for cppcheck:
+                                          "--background-index"
+                                          "--clang-tidy"
+                                          "--completion-style=detailed"
+                                          )))
 
      ;; Optional: Enable snippet completion (requires yasnippet to be active)
      (when nil
@@ -8908,6 +8913,21 @@ If filename begins with a digit, prefix with X_."
      :ensure t
      :hook (eglot-managed-mode . company-mode)
      :config (my-init--message-package-loaded "company")))
+
+ ;; === cppcheck
+
+ (use-package flycheck
+   :ensure t
+   :config
+   ;; Configure cppcheck for C
+   (add-hook 'c-mode-hook
+             (lambda ()
+               (setq flycheck-checker 'c/c++-cppcheck)
+               (flycheck-mode)))
+   (add-hook 'c-ts-mode-hook
+             (lambda ()
+               (setq flycheck-checker 'c/c++-cppcheck)
+               (flycheck-mode))))
 
  ;; === Indentation
  
