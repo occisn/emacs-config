@@ -422,7 +422,7 @@ The list is printed on a separate buffer.
 Requires 'f' package.
 (v1, available in occisn/emacs-utils GitHub repository)"
    (interactive)
-   (when (not (string-equal major-mode "dired-mode"))
+   (unless (string-equal major-mode "dired-mode")
      (error "Not in dired-mode."))
    (let ((root default-directory)
          (minimal-size (string-to-number (read-string "Minimal size in Mo (default = 100): " "" nil "100")))
@@ -495,7 +495,7 @@ Directories listed in ALREADY-OK-FOLDERS list are not investigated.
 Requires 'f' package.
 (v1, available in occisn/emacs-utils GitHub repository)"
    (interactive)
-   (when (not (string-equal major-mode "dired-mode"))
+   (unless (string-equal major-mode "dired-mode")
      (error "Trying to perform an my/list-directories-containing-zip-files when not in dired-mode."))
    (let ((already-OK-folders nil)
          (root default-directory)
@@ -533,7 +533,7 @@ Source: https://stackoverflow.com/questions/22403751/check-if-a-string-ends-with
                                      nil)
                                    nil ; not recursive
                                    ) 
-                          (when (not (null zip-files-and-sizes))
+                          (unless (null zip-files-and-sizes)
                             (setq sorted-zip-files-and-sizes (sort zip-files-and-sizes (lambda (a b) (> (cdr a) (cdr b)))))
                             (setq biggest-zip-file-and-size (car sorted-zip-files-and-sizes))
                             (if (cl-loop for suffix in already-OK-folders
@@ -581,7 +581,7 @@ Source: https://stackoverflow.com/questions/22403751/check-if-a-string-ends-with
 Presents the results as a dired buffer.
 (v2, available in occisn/emacs-utils GitHub repository; v1 as of December 21th, 2021)"
    (interactive)
-   (when (not (string-equal major-mode "dired-mode"))
+   (unless (string-equal major-mode "dired-mode")
      (error "Trying to perform my/find-files-with-same-size-in-same-subdirectory when not in dired-mode."))
    (cl-labels ((insert-directories-in-file-list (files)
                  "Take a list of files, and return the same list with directories intertwined.
@@ -595,7 +595,7 @@ d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
                    (cl-loop for filename in files
                             for dir1 = (file-name-directory filename)
                             do (progn
-                                 (when (not (string= current-dir dir1))
+                                 (unless (string= current-dir dir1)
                                    (push dir1 files-intertwined-with-directories)
                                    (setq current-dir dir1))
                                  (push filename files-intertwined-with-directories)))
@@ -2229,7 +2229,7 @@ M-x keycast-mode: show current key and its meaning on the command line
  (defun my/dark-theme ()
    "Set my dark theme."
    (interactive)
-   (when (not (null custom-enabled-themes))
+   (unless (null custom-enabled-themes)
      (my/disable-all-themes))
    (when (my-init--light-background-p)
      (invert-face 'default))
@@ -2242,7 +2242,7 @@ M-x keycast-mode: show current key and its meaning on the command line
  (defun my/light-theme ()
    "Set my light theme."
    (interactive)
-   (when (not (null custom-enabled-themes))
+   (unless (null custom-enabled-themes)
      (my/disable-all-themes))
    (when (my-init--dark-background-p)
      (invert-face 'default))
@@ -2286,7 +2286,7 @@ M-x keycast-mode: show current key and its meaning on the command line
  (defun my/raw-dark-theme ()
    "Set raw dark theme."
    (interactive)
-   (when (not (null custom-enabled-themes))
+   (unless (null custom-enabled-themes)
      (my/disable-all-themes))
    (when (my-init--light-background-p)
      (invert-face 'default))
@@ -2298,7 +2298,7 @@ M-x keycast-mode: show current key and its meaning on the command line
  (defun my/raw-light-theme ()
    "Set raw light theme."
    (interactive)
-   (when (not (null custom-enabled-themes))
+   (unless (null custom-enabled-themes)
      (my/disable-all-themes))
    (when (my-init--dark-background-p)
      (invert-face 'default))
@@ -2809,7 +2809,7 @@ Version 2019-12-02"
                (if (string= "" subdirectory-name)
                    default-directory
                  (let ((res (concat default-directory subdirectory-name "/")))
-                   (when (not (file-directory-p res))
+                   (unless (file-directory-p res)
                      (make-directory res)
                      (message "Creating directory \"%s\" within %s" subdirectory-name default-directory))
                    res)))
@@ -4390,7 +4390,7 @@ w   to resize cell
 
  ;; change permissions on Downloads to 777 so that C-x C-q do not trigger a "make editable?" question 
  (if (my-init--directory-exists-p *downloads-directory*)
-     (when (not (file-writable-p *downloads-directory*))
+     (unless (file-writable-p *downloads-directory*)
        (chmod *downloads-directory* #o777)
        (message "Changing permissions on Downloads directory (%s) so that C-x C-q do not trigger a 'make editable?' question ; now writable = %s" *downloads-directory* (file-writable-p *downloads-directory*)))
    (message "ERROR: *downloads-directory* is nil or does not exist: %s" *downloads-directory*))
@@ -4528,7 +4528,7 @@ w   to resize cell
    "Copy file as another file (adding ' (2)' at the end) in same dired folder.
 (v1, available in occisn/emacs-utils GitHub repository)"
    (interactive)
-   (when (not (string-equal major-mode "dired-mode"))
+   (unless (string-equal major-mode "dired-mode")
      (error "Trying to copy file when not in dired-mode."))
    (when (> (length (dired-get-marked-files)) 1)
      (error "Trying to copy several files in same folder."))
@@ -4603,7 +4603,7 @@ Uses ImageMagick.
    "In Dired, copy the date of last modification of file into clipboard under YYYY-MM-DD format."
    (interactive)
 
-   (when (not (string-equal major-mode "dired-mode"))
+   (unless (string-equal major-mode "dired-mode")
      (error "Not in dired-mode."))
    (when (> (length (dired-get-marked-files)) 1)
      (error "Several files marked."))
@@ -5161,10 +5161,10 @@ Ignore case.
                                    (erase-buffer)
                                    (insert-file-contents file11)
                                    (let ((tags-string1 (cadar (org-collect-keywords '("FILETAGS")))))
-                                     (when (not (null tags-string1))
+                                     (unless (null tags-string1)
                                        (cl-loop for tag0 in (split-string tags-string1 " ")
                                                 do
-                                                (when (not (member tag0 tags-list))
+                                                (unless (member tag0 tags-list)
                                                   (push tag0 tags-list)))))))) ; end of lambda
                              org-files) ; end of cl-remove-if-not
            ) ; end of with-temp-buffer
@@ -5203,7 +5203,7 @@ Ignore case.
                                    (erase-buffer)
                                    (insert-file-contents file11)
                                    (let ((tags-string1 (cadar (org-collect-keywords '("FILETAGS")))))
-                                     (when (not (null tags-string1))
+                                     (unless (null tags-string1)
                                        (cl-loop for tag0 in (split-string tags-string1 " ")
                                                 do
                                                 (if (assoc tag0 tags-alist)
@@ -5396,7 +5396,7 @@ Search & replace:
  (defun my/find1 ()
    "Find in current dired directory with native Emacs tools, output as buffer."
    (interactive)
-   (when (not (string-equal major-mode "dired-mode"))
+   (unless (string-equal major-mode "dired-mode")
      (error "Trying to perform a my/find1 when not in dired-mode."))
    
    (cl-labels ((insert-directories-in-file-list (files)
@@ -5413,7 +5413,7 @@ d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
                    (cl-loop for filename in files
                             for dir1 = (file-name-directory filename)
                             do (progn
-                                 (when (not (string= current-dir dir1))
+                                 (unless (string= current-dir dir1)
                                    (push dir1 files-intertwined-with-directories)
                                    (setq current-dir dir1))
                                  (push filename files-intertwined-with-directories)))
@@ -5441,7 +5441,7 @@ d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
  (defun my/find2 ()
    "Find in current dired directory with projectile."
    (interactive)
-   (when (not (string-equal major-mode "dired-mode"))
+   (unless (string-equal major-mode "dired-mode")
      (error "Trying to perform a my/find2 when not in dired-mode."))
    (let* ((directory default-directory)
           (file (projectile-completing-read
@@ -5455,7 +5455,7 @@ d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
    "Find in current dired directory with projectile, output as buffer."
    (interactive)
    
-   (when (not (string-equal major-mode "dired-mode"))
+   (unless (string-equal major-mode "dired-mode")
      (error "Trying to perform a my/find3 when not in dired-mode."))
 
    (cl-labels ((insert-directories-in-file-list (files)
@@ -5472,7 +5472,7 @@ d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
                    (cl-loop for filename in files
                             for dir1 = (file-name-directory filename)
                             do (progn
-                                 (when (not (string= current-dir dir1))
+                                 (unless (string= current-dir dir1)
                                    (push dir1 files-intertwined-with-directories)
                                    (setq current-dir dir1))
                                  (push filename files-intertwined-with-directories)))
@@ -7528,7 +7528,7 @@ outline : _o_ hide & _a_ show-all
    (interactive)
    (unless (my-init--file-exists-p *unzip-program*)
      (error "Unable to use unzip since no program defined: %s" *unzip-program*))
-   (when (not (string-equal major-mode "dired-mode"))
+   (unless (string-equal major-mode "dired-mode")
      (error "Trying to unzip when not in dired-mode."))
    (when (> (length (dired-get-marked-files)) 1)
      (error "Trying to unzip several files."))
@@ -7566,7 +7566,7 @@ For instance: abc/def --> abc\\def"
    (interactive)
    (unless (my-init--file-exists-p *unzip-program*)
      (error "Unable to use unzip since no program defined: %s" *unzip-program*))
-   (when (not (string-equal major-mode "dired-mode"))
+   (unless (string-equal major-mode "dired-mode")
      (error "Trying to zip when not in dired-mode."))
    (cl-labels ((replace-linux-slash-with-two-windows-slashes (path)
                  "Return PATH string after having replaced slashes by two backslashes.
@@ -7595,7 +7595,7 @@ For instance: abc/def --> abc\\def"
    (interactive)
    (unless (my-init--file-exists-p *unzip-program*)
      (error "Unable to list content of zip file since no program defined: %s" *unzip-program*))
-   (when (not (string-equal major-mode "dired-mode"))
+   (unless (string-equal major-mode "dired-mode")
      (error "Trying to list content of zip file when not in dired-mode."))
    (when (> (length (dired-get-marked-files)) 1)
      (error "Trying to list the content of several files."))
@@ -7622,7 +7622,7 @@ Attention: overwrite.
    (interactive)
    (unless (my-init--file-exists-p *unzip-program*)
      (error "Unable to add to zip archive since no program defined: %s" *unzip-program*))
-   (when (not (string-equal major-mode "dired-mode"))
+   (unless (string-equal major-mode "dired-mode")
      (error "Trying to add to zip archive when not in dired-mode."))
    (let ((files-to-add (dired-get-marked-files)))
      (message "marked files: %s" files-to-add)
@@ -7685,7 +7685,7 @@ Attention: overwrite.
    (interactive)
    (when (null *pdftk-program*)
      (error "No PDFTK program is defined."))
-   (when (not (string-equal major-mode "dired-mode"))
+   (unless (string-equal major-mode "dired-mode")
      (error "Trying to burst a PDF file when not in dired-mode."))
    (when (> (length (dired-get-marked-files)) 1)
      (error "Trying to burst several files."))
@@ -7709,8 +7709,8 @@ For instance: abc/def --> abc\\def"
                          "\"" output-directory-slash-OK-accents-OK "page_%03d_of_" file-name-slash-OK-accents-OK "\""))
             ;; Example of cmd line: "c:/Users/.../PDFTKBuilderPortable/App/pdftkbuilder/pdftk.exe" "c:/Users/.../Downloads/test.pdf" burst output "c:/Users/.../Downloads/page_%03d_of_XYZ.pdf"
             )
-       (when (not (or (string= (file-name-extension file-full-name) "pdf")
-                      (string= (file-name-extension file-full-name) "PDF")))
+       (unless (or (string= (file-name-extension file-full-name) "pdf")
+                 (string= (file-name-extension file-full-name) "PDF"))
          (error "Trying to burst a non-PDF file: %S" file-full-name))
        (message "Bursting (splitting) PDF file %S with %s" file-name *pdftk-program-name*)
        (call-process-shell-command cmd nil t)
@@ -7722,7 +7722,7 @@ For instance: abc/def --> abc\\def"
    (interactive)
    (when (null *pdftk-program*)
      (error "No PDFTK program is defined."))
-   (when (not (string-equal major-mode "dired-mode"))
+   (unless (string-equal major-mode "dired-mode")
      (error "Trying to extract from a PDF file when not in dired-mode."))
    (when (> (length (dired-get-marked-files)) 1)
      (error "Trying to extract from several files."))
@@ -7748,8 +7748,8 @@ For instance: abc/def --> abc\\def"
                          "\"" output-directory-slash-OK-accents-OK "page_" first-page "_to_" last-page "_of_" file-name-slash-OK-accents-OK "\""))
             ;; Example of cmd line: "c:/Users/.../PDFTKBuilderPortable/App/pdftkbuilder/pdftk.exe" A="c:/Users/.../Downloads/test.pdf" cat A2-4 output "c:/Users/.../Downloads/page_2_to_4_of_XYZ.pdf"
             )
-       (when (not (or (string= (file-name-extension file-full-name) "pdf")
-                      (string= (file-name-extension file-full-name) "PDF")))
+       (unless (or (string= (file-name-extension file-full-name) "pdf")
+                 (string= (file-name-extension file-full-name) "PDF"))
          (error "Trying to extract pages from a non-PDF file: %S" file-full-name))
        (message "Extracting page(s) %s to %s of PDF file %S with %s" first-page last-page file-name *pdftk-program-name*)
        (call-process-shell-command cmd nil t)
@@ -7763,7 +7763,7 @@ If necessary : M-x read-only-mode
    (interactive)
    (when (null *pdftk-program*)
      (error "No PDFTK program is defined."))
-   (when (not (string-equal major-mode "dired-mode"))
+   (unless (string-equal major-mode "dired-mode")
      (error "Trying to extract from a PDF file when not in dired-mode."))
    (cl-labels ((replace-linux-slash-with-two-windows-slashes (path)
                  "Return PATH string after having replaced slashes by two backslashes.
@@ -7779,8 +7779,8 @@ For instance: abc/def --> abc\\def"
             ;; Example of cmd line: "c:/Users/.../PDFTKBuilderPortable/App/pdftkbuilder/pdftk.exe" "c:/Users/.../Downloads/1.pdf" "c:/Users/.../Downloads/2.pdf" cat output "c:/Users/.../Downloads/output.pdf"
             )
        (dolist (file-full-name files-list)
-         (when (not (or (string= (file-name-extension file-full-name) "pdf")
-                        (string= (file-name-extension file-full-name) "PDF")))
+         (unless (or (string= (file-name-extension file-full-name) "pdf")
+                   (string= (file-name-extension file-full-name) "PDF"))
            (error "Trying to join a non-PDF file: %S" file-full-name))
          (let ((file-full-name-slash-OK-accents-OK (replace-linux-slash-with-two-windows-slashes file-full-name)))
            (setq cmd (concat cmd " " "\"" file-full-name-slash-OK-accents-OK "\""))))
@@ -8384,7 +8384,7 @@ Uses Imagemagick and Tesseract.
 (v4, available in occisn/emacs-utils GitHub repository)"
    (interactive)
    
-   (when (not (string-equal major-mode "dired-mode"))
+   (unless (string-equal major-mode "dired-mode")
      (error "Scanned pdf to txt: not in dired mode."))
    (when (> (length (dired-get-marked-files)) 1)
      (error "Scanned pdf to txt: more than 1 file has been selected."))
@@ -9504,7 +9504,7 @@ For instance: abc/def --> abc\\def"
                        ((equal "Dec" month) 12)
                        (t (error "Month not recognized: %s" month))))) ; end of labels definitions
      
-     (when (not (string-equal major-mode "dired-mode"))
+     (unless (string-equal major-mode "dired-mode")
        (error "Trying to burst a PDF file when not in dired-mode."))
      (when (> (length (dired-get-marked-files)) 1)
        (error "Trying to add dates at the beginning of several files."))
@@ -9517,7 +9517,7 @@ For instance: abc/def --> abc\\def"
             (file-name-slash-OK-accents-OK (replace-linux-slash-with-two-windows-slashes file-name))
             ;; (file-name-without-extension (file-name-base file-full-name))
             (date-line nil))
-       (when (not (or (string= (file-name-extension file-full-name) "eml") (string= (file-name-extension file-full-name) "EML") ))
+       (unless (or (string= (file-name-extension file-full-name) "eml") (string= (file-name-extension file-full-name) "EML") )
          (error "Trying to extract date from a non-EML fil: %S" file-full-name))
        (with-temp-buffer
          (insert-file-contents file-full-name-slash-OK-accents-OK)
