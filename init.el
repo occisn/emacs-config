@@ -288,7 +288,7 @@ The list is printed on a separate buffer.
 Requires 'f' package.
 (v1, available in occisn/emacs-utils GitHub repository)"
    (interactive)
-   (unless (string-equal major-mode "dired-mode")
+   (unless (string= major-mode "dired-mode")
      (error "Not in dired-mode."))
    (cl-labels ((file-size-Mo (filename)
                  "Return file size of FILENAME in Mo.
@@ -357,7 +357,7 @@ The list is printed on a separate buffer.
 Requires 'f' package.
 (v1, available in occisn/emacs-utils GitHub repository)"
    (interactive)
-   (unless (string-equal major-mode "dired-mode")
+   (unless (string= major-mode "dired-mode")
      (error "Not in dired-mode."))
    (cl-labels ((nb-of-elements-in-directory (folder)
                  "Return number of elements in FOLDER, including sub-folders (no recursive investigation of subdirectories).
@@ -422,7 +422,7 @@ The list is printed on a separate buffer.
 Requires 'f' package.
 (v1, available in occisn/emacs-utils GitHub repository)"
    (interactive)
-   (unless (string-equal major-mode "dired-mode")
+   (unless (string= major-mode "dired-mode")
      (error "Not in dired-mode."))
    (let ((root default-directory)
          (minimal-size (string-to-number (read-string "Minimal size in Mo (default = 100): " "" nil "100")))
@@ -495,7 +495,7 @@ Directories listed in ALREADY-OK-FOLDERS list are not investigated.
 Requires 'f' package.
 (v1, available in occisn/emacs-utils GitHub repository)"
    (interactive)
-   (unless (string-equal major-mode "dired-mode")
+   (unless (string= major-mode "dired-mode")
      (error "Trying to perform an my/list-directories-containing-zip-files when not in dired-mode."))
    (let ((already-OK-folders nil)
          (root default-directory)
@@ -581,7 +581,7 @@ Source: https://stackoverflow.com/questions/22403751/check-if-a-string-ends-with
 Presents the results as a dired buffer.
 (v2, available in occisn/emacs-utils GitHub repository; v1 as of December 21th, 2021)"
    (interactive)
-   (unless (string-equal major-mode "dired-mode")
+   (unless (string= major-mode "dired-mode")
      (error "Trying to perform my/find-files-with-same-size-in-same-subdirectory when not in dired-mode."))
    (cl-labels ((insert-directories-in-file-list (files)
                  "Take a list of files, and return the same list with directories intertwined.
@@ -2782,7 +2782,7 @@ Version 2019-12-02"
    (defun my/paste-image-from-clipboard-as-link ()
      "Paste image from clipboard to the current org-mode buffer as link. The image itself is pasted into the directory of the org file."
      (interactive)
-     (unless (string-equal major-mode "org-mode")
+     (unless (string= major-mode "org-mode")
        (error "Trying to paste image from clipboard while not in org-mode"))
      (cl-labels ((string-remove-surrounding-quotes (s)
                    "Remove quotes at the beginning and at the end of a string.
@@ -4528,7 +4528,7 @@ w   to resize cell
    "Copy file as another file (adding ' (2)' at the end) in same dired folder.
 (v1, available in occisn/emacs-utils GitHub repository)"
    (interactive)
-   (unless (string-equal major-mode "dired-mode")
+   (unless (string= major-mode "dired-mode")
      (error "Trying to copy file when not in dired-mode."))
    (when (> (length (dired-get-marked-files)) 1)
      (error "Trying to copy several files in same folder."))
@@ -4552,7 +4552,7 @@ Uses ImageMagick.
 (v1, available in occisn/emacs-utils GitHub repository + adaptations)"
    (interactive)
 
-   (unless (string-equal major-mode "dired-mode")
+   (unless (string= major-mode "dired-mode")
      (error "Trying to paste image from clipboard while not in dired-mode"))
 
    (cl-labels ((paste-image-from-clipboard-to-file-with-imagemagick (destination-file-with-path)
@@ -4603,7 +4603,7 @@ Uses ImageMagick.
    "In Dired, copy the date of last modification of file into clipboard under YYYY-MM-DD format."
    (interactive)
 
-   (unless (string-equal major-mode "dired-mode")
+   (unless (string= major-mode "dired-mode")
      (error "Not in dired-mode."))
    (when (> (length (dired-get-marked-files)) 1)
      (error "Several files marked."))
@@ -5396,7 +5396,7 @@ Search & replace:
  (defun my/find1 ()
    "Find in current dired directory with native Emacs tools, output as buffer."
    (interactive)
-   (unless (string-equal major-mode "dired-mode")
+   (unless (string= major-mode "dired-mode")
      (error "Trying to perform a my/find1 when not in dired-mode."))
    
    (cl-labels ((insert-directories-in-file-list (files)
@@ -5441,7 +5441,7 @@ d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
  (defun my/find2 ()
    "Find in current dired directory with projectile."
    (interactive)
-   (unless (string-equal major-mode "dired-mode")
+   (unless (string= major-mode "dired-mode")
      (error "Trying to perform a my/find2 when not in dired-mode."))
    (let* ((directory default-directory)
           (file (projectile-completing-read
@@ -5455,7 +5455,7 @@ d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
    "Find in current dired directory with projectile, output as buffer."
    (interactive)
    
-   (unless (string-equal major-mode "dired-mode")
+   (unless (string= major-mode "dired-mode")
      (error "Trying to perform a my/find3 when not in dired-mode."))
 
    (cl-labels ((insert-directories-in-file-list (files)
@@ -7528,7 +7528,7 @@ outline : _o_ hide & _a_ show-all
    (interactive)
    (unless (my-init--file-exists-p *unzip-program*)
      (error "Unable to use unzip since no program defined: %s" *unzip-program*))
-   (unless (string-equal major-mode "dired-mode")
+   (unless (string= major-mode "dired-mode")
      (error "Trying to unzip when not in dired-mode."))
    (when (> (length (dired-get-marked-files)) 1)
      (error "Trying to unzip several files."))
@@ -7566,7 +7566,7 @@ For instance: abc/def --> abc\\def"
    (interactive)
    (unless (my-init--file-exists-p *unzip-program*)
      (error "Unable to use unzip since no program defined: %s" *unzip-program*))
-   (unless (string-equal major-mode "dired-mode")
+   (unless (string= major-mode "dired-mode")
      (error "Trying to zip when not in dired-mode."))
    (cl-labels ((replace-linux-slash-with-two-windows-slashes (path)
                  "Return PATH string after having replaced slashes by two backslashes.
@@ -7595,7 +7595,7 @@ For instance: abc/def --> abc\\def"
    (interactive)
    (unless (my-init--file-exists-p *unzip-program*)
      (error "Unable to list content of zip file since no program defined: %s" *unzip-program*))
-   (unless (string-equal major-mode "dired-mode")
+   (unless (string= major-mode "dired-mode")
      (error "Trying to list content of zip file when not in dired-mode."))
    (when (> (length (dired-get-marked-files)) 1)
      (error "Trying to list the content of several files."))
@@ -7622,7 +7622,7 @@ Attention: overwrite.
    (interactive)
    (unless (my-init--file-exists-p *unzip-program*)
      (error "Unable to add to zip archive since no program defined: %s" *unzip-program*))
-   (unless (string-equal major-mode "dired-mode")
+   (unless (string= major-mode "dired-mode")
      (error "Trying to add to zip archive when not in dired-mode."))
    (let ((files-to-add (dired-get-marked-files)))
      (message "marked files: %s" files-to-add)
@@ -7685,7 +7685,7 @@ Attention: overwrite.
    (interactive)
    (when (null *pdftk-program*)
      (error "No PDFTK program is defined."))
-   (unless (string-equal major-mode "dired-mode")
+   (unless (string= major-mode "dired-mode")
      (error "Trying to burst a PDF file when not in dired-mode."))
    (when (> (length (dired-get-marked-files)) 1)
      (error "Trying to burst several files."))
@@ -7722,7 +7722,7 @@ For instance: abc/def --> abc\\def"
    (interactive)
    (when (null *pdftk-program*)
      (error "No PDFTK program is defined."))
-   (unless (string-equal major-mode "dired-mode")
+   (unless (string= major-mode "dired-mode")
      (error "Trying to extract from a PDF file when not in dired-mode."))
    (when (> (length (dired-get-marked-files)) 1)
      (error "Trying to extract from several files."))
@@ -7763,7 +7763,7 @@ If necessary : M-x read-only-mode
    (interactive)
    (when (null *pdftk-program*)
      (error "No PDFTK program is defined."))
-   (unless (string-equal major-mode "dired-mode")
+   (unless (string= major-mode "dired-mode")
      (error "Trying to extract from a PDF file when not in dired-mode."))
    (cl-labels ((replace-linux-slash-with-two-windows-slashes (path)
                  "Return PATH string after having replaced slashes by two backslashes.
@@ -7838,7 +7838,7 @@ To be called from dired hydra."
 To be called from hydra."
    (interactive)
    
-   (cond ((string-equal major-mode "dired-mode")
+   (cond ((string= major-mode "dired-mode")
           (let ((proc (start-process "cmd" nil "cmd.exe" "/C" "start" "cmd.exe" "/K" "cd" default-directory)))
             (set-process-query-on-exit-flag proc nil)
             (my-init--message2 "Native cmd window opened in %s directory" default-directory)))
@@ -8384,7 +8384,7 @@ Uses Imagemagick and Tesseract.
 (v4, available in occisn/emacs-utils GitHub repository)"
    (interactive)
    
-   (unless (string-equal major-mode "dired-mode")
+   (unless (string= major-mode "dired-mode")
      (error "Scanned pdf to txt: not in dired mode."))
    (when (> (length (dired-get-marked-files)) 1)
      (error "Scanned pdf to txt: more than 1 file has been selected."))
@@ -9504,7 +9504,7 @@ For instance: abc/def --> abc\\def"
                        ((equal "Dec" month) 12)
                        (t (error "Month not recognized: %s" month))))) ; end of labels definitions
      
-     (unless (string-equal major-mode "dired-mode")
+     (unless (string= major-mode "dired-mode")
        (error "Trying to burst a PDF file when not in dired-mode."))
      (when (> (length (dired-get-marked-files)) 1)
        (error "Trying to add dates at the beginning of several files."))
