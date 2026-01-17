@@ -6888,76 +6888,139 @@ Returns the immediate subdirectory path, or nil if FILE is directly in ROOT-DIR.
        (expand-file-name (car parts) root-dir))))
 
  (defun my/dired-clean-build-artifacts ()
-   "Delete .o, .fasl, and .exe files recursively in subdirectories.
-EXCEPTIONS are defined within the function.
-Files are moved to Windows Recycle Bin.
-Results are grouped by immediate subdirectory."
-   (interactive)
-   (let* ((dir (dired-current-directory))
-          (extensions '("o" "fasl" "exe"))
-          (exception-list '("cloc-2.06.exe" "scc.exe"))
-          (deleted-files '())
-          (failed-files '())
-          (buffer-name "*Deleted Build Artifacts*"))
-     
-     ;; Validate we're in a dired buffer
-     (unless (derived-mode-p 'dired-mode)
-       (error "This command must be run from a dired buffer"))
-     
-     (message "Recursively scanning directories and moving files to Recycle Bin...")
-     
-     ;; Find all matching files recursively
-     (let ((all-files (dired-clean--find-files-recursively dir extensions exception-list)))
-       
-       ;; Try to delete each file and group by immediate subdirectory
-       (dolist (file all-files)
-         (let ((immediate-subdir (dired-clean--get-immediate-subdir file dir)))
-           (when immediate-subdir
-             (if (my/delete-to-recycle-bin file)
-                 (let ((existing (assoc immediate-subdir deleted-files)))
-                   (if existing
-                       (setcdr existing (cons file (cdr existing)))
-                     (push (cons immediate-subdir (list file)) deleted-files)))
-               (push file failed-files))))))
-     
-     ;; Display results
-     (with-current-buffer (get-buffer-create buffer-name)
-       (erase-buffer)
-       (insert (format "Build Artifacts Cleanup Report\n"))
-       (insert (format "Directory: %s\n" dir))
-       (insert (format "Search: Recursive (grouped by immediate subdirectory)\n"))
-       (insert (format "Time: %s\n" (current-time-string)))
-       (insert (make-string 70 ?=) "\n\n")
-       
-       (if deleted-files
-           (progn
-             (insert (format "Successfully moved to Recycle Bin (%d files from %d subdirectories):\n\n"
-                             (apply #'+ (mapcar (lambda (x) (length (cdr x))) deleted-files))
-                             (length deleted-files)))
-             (dolist (subdir-entry (sort deleted-files 
-                                         (lambda (a b) (string< (car a) (car b)))))
-               (let* ((subdir (car subdir-entry))
-                      (files (cdr subdir-entry))
-                      (subdir-name (file-name-nondirectory (directory-file-name subdir))))
-                 (insert (format "\n%s/ (%d files):\n" subdir-name (length files)))
-                 (dolist (file (sort files #'string<))
-                   (let ((relative (file-relative-name file dir)))
-                     (insert (format "  ✓ %s\n" relative)))))))
-         (insert "No build artifact files found to delete.\n\n"))
-       
-       (when failed-files
-         (insert (format "\n\nFailed to move (%d files):\n" (length failed-files)))
-         (dolist (file failed-files)
-           (insert (format "  ✗ %s\n" (file-relative-name file dir)))))
-       
-       (goto-char (point-min))
-       (display-buffer (current-buffer)))
-     
-     (if deleted-files
-         (message "Moved %d files to Recycle Bin from %d immediate subdirectories. Check Recycle Bin!"
-                  (apply #'+ (mapcar (lambda (x) (length (cdr x))) deleted-files))
-                  (length deleted-files))
-       (message "No build artifact files found to delete"))))
+  "Delete .o, .fasl, and .exe files recursively in subdirectories.
+Shows files first, then deletes with a progress bar.
+Files are moved to Windows Recycle Bin."
+  (interactive)
+  (let* ((dir (dired-current-directory))
+         (extensions '("o" "fasl" "exe"))
+         (exception-list '("cloc-2.06.exe" "scc.exe"))
+         (deleted-files '())
+         (failed-files '())
+         (buffer-name "*Deleted Build Artifacts*"))
+
+    ;; Validate we're in a dired buffer
+    (unless (derived-mode-p 'dired-mode)
+      (error "This command must be run from a dired buffer"))
+
+    ;; Find all matching files first
+    (let* ((all-files
+            (dired-clean--find-files-recursively dir extensions exception-list))
+           (total (length all-files))
+           (preview-groups '()))
+
+      (dolist (file all-files)
+        (let ((subdir (dired-clean--get-immediate-subdir file dir)))
+          (when subdir
+            (let ((existing (assoc subdir preview-groups)))
+              (if existing
+                  (setcdr existing (cons file (cdr existing)))
+                (push (cons subdir (list file)) preview-groups))))))
+      
+      (if (zerop total)
+          (message "No build artifact files found to delete.")
+
+        ;; ---- PREVIEW PHASE (GROUPED) ----
+        (with-current-buffer (get-buffer-create "*Build Artifacts Preview*")
+          (erase-buffer)
+          (insert "Build Artifacts Deletion Preview\n")
+          (insert (format "Directory: %s\n" dir))
+          (insert (make-string 70 ?=) "\n\n")
+
+          (dolist (subdir-entry
+                   (sort preview-groups
+                         (lambda (a b)
+                           (string< (car a) (car b)))))
+            (let* ((subdir (car subdir-entry))
+                   (files (cdr subdir-entry))
+                   (subdir-name
+                    (file-name-nondirectory
+                     (directory-file-name subdir))))
+              (insert (format "\n%s/ (%d files):\n"
+                              subdir-name (length files)))
+              (dolist (file (sort files #'string<))
+                (insert (format "  • %s\n"
+                                (file-relative-name file dir))))))
+
+          (goto-char (point-min))
+          (display-buffer (current-buffer)))
+
+        ;; Ask for confirmation
+        (unless (y-or-n-p
+                 (format "Delete %d build artifact files (move to Recycle Bin)? "
+                         total))
+          (user-error "Aborted"))
+
+        ;; ---- DELETE PHASE WITH PROGRESS BAR ----
+        (let ((count 0)
+              (bar-width 30))
+          (dolist (file all-files)
+            (setq count (1+ count))
+
+            ;; Progress bar
+            (let* ((percent (/ (* 100.0 count) total))
+                   (filled (/ (* bar-width count) total))
+                   (bar (concat
+                         "[" (make-string filled ?#)
+                         (make-string (- bar-width filled) ?-)
+                         "]")))
+              (message "Deleting %s %3.0f%% (%d/%d)"
+                       bar percent count total))
+
+            ;; Delete
+            (let ((immediate-subdir
+                   (dired-clean--get-immediate-subdir file dir)))
+              (if (my/delete-to-recycle-bin file)
+                  (let ((existing (assoc immediate-subdir deleted-files)))
+                    (if existing
+                        (setcdr existing (cons file (cdr existing)))
+                      (push (cons immediate-subdir (list file))
+                            deleted-files)))
+                (push file failed-files))))
+
+          (message "Deletion complete."))))
+
+    ;; ---- REPORT PHASE (unchanged logic) ----
+    (with-current-buffer (get-buffer-create buffer-name)
+      (erase-buffer)
+      (insert "Build Artifacts Cleanup Report\n")
+      (insert (format "Directory: %s\n" dir))
+      (insert (format "Time: %s\n" (current-time-string)))
+      (insert (make-string 70 ?=) "\n\n")
+
+      (if deleted-files
+          (progn
+            (insert (format
+                     "Successfully moved to Recycle Bin (%d files):\n\n"
+                     (apply #'+
+                            (mapcar (lambda (x) (length (cdr x)))
+                                    deleted-files))))
+            (dolist (subdir-entry
+                     (sort deleted-files
+                           (lambda (a b)
+                             (string< (car a) (car b)))))
+              (let ((subdir (car subdir-entry))
+                    (files (cdr subdir-entry)))
+                (insert (format "\n%s/ (%d files):\n"
+                                (file-name-nondirectory
+                                 (directory-file-name subdir))
+                                (length files)))
+                (dolist (file (sort files #'string<))
+                  (insert (format "  ✓ %s\n"
+                                  (file-relative-name file dir)))))))
+        (insert "No files were deleted.\n"))
+
+      (when failed-files
+        (insert (format "\nFailed to move (%d files):\n"
+                        (length failed-files)))
+        (dolist (file failed-files)
+          (insert (format "  ✗ %s\n"
+                          (file-relative-name file dir)))))
+
+      (goto-char (point-min))
+      (display-buffer (current-buffer)))
+
+    (message "Build artifact cleanup finished.")))
 
  ;; ===
  ;; === abbrev
