@@ -1296,6 +1296,11 @@ M-x list-_c_olors-display
  t
  "General"
 
+ ;; in order <enter> key of righ-hand-side numerical keypad to behave as main <return> key:
+ (define-key key-translation-map (kbd "<enter>") (kbd "<return>"))
+ (define-key key-translation-map (kbd "C-<enter>") (kbd "C-<return>"))
+ (define-key key-translation-map (kbd "M-<enter>") (kbd "M-<return>"))
+
  ;; Disable autosave :
  (setq auto-save-default nil)
 
