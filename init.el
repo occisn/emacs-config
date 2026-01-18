@@ -7773,7 +7773,7 @@ For instance: abc/def --> abc\\def"
             ;; Example of cmd line: "c:/Users/.../PDFTKBuilderPortable/App/pdftkbuilder/pdftk.exe" "c:/Users/.../Downloads/test.pdf" burst output "c:/Users/.../Downloads/page_%03d_of_XYZ.pdf"
             )
        (unless (or (string= (file-name-extension file-full-name) "pdf")
-                 (string= (file-name-extension file-full-name) "PDF"))
+                   (string= (file-name-extension file-full-name) "PDF"))
          (error "Trying to burst a non-PDF file: %S" file-full-name))
        (message "Bursting (splitting) PDF file %S with %s" file-name *pdftk-program-name*)
        (call-process-shell-command cmd nil t)
@@ -7812,7 +7812,7 @@ For instance: abc/def --> abc\\def"
             ;; Example of cmd line: "c:/Users/.../PDFTKBuilderPortable/App/pdftkbuilder/pdftk.exe" A="c:/Users/.../Downloads/test.pdf" cat A2-4 output "c:/Users/.../Downloads/page_2_to_4_of_XYZ.pdf"
             )
        (unless (or (string= (file-name-extension file-full-name) "pdf")
-                 (string= (file-name-extension file-full-name) "PDF"))
+                   (string= (file-name-extension file-full-name) "PDF"))
          (error "Trying to extract pages from a non-PDF file: %S" file-full-name))
        (message "Extracting page(s) %s to %s of PDF file %S with %s" first-page last-page file-name *pdftk-program-name*)
        (call-process-shell-command cmd nil t)
@@ -7843,7 +7843,7 @@ For instance: abc/def --> abc\\def"
             )
        (dolist (file-full-name files-list)
          (unless (or (string= (file-name-extension file-full-name) "pdf")
-                   (string= (file-name-extension file-full-name) "PDF"))
+                     (string= (file-name-extension file-full-name) "PDF"))
            (error "Trying to join a non-PDF file: %S" file-full-name))
          (let ((file-full-name-slash-OK-accents-OK (replace-linux-slash-with-two-windows-slashes file-full-name)))
            (setq cmd (concat cmd " " "\"" file-full-name-slash-OK-accents-OK "\""))))
