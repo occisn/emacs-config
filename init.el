@@ -3476,8 +3476,8 @@ Web site: _s_witch between FR and EN org files {end}"
    ("s" #'my/switch-between-language-org-files)
    ("v" #'olivetti-mode)
    ("w" #'widen)
-   ("1" #'my/org-agenda-switch-to-perso-file)) ; end of hydra
-
+   ("1" #'my/org-agenda-switch-to-perso-file)
+   ("<kp-1>" #'my/org-agenda-switch-to-perso-file)) ; end of hydra
 
  (defhydra hydra-org-export (:exit t :hint nil)
    "
