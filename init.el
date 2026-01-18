@@ -4831,7 +4831,7 @@ P        see all page
 C-s C-s  search
 q        quit
 C-c C-c  change mode
-C-c C-t  undrlying text
+C-c C-t  underlying text
 
 doc-view-cache-directory
 M-x doc-view-dired-cache   leads to doc-view cache into _d_ired
