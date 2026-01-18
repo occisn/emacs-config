@@ -7235,7 +7235,8 @@ EXECUTE:
    ONE FILE: C-c C-k
    REPL: C-c C-z to jump in REPL || C-c C-j to execute in REPL || M-n || M-p || *,** || /,// || (foo M-
    ASDF: ,load-system etc from REPL (but *slime-compilation* does not update) | C-c C-c to recompile function
-   SLIME: C-c C-l force load | C-c C-t force test | C-c C-n show compilation notes | C-c C-r to restart inferior lisp | C-c C-m to execute main
+   SLIME: C-c C-l force load [equivalent of relevant , in REPL] | C-c C-t force test [idem] | C-c C-n show compilation notes
+          C-c C-r to restart inferior lisp [equivalent of relevant , in REPL] | C-c C-m to execute main
           M-x slime-compile-system (compiles an ASDF system)
           C-c C-c to recompile function | avoid C-c C-k | ,q to stop slime
    Test in REPL: C-c SPC || delete fasl (from dired): M-x my/delete-fasl-files
