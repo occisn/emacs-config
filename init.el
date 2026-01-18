@@ -8818,7 +8818,6 @@ If filename begins with a digit, prefix with X_."
      "Insert includes"
      nil
      "#include <stdlib.h>\n#include <stdio.h>\n#include <string.h>\n\n")
-
    
    (define-skeleton c-if-skeleton
      "Insert an if structure"
@@ -8828,7 +8827,12 @@ If filename begins with a digit, prefix with X_."
    (define-skeleton c-if-else-skeleton
      "Insert an if structure"
      nil
-     > "if (" _ ") {" \n > \n > "} else {" \n \n "}" >))
+     > "if (" _ ") {" \n > \n > "} else {" \n \n "}" >)
+
+   (define-skeleton c-err-skeleton
+     "Insert an error structure"
+     nil
+     > "fprintf(stderr, \"" _ "\\n\");" >))
 
  (add-hook 'c-mode-hook
            (lambda ()
@@ -8838,7 +8842,9 @@ If filename begins with a digit, prefix with X_."
              (define-abbrev c-mode-abbrev-table "cfor" "" 'c-for-loop-skeleton)
              (define-abbrev c-mode-abbrev-table "cinclude" "" 'c-include-skeleton)
              (define-abbrev c-mode-abbrev-table "cif" "" 'c-if-skeleton)
-             (define-abbrev c-mode-abbrev-table "cifelse" "" 'c-if-else-skeleton)))
+             (define-abbrev c-mode-abbrev-table "cifelse" "" 'c-if-else-skeleton)
+             (define-abbrev c-mode-abbrev-table "cerr" "" 'c-err-skeleton)
+             ))
  
  (add-hook 'c-ts-mode-hook
            (lambda ()
@@ -8848,7 +8854,9 @@ If filename begins with a digit, prefix with X_."
              (define-abbrev c-ts-mode-abbrev-table "cfor" "" 'c-for-loop-skeleton)
              (define-abbrev c-ts-mode-abbrev-table "cinclude" "" 'c-include-skeleton)
              (define-abbrev c-ts-mode-abbrev-table "cif" "" 'c-if-skeleton)
-             (define-abbrev c-ts-mode-abbrev-table "cifelse" "" 'c-if-else-skeleton)))
+             (define-abbrev c-ts-mode-abbrev-table "cifelse" "" 'c-if-else-skeleton)
+             (define-abbrev c-ts-mode-abbrev-table "cerr" "" 'c-err-skeleton)
+             ))
  
  ;; === Occur
 
