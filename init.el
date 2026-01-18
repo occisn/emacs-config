@@ -4659,7 +4659,7 @@ _h_: paste image from clipboard to _h_ere (M-x my/paste-image-from-clipboard-to-
 
 Open with:
    _w_: open this dired directory in _w_indows Explorer (M-x my/open-current-dired-directory-in-windows-explorer)
-   _a_: open with Sum_a_tra
+   _s_: open with Sumatra
    _i_: open with _i_rfan View
    M-RET to open file with Windows application | C-RET to open directory in Windows Explorer (similar to _w_ above)
 
@@ -4672,12 +4672,13 @@ Grep:
 Filetags --> see project hydra
 
 Copy last modification date to clipboard: M-x my/copy-file-last-modification-date-to-clipboard
+_a_: clean build artifacts
 Zip: _u_nzip, _z_ip content of current directory;
      _l_ist zip content, my/zip-add-to-archive-present-in-same-directory
 pdf: M-x my/pdf-burst, M-x my/pdf-extract, M-x my/pdf-join
 Files: my/list-big-files-in-current-directory-and-subdirectories, my/list-directories-with-many-files-or-direct-subdirectories (# of files), my/list-directories-of-big-size, my/list-directories-containing-zip-files, my/find-files-with-same-size-in-same-subdirectory
 Attach file to mail: C-c RET C-a (gnus-dired-attach) {end}"
-   ("a" #'my/open-with-Sumatra)
+   ("a" #'my/dired-clean-build-artifacts)
    ("c" #'my/copy-file-here)
    ("h" #'my/paste-image-from-clipboard-to-here)
    ("i" #'my/open-with-Irfan)
@@ -4685,6 +4686,7 @@ Attach file to mail: C-c RET C-a (gnus-dired-attach) {end}"
    ("g" #'my/ag-grep-in-current-dired-directory)
    ("l" #'my/list-zip-content)
    ("p" #'my/pt-grep-in-current-dired-directory)
+   ("s" #'my/open-with-Sumatra)
    ("u" #'my/unzip)
    ("w" #'my/open-current-dired-directory-in-windows-explorer)
    ("x" #'xah-grep-in-current-dired-directory)
@@ -5348,7 +5350,6 @@ Projectile:
 - C-c p m    projectile commander
 - C-c p C-h  all keybindings 
 - C-c p a    toggle among extensions (à configurer ?)
-- C-c p s g  (grep by pt ?)
 - C-c p b    project buffers open
 - C-c p o    multi-occur ; mais uniquement sur les buffers ouverts
 - C-c p D    open root in dired (idem C-p p modifié)
@@ -5367,10 +5368,15 @@ FILETAGS:
 - _l_: my/list-all-filetags-in-project
 
 Grep : 
-- projectile-_p_t
+- with ag: C-c p s s [then C-c to to show in another window]
+           M-x projectile-ag (show in another window)
+           a_g_ / grep in projectile project (pb encoding ?)
+- with ripgrep: C-c p s r [then C-c o to show in another window]
+                M-x projectile-ripgrep [does not seem to work]
+- projectile-_p_t (M-x projectile-pt)
 - my projectile _s_earch (pb accents)
 - _x_ah / grep in projectile project
-- a_g_ / grep in projectile project (pb encoding ?)
+- C-c p s g  (grep by pt ?)
 
 Search & replace:
 - C-c p r : search and replace (Y to approve all) {end}"
@@ -5624,6 +5630,17 @@ d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
  ;;   :config
  ;;   (my-init--message-package-loaded "xah-find"))
 
+ ;;  Install ripgrep & add to path
+ ;; -
+ ;; 1) winget install BurntSushi.ripgrep.MSVC 
+ ;; 2) relancer shell
+ ;; 3) ~rg --version~
+
+ (use-package rg
+   :commands (projectile-ripgrep)
+   :config
+   (my-init--message-package-loaded "rg"))
+ 
  ) ; end of init section
 
 
