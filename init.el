@@ -6836,6 +6836,13 @@ Return NIL if no system found.
  (with-eval-after-load 'slime
    (define-key slime-mode-map (kbd "C-c C-l")
                #'my/slime-force-reload-current-system))
+
+ (with-eval-after-load 'slime
+   (define-key slime-mode-map (kbd "C-c C-r")
+               (lambda ()
+                 (interactive)
+                 (slime-switch-to-output-buffer)
+                 (slime-restart-inferior-lisp))))
  
  (defun my/asdf-force-test-system-corresponding-to-current-buffer ()
    "Force test current ASDF system.
@@ -6861,6 +6868,34 @@ Return NIL if no system found.
  (with-eval-after-load 'slime
    (define-key slime-mode-map (kbd "C-c C-t")
                #'my/slime-force-test-current-system))
+
+ (defun my/slime-call-main ()
+  "Clear REPL, insert (package::main ), and execute immediately."
+  (interactive)
+  (let* ((raw-pkg (slime-current-package))
+         (pkg-name (if raw-pkg 
+                       (replace-regexp-in-string "^:" "" raw-pkg) 
+                     "cl-user"))
+         (call-string (format "(%s::main)" pkg-name)))
+    ;; Switch to REPL
+    (slime-switch-to-output-buffer)
+    (goto-char (point-max))
+    
+    ;; Clear any half-typed input
+    (slime-repl-delete-current-input)
+    
+    ;; Insert the call (for visual feedback)
+    (insert call-string)
+    
+    ;; Force display update
+    (redisplay t)
+    
+    ;; Now evaluate it
+    (slime-repl-send-input t)))
+
+  (with-eval-after-load 'slime
+   (define-key slime-mode-map (kbd "C-c C-m")
+               #'my/slime-call-main))
 
  ;; ===
  ;; === my/dired-clean-build-artifacts
@@ -7200,7 +7235,8 @@ EXECUTE:
    ONE FILE: C-c C-k
    REPL: C-c C-z to jump in REPL || C-c C-j to execute in REPL || M-n || M-p || *,** || /,// || (foo M-
    ASDF: ,load-system etc from REPL (but *slime-compilation* does not update) | C-c C-c to recompile function
-   SLIME: C-c C-l force load | C-c C-t force test | C-c C-n show compilation notes || M-x slime-compile-system (compiles an ASDF system)
+   SLIME: C-c C-l force load | C-c C-t force test | C-c C-n show compilation notes | C-c C-r to restart inferior lisp | C-c C-m to execute main
+          M-x slime-compile-system (compiles an ASDF system)
           C-c C-c to recompile function | avoid C-c C-k | ,q to stop slime
    Test in REPL: C-c SPC || delete fasl (from dired): M-x my/delete-fasl-files
    Clear screen: C-c M-o              ||   q to hide compilation window
