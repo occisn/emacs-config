@@ -8692,7 +8692,7 @@ If filename begins with a digit, prefix with X_."
 
  ;; === stand-alone & compile
 
- (defun c-save-compile-and-run-c-file ()
+ (defun my/c-save-compile-and-run-c-file ()
    "Compile and execute the current C file using gcc on Windows."
    (interactive)
    (let* ((flags "-Wall -Wextra -Werror -O3 -std=c2x -pedantic")
@@ -8710,12 +8710,12 @@ If filename begins with a digit, prefix with X_."
            (compile compile-command))
        (message "Buffer is not visiting a file!"))))
 
- (add-hook 'c-mode-hook
-           (lambda ()
-             (local-set-key (kbd "C-c C-r") #'c-save-compile-and-run-c-file)))
- (add-hook 'c-ts-mode-hook
-           (lambda ()
-             (local-set-key (kbd "C-c C-r") #'c-save-compile-and-run-c-file)))
+ ;; (add-hook 'c-mode-hook
+ ;;           (lambda ()
+ ;;             (local-set-key (kbd "C-c C-r") #'my/c-save-compile-and-run-c-file)))
+ ;; (add-hook 'c-ts-mode-hook
+ ;;           (lambda ()
+ ;;             (local-set-key (kbd "C-c C-r") #'my/c-save-compile-and-run-c-file)))
 
  ;; === stand-alone & shell
 
@@ -8762,7 +8762,7 @@ If filename begins with a digit, prefix with X_."
            (lambda ()
              (local-set-key (kbd "C-c C-c") #'compile-makefile-project)))
 
- (defun compile-and-run-makefile-project ()
+ (defun my/compile-and-run-makefile-project ()
    "Compile using make and run the executable specified in the Makefile."
    (interactive)
    (let* ((makefile-dir (locate-dominating-file default-directory "Makefile"))
@@ -8774,14 +8774,14 @@ If filename begins with a digit, prefix with X_."
            (compile compile-command))
        (message "No Makefile found in current or parent directories!"))))
 
- (add-hook 'c-mode-hook
-           (lambda ()
-             (local-set-key (kbd "C-c C-m") #'compile-and-run-makefile-project)))
- (add-hook 'c-ts-mode-hook
-           (lambda ()
-             (local-set-key (kbd "C-c C-m") #'compile-and-run-makefile-project)))
+ ;; (add-hook 'c-mode-hook
+ ;;           (lambda ()
+ ;;             (local-set-key (kbd "C-c C-m") #'my/compile-and-run-makefile-project)))
+ ;; (add-hook 'c-ts-mode-hook
+ ;;           (lambda ()
+ ;;             (local-set-key (kbd "C-c C-m") #'my/compile-and-run-makefile-project)))
 
- (defun test-makefile-project ()
+ (defun my/test-makefile-project ()
    "Test using the Makefile."
    (interactive)
    (let* ((makefile-dir (locate-dominating-file default-directory "Makefile"))
@@ -8793,12 +8793,62 @@ If filename begins with a digit, prefix with X_."
            (compile compile-command))
        (message "No Makefile found in current or parent directories!"))))
 
+ ;; (add-hook 'c-mode-hook
+ ;;           (lambda ()
+ ;;             (local-set-key (kbd "C-c C-t") #'my/test-makefile-project)))
+ ;; (add-hook 'c-ts-mode-hook
+ ;;           (lambda ()
+ ;;             (local-set-key (kbd "C-c C-t") #'my/test-makefile-project)))
+
+ ;; === projectile and command
+
+ (defun my/c-projectile-make ()
+   "Run 'make' in the project root."
+   (interactive)
+   (projectile-with-default-dir (projectile-project-root)
+     (projectile-run-compilation "make")))
  (add-hook 'c-mode-hook
            (lambda ()
-             (local-set-key (kbd "C-c C-t") #'test-makefile-project)))
+             (local-set-key (kbd "C-c C-m") #'my/c-projectile-make)))
  (add-hook 'c-ts-mode-hook
            (lambda ()
-             (local-set-key (kbd "C-c C-t") #'test-makefile-project)))
+             (local-set-key (kbd "C-c C-m") #'my/c-projectile-make)))
+
+ (defun my/c-projectile-make-run ()
+   "Run 'make run' in the project root."
+   (interactive)
+   (projectile-with-default-dir (projectile-project-root)
+     (projectile-run-compilation "make run")))
+ (add-hook 'c-mode-hook
+           (lambda ()
+             (local-set-key (kbd "C-c C-r") #'my/c-projectile-make-run)))
+ (add-hook 'c-ts-mode-hook
+           (lambda ()
+             (local-set-key (kbd "C-c C-r") #'my/c-projectile-make-run)))
+
+ (defun my/c-projectile-make-test ()
+   "Run 'make test' in the project root."
+   (interactive)
+   (projectile-with-default-dir (projectile-project-root)
+     (projectile-run-compilation "make test")))
+ (add-hook 'c-mode-hook
+           (lambda ()
+             (local-set-key (kbd "C-c C-t") #'my/c-projectile-make-test)))
+ (add-hook 'c-ts-mode-hook
+           (lambda ()
+             (local-set-key (kbd "C-c C-t") #'my/c-projectile-make-test)))
+
+ (defun my/c-projectile-make-clean ()
+   "Run 'make clean' in the project root."
+   (interactive)
+   (projectile-with-default-dir (projectile-project-root)
+     (projectile-run-compilation "make clean")))
+ (add-hook 'c-mode-hook
+           (lambda ()
+             (local-set-key (kbd "C-c C-l") #'my/c-projectile-make-clean)))
+ (add-hook 'c-ts-mode-hook
+           (lambda ()
+             (local-set-key (kbd "C-c C-l") #'my/c-projectile-make-clean)))
 
  ;; === my/dired-clean-build-artifacts
 
@@ -9135,14 +9185,16 @@ ABBREV: [...]
 COMPLETE: C-M-i   completion (eglot)
 REFACTOR: _r_efactor symbol at point (eglot-rename) | [projectile]
 EXECUTE:
-   ONE FILE with compile: C-c C-r: save, compile and run (gcc ...)
+   ONE FILE with compile: my/c-save-compile-and-run-c-file = save, compile and run (gcc ...)
    ONE FILE with shell: _s_ : show eshell
                         _x_ : compile & execute in shell (gcc ...)
    PROJECT with compile: C-c C-c, compile project
-                         C-c C-m, save compile and run (M-x compile > make && make run)
-                         C-c C-t, save and test (M-x compile > make test)
-   PROJECT with projectile: compile : C-c p c c > make, make run, make test
-                             execute : C-c p u   > make run
+                         my/compile-and-run-makefile-project = save compile and run (M-x compile > make && make run)
+                         (M-x compile > make test) or my/test-makefile-project
+   PROJECT with projectile: C-c C-l to clean (C-c p c c > make clean)
+                            C-c C-m to make (C-c p c c > make clean)
+                            C-c C-r to run (C-c p c c > make run) (or C-c p u ?)
+                            C-c C-t to test (C-c p c c > make test)
 DEBUG: C-c a to implement eglot proposed action / correction (eglot-code-actions) | C-h . to access to overlaid eglot/clangd warning
 CLEAN: my/dired-clean-build-artifacts (before resynchronization of Dropbox)
 SPECIFIC: M-x eglot-shutdown | M-x eglot-reconnect
@@ -9223,7 +9275,7 @@ SPECIFIC: M-x eglot-shutdown | M-x eglot-reconnect
 
  ;; function 'my/create-shell-window' defined above
 
- (defun cpp-save-compile-and-run-c-file ()
+ (defun my/cpp-save-compile-and-run-cpp-file ()
    "Compile and execute the current C++ file using g++ on Windows."
    (interactive)
    (let* ((flags "-Wall -Wextra -std=c++17 -O3")
@@ -9241,12 +9293,12 @@ SPECIFIC: M-x eglot-shutdown | M-x eglot-reconnect
            (compile compile-command))
        (message "Buffer is not visiting a file!"))))
 
- (add-hook 'c++-mode-hook
-           (lambda ()
-             (local-set-key (kbd "C-c C-r") #'cpp-save-compile-and-run-c-file)))
- (add-hook 'c++-ts-mode-hook
-           (lambda ()
-             (local-set-key (kbd "C-c C-r") #'cpp-save-compile-and-run-c-file)))
+ ;; (add-hook 'c++-mode-hook
+ ;;           (lambda ()
+ ;;             (local-set-key (kbd "C-c C-r") #'my/cpp-save-compile-and-run-cpp-file)))
+ ;; (add-hook 'c++-ts-mode-hook
+ ;;           (lambda ()
+ ;;             (local-set-key (kbd "C-c C-r") #'my/cpp-save-compile-and-run-cpp-file)))
 
  ;; === stand-alone & shell
 
@@ -9274,23 +9326,61 @@ SPECIFIC: M-x eglot-shutdown | M-x eglot-reconnect
            (lambda ()
              (local-set-key (kbd "C-c C-c") #'compile-makefile-project)))
 
- ;; function 'compile-and-run-makefile-project' defined above
+ ;; function 'my/compile-and-run-makefile-project' defined above
 
- (add-hook 'c++-mode-hook
-           (lambda ()
-             (local-set-key (kbd "C-c C-m") #'compile-and-run-makefile-project)))
- (add-hook 'c++-ts-mode-hook
-           (lambda ()
-             (local-set-key (kbd "C-c C-m") #'compile-and-run-makefile-project)))
+ ;; (add-hook 'c++-mode-hook
+ ;;           (lambda ()
+ ;;             (local-set-key (kbd "C-c C-m") #'my/compile-and-run-makefile-project)))
+ ;; (add-hook 'c++-ts-mode-hook
+ ;;           (lambda ()
+ ;;             (local-set-key (kbd "C-c C-m") #'my/compile-and-run-makefile-project)))
 
- ;; function 'test-makefile-project' defined above
+ ;; function 'my/test-makefile-project' defined above
  
+ ;; (add-hook 'c++-mode-hook
+ ;;           (lambda ()
+ ;;             (local-set-key (kbd "C-c C-t") #'my/test-makefile-project)))
+ ;; (add-hook 'c++-ts-mode-hook
+ ;;           (lambda ()
+ ;;             (local-set-key (kbd "C-c C-t") #'my/test-makefile-project)))
+
+ ;; === projectile and commands
+
+ ;; function my/c-projectile-make defined above
+
  (add-hook 'c++-mode-hook
            (lambda ()
-             (local-set-key (kbd "C-c C-t") #'test-makefile-project)))
+             (local-set-key (kbd "C-c C-m") #'my/c-projectile-make)))
  (add-hook 'c++-ts-mode-hook
            (lambda ()
-             (local-set-key (kbd "C-c C-t") #'test-makefile-project)))
+             (local-set-key (kbd "C-c C-m") #'my/c-projectile-make)))
+
+ ;; function my/c-projectile-make-run defined above
+
+ (add-hook 'c++-mode-hook
+           (lambda ()
+             (local-set-key (kbd "C-c C-r") #'my/c-projectile-make-run)))
+ (add-hook 'c++-ts-mode-hook
+           (lambda ()
+             (local-set-key (kbd "C-c C-r") #'my/c-projectile-make-run)))
+
+ ;; function my/c-projectile-make-test defined above
+
+ (add-hook 'c++-mode-hook
+           (lambda ()
+             (local-set-key (kbd "C-c C-t") #'my/c-projectile-make-test)))
+ (add-hook 'c++-ts-mode-hook
+           (lambda ()
+             (local-set-key (kbd "C-c C-t") #'my/c-projectile-make-test)))
+
+ ;; function my/c-projectile-make-clean defined above
+
+ (add-hook 'c++-mode-hook
+           (lambda ()
+             (local-set-key (kbd "C-c C-l") #'my/c-projectile-make-clean)))
+ (add-hook 'c++-ts-mode-hook
+           (lambda ()
+             (local-set-key (kbd "C-c C-l") #'my/c-projectile-make-clean)))
 
  ;; === my/dired-clean-build-artifacts
 
@@ -9454,14 +9544,16 @@ ABBREV: [...]
 COMPLETE: C-M-i   completion (eglot)
 REFACTOR: _r_efactor symbol at point (eglot-rename) | [projectile]
 EXECUTE:
-   ONE FILE with compile: C-c C-r: save, compile and run (g++ ...)
+   ONE FILE with compile: my/cpp-save-compile-and-run-cpp-file = save, compile and run (g++ ...)
    ONE FILE with shell: _s_ : show eshell
                         _x_ : compile & execute in shell (g++ ...)
    PROJECT with M-x compile: C-c C-c, compile project
-                             C-c C-m, save compile and run (M-x compile > make && make run)
-                             C-c C-t, save and test (M-x compile > make test)
-   PROJECT with projectile: compile : C-c p c c > make, make run, make test
-                            execute : C-c p u   > make run
+                             my/compile-and-run-makefile-project = save compile and run (M-x compile > make && make run)
+                             (M-x compile > make test) or my/test-makefile-project
+   PROJECT with projectile: C-c C-l to clean (C-c p c c > make clean)
+                            C-c C-m to make (C-c p c c > make clean)
+                            C-c C-r to run (C-c p c c > make run) (or C-c p u ?)
+                            C-c C-t to test (C-c p c c > make test)
 DEBUG: C-c a to implement eglot proposed action / correction (eglot-code-actions) | C-h . to access to overlaid eglot/clangd warning
 CLEAN: my/dired-clean-build-artifacts (before resynchronization of Dropbox)
 SPECIFIC: M-x eglot-shutdown | M-x eglot-reconnect
