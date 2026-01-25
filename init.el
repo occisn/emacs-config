@@ -3598,9 +3598,29 @@ Paste into org-mode from clipboard under following format:
    (beginning-of-line)
    (my/calc-read-macro))
 
- 
+ (defun my/calc-compact-to-clipboard (beg end)
+  "Compact the current region between BEG and END.
+For each line in the region:
+1. Delete occurrences of ';;' and everything following them.
+2. Remove line breaks so the whole region becomes a single line.
+3. Replace TAB characters with single spaces.
+4. Replace any sequence of multiple spaces with a single space.
+The result is copied to the clipboard without modifying the buffer."
+  (interactive "r")
+  (let ((text (buffer-substring-no-properties beg end)))
+    ;; 1. Remove ;; comments
+    (setq text (replace-regexp-in-string ";;.*$" "" text))
+    ;; 2. Remove line breaks
+    (setq text (replace-regexp-in-string "[\r\n]+" " " text))
+    ;; 3. Replace tabs with spaces
+    (setq text (replace-regexp-in-string "\t" " " text))
+    ;; 4. Collapse multiple spaces into one
+    (setq text (replace-regexp-in-string " +" " " text))
+    ;; Copy to clipboard
+    (kill-new (string-trim text))
+    (message "Compacted text copied to clipboard")))
 
- (declare-function calc-push "calc")    ; to avoid compilation warning
+  (declare-function calc-push "calc")    ; to avoid compilation warning
  (with-eval-after-load 'calc
    (defun calc-push-time-in-milliseconds ()
      "Push time expressed in milliseconds into Calc stack."
@@ -3630,6 +3650,8 @@ Toggle algebraic mode on/off : m a
 Copy the stack (to past in another window) : M-w
 
 ` to edit top element of the stack
+
+Compact instructions (to be called on source file): my/calc-compact-to-clipboard
 
 Macros :
    C-x (   |   C-x ) 
