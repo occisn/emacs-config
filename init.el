@@ -8628,6 +8628,10 @@ For instance: abc/def --> abc\\def"
  (advice-add 'org-babel-execute-src-block
              :before #'my--org-babel-load-C)
 
+ ;; === let compilation window auto-scroll
+
+ (setq compilation-scroll-output t)
+
  ;; === switch/toggle among source, header and test files
 
  (defun my/toggle-c-h ()
