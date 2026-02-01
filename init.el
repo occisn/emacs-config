@@ -8960,9 +8960,16 @@ If filename begins with a digit, prefix with X_."
      > "if (" _ ") {" \n > \n > "} else {" \n \n "}" >)
 
    (define-skeleton c-err-skeleton
-     "Insert an error structure"
+     "Insert an error message"
      nil
-     > "fprintf(stderr, \"" _ "\\n\");" >))
+     > "fprintf(stderr, \"" _ "\\n\");" >)
+
+   (define-skeleton c-flush-skeleton
+     "Insert a flush instruction"
+     nil
+     > "fflush(stdout);\n" >))
+
+ 
 
  (add-hook 'c-mode-hook
            (lambda ()
@@ -8974,6 +8981,7 @@ If filename begins with a digit, prefix with X_."
              (define-abbrev c-mode-abbrev-table "cif" "" 'c-if-skeleton)
              (define-abbrev c-mode-abbrev-table "cifelse" "" 'c-if-else-skeleton)
              (define-abbrev c-mode-abbrev-table "cerr" "" 'c-err-skeleton)
+             (define-abbrev c-mode-abbrev-table "cflush" "" 'c-flush-skeleton)
              ))
  
  (add-hook 'c-ts-mode-hook
@@ -8985,7 +8993,7 @@ If filename begins with a digit, prefix with X_."
              (define-abbrev c-ts-mode-abbrev-table "cinclude" "" 'c-include-skeleton)
              (define-abbrev c-ts-mode-abbrev-table "cif" "" 'c-if-skeleton)
              (define-abbrev c-ts-mode-abbrev-table "cifelse" "" 'c-if-else-skeleton)
-             (define-abbrev c-ts-mode-abbrev-table "cerr" "" 'c-err-skeleton)
+             (define-abbrev c-ts-mode-abbrev-table "cflush" "" 'c-flush-skeleton)
              ))
  
  ;; === Occur
