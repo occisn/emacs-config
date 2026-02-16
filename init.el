@@ -3812,8 +3812,7 @@ and starting in the current buffer's directory (if any)."
  (defun my/open-msys2-external ()
    "Open MSYS2 in a native window, within the directory of current buffer (if it is a dired or a file)."
    (interactive)
-   (let ((msys2-shell-cmd (or (bound-and-true-p *msys2-shell-cmd*)
-                              "C:/msys64/msys2_shell.cmd")))
+   (let ((msys2-shell-cmd (bound-and-true-p *msys2-shell-cmd*)))
      (unless (file-exists-p msys2-shell-cmd)
        (user-error "Could not find MSYS2 shell script at %s" msys2-shell-cmd))
      (if (or (buffer-file-name) (derived-mode-p 'dired-mode))
@@ -6973,7 +6972,10 @@ Files are moved to Windows Recycle Bin."
    (interactive)
    (let* ((dir (dired-current-directory))
           (extensions '("o" "fasl" "exe"))
-          (exception-list '("cloc-2.06.exe" "scc.exe"))
+          (exception-list '("cloc-2.06.exe" "scc.exe"
+                            ;; T. Masters
+                            "CONVNET.exe" "DataMine.exe" "DEEP.exe" "BLOCKS.exe" "EXECUTE.CPP" "JULIA.exe" "LIN.exe" "VORTEX.exe" "MULT.exe" "PAIRED.exe" "ROC.exe" "SINGLE.exe" "VarScreen_4_4.exe"
+                            ))
           (deleted-files '())
           (failed-files '())
           (buffer-name "*Deleted Build Artifacts*"))
@@ -8993,6 +8995,7 @@ If filename begins with a digit, prefix with X_."
              (define-abbrev c-ts-mode-abbrev-table "cinclude" "" 'c-include-skeleton)
              (define-abbrev c-ts-mode-abbrev-table "cif" "" 'c-if-skeleton)
              (define-abbrev c-ts-mode-abbrev-table "cifelse" "" 'c-if-else-skeleton)
+             (define-abbrev c-ts-mode-abbrev-table "cerr" "" 'c-err-skeleton)
              (define-abbrev c-ts-mode-abbrev-table "cflush" "" 'c-flush-skeleton)
              ))
  
