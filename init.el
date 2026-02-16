@@ -6734,42 +6734,85 @@ Otherwise, open in another window. Shows an error if compilation buffer does not
  ;; ===
  ;; === (CL) filter compilation report
 
- (defun my/slime-compilation-delete-float-coercion-notes ()
-   "Remove sections containing 'float to pointer coercion' from *slime-compilation* buffer.
-(v1 as of 2025-11-01)"
-   (interactive)
-   (with-current-buffer "*slime-compilation*"
-     (let ((inhibit-read-only t)
-           (filter-string "float to pointer coercion")
-           (nb-deletions 0))
-       (save-excursion
-         (goto-char (point-min))
-         (while (re-search-forward (regexp-quote filter-string) nil t)
-           (setq nb-deletions (1+ nb-deletions))
-           ;; Find the start of this warning/note section
-           (let ((end (line-end-position)))
-             (beginning-of-line)
-             ;; Search backward for the section start (typically a blank line or buffer start)
-             (while (and (not (bobp))
-                         (not (looking-at "^$"))
-                         (looking-at "^[; ]"))
-               (forward-line -1))
-             (when (looking-at "^$")
-               (forward-line 1))
-             (let ((start (point)))
-               ;; Search forward for section end (blank line or end of buffer)
-               (goto-char end)
-               (while (and (not (eobp))
-                           (not (looking-at "^$")))
-                 (forward-line 1))
-               (delete-region start (point))))))
-       (beginning-of-buffer)
-       (cond ((= 0 nb-deletions)
-              (message "No deletion performed."))
-             ((= 1 nb-deletions)
-              (message "1 deletion performed."))
-             (t
-              (message "%s deletions performed" nb-deletions))))))
+ ;; (defun my/slime-compilation-delete-float-coercion-notes ()
+;;    "Remove sections containing 'float to pointer coercion' from *slime-compilation* buffer.
+;; (v1 as of 2025-11-01)"
+;;    (interactive)
+;;    (with-current-buffer "*slime-compilation*"
+;;      (let ((inhibit-read-only t)
+;;            (filter-string "float to pointer coercion")
+;;            (nb-deletions 0))
+;;        (save-excursion
+;;          (goto-char (point-min))
+;;          (while (re-search-forward (regexp-quote filter-string) nil t)
+;;            (setq nb-deletions (1+ nb-deletions))
+;;            ;; Find the start of this warning/note section
+;;            (let ((end (line-end-position)))
+;;              (beginning-of-line)
+;;              ;; Search backward for the section start (typically a blank line or buffer start)
+;;              (while (and (not (bobp))
+;;                          (not (looking-at "^$"))
+;;                          (looking-at "^[; ]"))
+;;                (forward-line -1))
+;;              (when (looking-at "^$")
+;;                (forward-line 1))
+;;              (let ((start (point)))
+;;                ;; Search forward for section end (blank line or end of buffer)
+;;                (goto-char end)
+;;                (while (and (not (eobp))
+;;                            (not (looking-at "^$")))
+;;                  (forward-line 1))
+;;                (delete-region start (point))))))
+;;        (beginning-of-buffer)
+;;        (cond ((= 0 nb-deletions)
+;;               (message "No deletion performed."))
+;;              ((= 1 nb-deletions)
+;;               (message "1 deletion performed."))
+;;              (t
+;;               (message "%s deletions performed" nb-deletions))))))
+
+ (defun my/slime-compilation-delete-some-compilation-notes ()
+  "Remove sections containing certain compiler warnings from *slime-compilation* buffer.
+Removes:
+  - \"float to pointer coercion\"
+  - \"convert to multiplication by reciprocal\"
+(v2 as of 2026-02-16)"
+  (interactive)
+  (with-current-buffer "*slime-compilation*"
+    (let ((inhibit-read-only t)
+          (filter-strings '("float to pointer coercion"
+                            "convert to multiplication by reciprocal"))
+          (nb-deletions 0))
+      (save-excursion
+        (goto-char (point-min))
+        (let ((regexp (regexp-opt filter-strings)))
+          (while (re-search-forward regexp nil t)
+            (setq nb-deletions (1+ nb-deletions))
+            ;; Find the start of this warning/note section
+            (let ((end (line-end-position)))
+              (beginning-of-line)
+              ;; Search backward for the section start
+              (while (and (not (bobp))
+                          (not (looking-at "^$"))
+                          (looking-at "^[; ]"))
+                (forward-line -1))
+              (when (looking-at "^$")
+                (forward-line 1))
+              (let ((start (point)))
+                ;; Search forward for section end
+                (goto-char end)
+                (while (and (not (eobp))
+                            (not (looking-at "^$")))
+                  (forward-line 1))
+                (delete-region start (point))))))))
+      (goto-char (point-min))
+      (cond ((= 0 nb-deletions)
+             (message "No deletion performed."))
+            ((= 1 nb-deletions)
+             (message "1 deletion performed."))
+            (t
+             (message "%s deletions performed" nb-deletions)))))
+
 
  ;; ===
  ;; === (CL) ASDF
@@ -7152,7 +7195,7 @@ Files are moved to Windows Recycle Bin."
 Common Lisp :
    M-n, M-p to navigate
    RET to follow link
-   _f_ilter 'float to pointer coercion' notes
+   _f_ilter some compilation notes
 
 C and C++:
    C-c C-k to interrupt compilation or run
@@ -7160,7 +7203,7 @@ C and C++:
 {end}
 "
 
-   ("f" #'my/slime-compilation-delete-float-coercion-notes))
+   ("f" #'my/slime-compilation-delete-some-compilation-notes))
 
  ;; ===
  ;; === Hydra Emacs Lisp
