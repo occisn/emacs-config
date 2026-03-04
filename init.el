@@ -9739,6 +9739,11 @@ SPECIFIC: M-x eglot-shutdown | M-x eglot-reconnect
    :config (elpy-enable)
    (my-init--message-package-loaded "elpy"))
 
+ ;; === Display line number
+
+ (dolist (mode '(python-mode-hook python-ts-mode-hook))
+   (add-hook mode (lambda () (display-line-numbers-mode 1))))
+
  ;; Babel:
  (defun my--org-babel-load-python (&rest _args)
    (message "Preparing org-mode babel for python...")
