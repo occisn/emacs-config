@@ -759,7 +759,7 @@ d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
        *cpp-tree-sitter-dll* "c:/.../.emacs.d/tree-sitter/libtree-sitter-cpp.dll"
        
        ) ; end of setq
- 
+
  (my-init--load-additional-init-file "personal--directories-and-files-and-constants.el")
 
  ) ; end of init section
@@ -1344,9 +1344,11 @@ M-x list-_c_olors-display
  (setq backup-directory-alist `((".*" . ,temporary-file-directory)))
  (setq auto-save-file-name-transforms `((".*" ,temporary-file-directory t)))
 
- (use-package keycast
-   :commands (keycast-mode)
-   :config (my-init--message-package-loaded "keycast"))
+ (if (>= emacs-major-version 28)
+     (use-package keycast
+       :commands (keycast-mode)
+       :config (my-init--message-package-loaded "keycast"))
+   (my-init--warning "Could not use package keycast since emacs version is not >= 28"))
 
  ;; to launch:
  ;;    (keycast-mode-line-mode 1)
@@ -1811,7 +1813,9 @@ This advice changes the encoding of the argument given to w32explore function in
      (switch-to-buffer buf)))           ; end of defun
 
  ;; The font which is chosen:
- (my-init--set-font-if-exists "DM Mono" 9)
+ (if (my-init--font-exists-p "DM Mono")
+     (my-init--set-font-if-exists "DM Mono" 9)
+   (my-init--warning "Font is not available: DM Mono"))
  ;; I like also:
  (when nil
    (my-init--set-font-if-exists "Cascadia Code" 9)
@@ -1948,7 +1952,9 @@ This advice changes the encoding of the argument given to w32explore function in
  (setq use-dialog-box nil)
 
  ;; pixel scrolling:
- (pixel-scroll-precision-mode 1)
+ (if (>= emacs-major-version 29)
+     (pixel-scroll-precision-mode 1)
+   (my-init--warning "Could not set pixel-scroll-precision-mode, since Emacs version is not >= 29"))
 
  ;; parenthesis:
  ;; (setq show-paren-mode nil) ; 1 by default since Emacs 28.1
@@ -3603,28 +3609,28 @@ Paste into org-mode from clipboard under following format:
    (my/calc-read-macro))
 
  (defun my/calc-compact-to-clipboard (beg end)
-  "Compact the current region between BEG and END.
+   "Compact the current region between BEG and END.
 For each line in the region:
 1. Delete occurrences of ';;' and everything following them.
 2. Remove line breaks so the whole region becomes a single line.
 3. Replace TAB characters with single spaces.
 4. Replace any sequence of multiple spaces with a single space.
 The result is copied to the clipboard without modifying the buffer."
-  (interactive "r")
-  (let ((text (buffer-substring-no-properties beg end)))
-    ;; 1. Remove ;; comments
-    (setq text (replace-regexp-in-string ";;.*$" "" text))
-    ;; 2. Remove line breaks
-    (setq text (replace-regexp-in-string "[\r\n]+" " " text))
-    ;; 3. Replace tabs with spaces
-    (setq text (replace-regexp-in-string "\t" " " text))
-    ;; 4. Collapse multiple spaces into one
-    (setq text (replace-regexp-in-string " +" " " text))
-    ;; Copy to clipboard
-    (kill-new (string-trim text))
-    (message "Compacted text copied to clipboard")))
+   (interactive "r")
+   (let ((text (buffer-substring-no-properties beg end)))
+     ;; 1. Remove ;; comments
+     (setq text (replace-regexp-in-string ";;.*$" "" text))
+     ;; 2. Remove line breaks
+     (setq text (replace-regexp-in-string "[\r\n]+" " " text))
+     ;; 3. Replace tabs with spaces
+     (setq text (replace-regexp-in-string "\t" " " text))
+     ;; 4. Collapse multiple spaces into one
+     (setq text (replace-regexp-in-string " +" " " text))
+     ;; Copy to clipboard
+     (kill-new (string-trim text))
+     (message "Compacted text copied to clipboard")))
 
-  (declare-function calc-push "calc")    ; to avoid compilation warning
+ (declare-function calc-push "calc")    ; to avoid compilation warning
  (with-eval-after-load 'calc
    (defun calc-push-time-in-milliseconds ()
      "Push time expressed in milliseconds into Calc stack."
@@ -5665,10 +5671,12 @@ d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
  ;; 2) relancer shell
  ;; 3) ~rg --version~
 
- (use-package rg
-   :commands (projectile-ripgrep)
-   :config
-   (my-init--message-package-loaded "rg"))
+ (if (>= emacs-major-version 28)
+     (use-package rg
+       :commands (projectile-ripgrep)
+       :config
+       (my-init--message-package-loaded "rg"))
+   (my-init--warning "Could not use package rg since emacs version is not >= 28"))
  
  ) ; end of init section
 
@@ -6743,83 +6751,83 @@ Otherwise, open in another window. Shows an error if compilation buffer does not
  ;; === (CL) filter compilation report
 
  ;; (defun my/slime-compilation-delete-float-coercion-notes ()
-;;    "Remove sections containing 'float to pointer coercion' from *slime-compilation* buffer.
-;; (v1 as of 2025-11-01)"
-;;    (interactive)
-;;    (with-current-buffer "*slime-compilation*"
-;;      (let ((inhibit-read-only t)
-;;            (filter-string "float to pointer coercion")
-;;            (nb-deletions 0))
-;;        (save-excursion
-;;          (goto-char (point-min))
-;;          (while (re-search-forward (regexp-quote filter-string) nil t)
-;;            (setq nb-deletions (1+ nb-deletions))
-;;            ;; Find the start of this warning/note section
-;;            (let ((end (line-end-position)))
-;;              (beginning-of-line)
-;;              ;; Search backward for the section start (typically a blank line or buffer start)
-;;              (while (and (not (bobp))
-;;                          (not (looking-at "^$"))
-;;                          (looking-at "^[; ]"))
-;;                (forward-line -1))
-;;              (when (looking-at "^$")
-;;                (forward-line 1))
-;;              (let ((start (point)))
-;;                ;; Search forward for section end (blank line or end of buffer)
-;;                (goto-char end)
-;;                (while (and (not (eobp))
-;;                            (not (looking-at "^$")))
-;;                  (forward-line 1))
-;;                (delete-region start (point))))))
-;;        (beginning-of-buffer)
-;;        (cond ((= 0 nb-deletions)
-;;               (message "No deletion performed."))
-;;              ((= 1 nb-deletions)
-;;               (message "1 deletion performed."))
-;;              (t
-;;               (message "%s deletions performed" nb-deletions))))))
+ ;;    "Remove sections containing 'float to pointer coercion' from *slime-compilation* buffer.
+ ;; (v1 as of 2025-11-01)"
+ ;;    (interactive)
+ ;;    (with-current-buffer "*slime-compilation*"
+ ;;      (let ((inhibit-read-only t)
+ ;;            (filter-string "float to pointer coercion")
+ ;;            (nb-deletions 0))
+ ;;        (save-excursion
+ ;;          (goto-char (point-min))
+ ;;          (while (re-search-forward (regexp-quote filter-string) nil t)
+ ;;            (setq nb-deletions (1+ nb-deletions))
+ ;;            ;; Find the start of this warning/note section
+ ;;            (let ((end (line-end-position)))
+ ;;              (beginning-of-line)
+ ;;              ;; Search backward for the section start (typically a blank line or buffer start)
+ ;;              (while (and (not (bobp))
+ ;;                          (not (looking-at "^$"))
+ ;;                          (looking-at "^[; ]"))
+ ;;                (forward-line -1))
+ ;;              (when (looking-at "^$")
+ ;;                (forward-line 1))
+ ;;              (let ((start (point)))
+ ;;                ;; Search forward for section end (blank line or end of buffer)
+ ;;                (goto-char end)
+ ;;                (while (and (not (eobp))
+ ;;                            (not (looking-at "^$")))
+ ;;                  (forward-line 1))
+ ;;                (delete-region start (point))))))
+ ;;        (beginning-of-buffer)
+ ;;        (cond ((= 0 nb-deletions)
+ ;;               (message "No deletion performed."))
+ ;;              ((= 1 nb-deletions)
+ ;;               (message "1 deletion performed."))
+ ;;              (t
+ ;;               (message "%s deletions performed" nb-deletions))))))
 
  (defun my/slime-compilation-delete-some-compilation-notes ()
-  "Remove sections containing certain compiler warnings from *slime-compilation* buffer.
+   "Remove sections containing certain compiler warnings from *slime-compilation* buffer.
 Removes:
   - \"float to pointer coercion\"
   - \"convert to multiplication by reciprocal\"
 (v2 as of 2026-02-16)"
-  (interactive)
-  (with-current-buffer "*slime-compilation*"
-    (let ((inhibit-read-only t)
-          (filter-strings '("float to pointer coercion"
-                            "convert to multiplication by reciprocal"))
-          (nb-deletions 0))
-      (save-excursion
-        (goto-char (point-min))
-        (let ((regexp (regexp-opt filter-strings)))
-          (while (re-search-forward regexp nil t)
-            (setq nb-deletions (1+ nb-deletions))
-            ;; Find the start of this warning/note section
-            (let ((end (line-end-position)))
-              (beginning-of-line)
-              ;; Search backward for the section start
-              (while (and (not (bobp))
-                          (not (looking-at "^$"))
-                          (looking-at "^[; ]"))
-                (forward-line -1))
-              (when (looking-at "^$")
-                (forward-line 1))
-              (let ((start (point)))
-                ;; Search forward for section end
-                (goto-char end)
-                (while (and (not (eobp))
-                            (not (looking-at "^$")))
-                  (forward-line 1))
-                (delete-region start (point))))))))
-      (goto-char (point-min))
-      (cond ((= 0 nb-deletions)
-             (message "No deletion performed."))
-            ((= 1 nb-deletions)
-             (message "1 deletion performed."))
-            (t
-             (message "%s deletions performed" nb-deletions)))))
+   (interactive)
+   (with-current-buffer "*slime-compilation*"
+     (let ((inhibit-read-only t)
+           (filter-strings '("float to pointer coercion"
+                             "convert to multiplication by reciprocal"))
+           (nb-deletions 0))
+       (save-excursion
+         (goto-char (point-min))
+         (let ((regexp (regexp-opt filter-strings)))
+           (while (re-search-forward regexp nil t)
+             (setq nb-deletions (1+ nb-deletions))
+             ;; Find the start of this warning/note section
+             (let ((end (line-end-position)))
+               (beginning-of-line)
+               ;; Search backward for the section start
+               (while (and (not (bobp))
+                           (not (looking-at "^$"))
+                           (looking-at "^[; ]"))
+                 (forward-line -1))
+               (when (looking-at "^$")
+                 (forward-line 1))
+               (let ((start (point)))
+                 ;; Search forward for section end
+                 (goto-char end)
+                 (while (and (not (eobp))
+                             (not (looking-at "^$")))
+                   (forward-line 1))
+                 (delete-region start (point))))))))
+     (goto-char (point-min))
+     (cond ((= 0 nb-deletions)
+            (message "No deletion performed."))
+           ((= 1 nb-deletions)
+            (message "1 deletion performed."))
+           (t
+            (message "%s deletions performed" nb-deletions)))))
 
 
  ;; ===
@@ -7532,41 +7540,45 @@ To be called from hydra."
  (setq previous-coding-system-for-read coding-system-for-read)
  (setq coding-system-for-read nil) ; otherwise problem in auctex installation
 
- (use-package tex ;; le package 'auctex' utilise des noms de fichiers en tex-...
-   :mode ("\\.tex\\'" . latex-mode)     ; new as of 2023-08-15
-   ;; :mode ("\\.tex\\'" . plain-tex-mode)
-   :ensure auctex
-   :config (my-init--message-package-loaded "tex")
-   ) ; end of tex use-package
+ (if (>= emacs-major-version 28)
+     (use-package tex ;; le package 'auctex' utilise des noms de fichiers en tex-...
+       :mode ("\\.tex\\'" . latex-mode)     ; new as of 2023-08-15
+       ;; :mode ("\\.tex\\'" . plain-tex-mode)
+       :ensure auctex
+       :config (my-init--message-package-loaded "tex"))
+   (my-init--warning "Could not use package tex/auctex since emacs version is not >= 28"))
+ 
+                                        ; end of tex use-package
 
  (when (null *pdf-viewer-program*)
    (my-init--warning "!! *pdf-viewer-program* is nil: %s" *pdf-viewer-program*))
- 
- (use-package latex 
-   :ensure auctex
-   :mode ("\\.tex\\'" . latex-mode)
-   ;; :mode ("\\.tex\\'" . plain-tex-mode)
-   ;; :mode ( "\\.(la)?tex\\'" . latex-mode )
-   :config
-   (my-init--message-package-loaded "latex")
-   (setq TeX-save-query nil)            ; autosave before compiling
-   (setq TeX-error-overview-open-after-TeX-run t) ; errors and warnings overview
-   ;; (setq TeX-auto-save t)
-   ;; (setq TeX-parse-self t)
-   (setq TeX-PDF-mode t)                ; PDF output by default
-   (setq TeX-view-program-list *pdf-viewer-program*) ; Sumatra as PDF viewer
-   (setq TeX-view-program-selection
-         '(((output-dvi style-pstricks) "dvips and start")
-           (output-dvi "Yap")
-           (output-pdf "Sumatra PDF")
-           (output-html "start")))
-   ;; RefTeX:
-   (add-hook 'LaTeX-mode-hook 'turn-on-reftex)
-   (setq reftex-plug-into-auctex t)
-   ;; to allow preview on dark background:
-   (when (my-init--dark-background-p)
-     (custom-set-faces 
-      '(preview-reference-face ((t (:background "#ebdbb2" :foreground "black"))))))) ; end of latex use-package
+ (if (>= emacs-major-version 28)
+     (use-package latex 
+       :ensure auctex
+       :mode ("\\.tex\\'" . latex-mode)
+       ;; :mode ("\\.tex\\'" . plain-tex-mode)
+       ;; :mode ( "\\.(la)?tex\\'" . latex-mode )
+       :config
+       (my-init--message-package-loaded "latex")
+       (setq TeX-save-query nil)            ; autosave before compiling
+       (setq TeX-error-overview-open-after-TeX-run t) ; errors and warnings overview
+       ;; (setq TeX-auto-save t)
+       ;; (setq TeX-parse-self t)
+       (setq TeX-PDF-mode t)                ; PDF output by default
+       (setq TeX-view-program-list *pdf-viewer-program*) ; Sumatra as PDF viewer
+       (setq TeX-view-program-selection
+             '(((output-dvi style-pstricks) "dvips and start")
+               (output-dvi "Yap")
+               (output-pdf "Sumatra PDF")
+               (output-html "start")))
+       ;; RefTeX:
+       (add-hook 'LaTeX-mode-hook 'turn-on-reftex)
+       (setq reftex-plug-into-auctex t)
+       ;; to allow preview on dark background:
+       (when (my-init--dark-background-p)
+         (custom-set-faces 
+          '(preview-reference-face ((t (:background "#ebdbb2" :foreground "black")))))))
+   (my-init--warning "Could not use package latex/auctex since emacs version is not >= 28")) ; end of latex use-package
 
  ;; coding system (2/2):
  (setq coding-system-for-read previous-coding-system-for-read)
@@ -8365,11 +8377,13 @@ Alt-F4 and Alt-TAB
        (add-to-list 'exec-path *git-diff3-directory*)
      (my-init--warning "!! (magit) diff3.exe not found within %s" *git-diff3-directory*)))
  ;; (setq ediff-diff3-program "C:/portable-programs/Git/usr/bin/diff3.exe")
-
- (use-package magit
-   :bind (("C-x g" . magit-status)
-          ("C-x C-g" . magit-status))
-   :config (my-init--message-package-loaded "magit"))
+ 
+ (if (>= emacs-major-version 28)
+     (use-package magit
+       :bind (("C-x g" . magit-status)
+              ("C-x C-g" . magit-status))
+       :config (my-init--message-package-loaded "magit"))
+   (my-init--warning "Could not use package magit since emacs version is not >= 28"))
 
  (defhydra hydra-magit-status (:exit t :hint nil)
    "
@@ -9999,11 +10013,13 @@ From here, you can also copy images from the book with the C keyboard shortcut
      (my-init--add-to-path-and-exec-path "Pandoc" *pandoc-directory*)
    (my-init--warning "!! pandoc directory is nil or does not exist: %s" *pandoc-directory*))
  
- (use-package markdown-mode
-   :mode ("\\.md\\'" . markdown-mode)
-   :config
-   (my-init--message-package-loaded "markdown-mode")
-   (setq markdown-command *pandoc-executable-name*))
+ (if (>= emacs-major-version 28)
+     (use-package markdown-mode
+       :mode ("\\.md\\'" . markdown-mode)
+       :config
+       (my-init--message-package-loaded "markdown-mode")
+       (setq markdown-command *pandoc-executable-name*))
+   (my-init--warning "Could not use package markdown since emacs version is not >= 28"))
 
  (defun my/markdown-align-all-tables ()
    "Align all markdown tables in the buffer."
