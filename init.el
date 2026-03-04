@@ -10005,6 +10005,19 @@ From here, you can also copy images from the book with the C keyboard shortcut
    (my-init--message-package-loaded "markdown-mode")
    (setq markdown-command *pandoc-executable-name*))
 
+ (defun my/markdown-align-all-tables ()
+   "Align all markdown tables in the buffer."
+   (interactive)
+   (save-excursion
+     (goto-char (point-min))
+     (while (re-search-forward "^|" nil t)
+       (markdown-table-align)
+       (forward-paragraph))))
+
+ (add-hook 'markdown-mode-hook
+           (lambda ()
+             (add-hook 'before-save-hook #'my/markdown-align-all-tables nil t)))
+
  (defun my/md-convert-region-to-anchor-and-kill ()
    "Convert current '## a b c' headline into #a-b-c anchor ready to be pasted."
    (interactive)
@@ -10034,6 +10047,8 @@ preview in browser : C-c C-c p
 M-x my/md-convert-region-to-anchor-and-kill 
 
 _3_ : copy from markdown to clipboard, under org-mode format
+
+M-x markdown-table-align (modifies buffer)
 
 (end)
 "
