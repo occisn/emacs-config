@@ -75,6 +75,12 @@
 (defvar *my-init--startup-message-verbose* t
   "If t, start-up information will be printed.")
 
+(defvar *my-init--windows-p* (eq system-type 'windows-nt)
+  "Non-nil when running on Windows.")
+
+(defvar *my-init--linux-p* (eq system-type 'gnu/linux)
+  "Non-nil when running on GNU/Linux (including WSL).")
+
 ;;; ===
 ;;; === Customized init messages
 
@@ -266,12 +272,17 @@
 
  (defun my-init--replace-linux-slash-with-two-windows-slashes (path)
    "Return PATH string after having replaced slashes by two backslashes.
-For instance: abc/def --> abc\\def"
-   (replace-regexp-in-string  "/" "\\\\" path))
+For instance: abc/def --> abc\\def.
+On Linux, returns PATH unchanged since backslashes are not needed."
+   (if *my-init--windows-p*
+       (replace-regexp-in-string  "/" "\\\\" path)
+     path))
 
  (ert-deftest my-init--replace-linux-slash-with-two-windows-slashes ()
    :tags '(init)
-   (should (string= "abc\\def" (my-init--replace-linux-slash-with-two-windows-slashes "abc/def"))))) ; end of init section
+   (if *my-init--windows-p*
+       (should (string= "abc\\def" (my-init--replace-linux-slash-with-two-windows-slashes "abc/def")))
+     (should (string= "abc/def" (my-init--replace-linux-slash-with-two-windows-slashes "abc/def")))))) ; end of init section
 
 (my-init--with-duration-measured-section
  t
@@ -737,7 +748,7 @@ d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
        *maxima-directory* "C:/.../maxima-5.47.0/bin"
 
        *pandoc-directory* "c:/.../pandoc-3.1.11.1"
-       *pandoc-executable-name* "pandoc.exe"
+       *pandoc-executable-name* (if *my-init--windows-p* "pandoc.exe" "pandoc")
 
        *my-signature* "(my signature for mail)"
 
@@ -887,8 +898,9 @@ v1 as of 2025-09-07; available in occisn/elisp-utils GitHub repository"
  ;; Inhibit the initial startup echo area message
  (setq inhibit-startup-echo-area-message t)
 
- ;; Avoid freezing at start-up:
- (setq w32-get-true-file-attributes nil)
+ ;; Avoid freezing at start-up (Windows-only variable):
+ (when *my-init--windows-p*
+   (setq w32-get-true-file-attributes nil))
 
  ;; Start with full screen:
  (add-to-list 'initial-frame-alist '(fullscreen . maximized))
@@ -1007,12 +1019,12 @@ Shall be used in the 'config' section of each package."
 (v1, available in occisn/emacs-utils GitHub repository) + messages"
    (let ((envt-variable-content (getenv envt-variable-name)))
      (if (cl-search directory envt-variable-content)
-         (my-init--message2 "No need to add %s to Windows %s environment variable since already in: %s" prog-name envt-variable-name directory)
-       (setenv envt-variable-name (concat directory ";" envt-variable-content))
+         (my-init--message2 "No need to add %s to %s environment variable since already in: %s" prog-name envt-variable-name directory)
+       (setenv envt-variable-name (concat directory (if *my-init--windows-p* ";" ":") envt-variable-content))
        (my-init--message2 "%s is added to %s environment variable." prog-name envt-variable-name))))
 
  (defun my-init--add-to-path (prog-name directory)
-   "Add DIRECTORY corresponding to PROG-NAME to Windows 'PATH' environment variable.
+   "Add DIRECTORY corresponding to PROG-NAME to 'PATH' environment variable.
 DIRECTORY may have a final slash"
    (my/add-to-environment-variable "PATH" prog-name directory))
 
@@ -1024,7 +1036,7 @@ DIRECTORY may have a final slash"
      (my-init--message2 "%s is added to exec-path." prog-name)))
 
  (defun my-init--add-to-path-and-exec-path (prog-name directory)
-   "Add DIRECTORY corresponding to PROG-NAME to Windows 'PATH' and exec-path.
+   "Add DIRECTORY corresponding to PROG-NAME to 'PATH' and exec-path.
 DIRECTORY may have a final slash"
    (my-init--add-to-path prog-name directory)
    (my-init--add-to-exec-path prog-name directory))) ; end of init section
@@ -1039,13 +1051,14 @@ DIRECTORY may have a final slash"
  t
  "Utilities for Windows"
 
- (defun my-init--open-windows-executable (exe-name exe-path)
-   "Open Windows executable EXE-NAME located at EXE-PATH.
+ (when *my-init--windows-p*
+   (defun my-init--open-windows-executable (exe-name exe-path)
+     "Open Windows executable EXE-NAME located at EXE-PATH.
 First check that the path is correct."
-   (unless (my-init--file-exists-p exe-path)
-     (error (concat "Impossible to open " exe-name " from Emacs, since no path is known")))
-   (message (concat "Opening " exe-name " from Emacs"))
-   (call-process-shell-command exe-path nil 0))
+     (unless (my-init--file-exists-p exe-path)
+       (error (concat "Impossible to open " exe-name " from Emacs, since no path is known")))
+     (message (concat "Opening " exe-name " from Emacs"))
+     (call-process-shell-command exe-path nil 0)))
 
  (defun my-init--open-with-external-program (program-name build-cmd-fn)
    "Open the current file or dired marked files in external program named PROGRAM-NAME (this name is just used for messages).
@@ -1463,14 +1476,14 @@ M-x list-_c_olors-display
  ;; Coding system used for network connections.
 
  (let ((tmp (if (boundp 'coding-system-for-read) coding-system-for-read "UNBOUND")))
-   (setq coding-system-for-read 'utf-8-dos)
+   (setq coding-system-for-read (if *my-init--windows-p* 'utf-8-dos 'utf-8-unix))
    (my-init--message2 "Encoding: coding-system-for-read was %s and is now %s" tmp coding-system-for-read))
  ;; crucial for FIND et projectile
  ;; Specify the coding system for read operations.
 
  ;; to solve the problem encountered with doc-view related to accent in file name: 
  (let ((tmp (if (boundp 'default-process-coding-system) default-process-coding-system "UNBOUND")))
-   (setq default-process-coding-system '(utf-8 . latin-1))
+   (setq default-process-coding-system (if *my-init--windows-p* '(utf-8 . latin-1) '(utf-8 . utf-8)))
    (my-init--message2 "Encoding: default-process-coding-system was %s and is now %s" tmp default-process-coding-system))
  ;; (setq default-process-coding-system '(utf-8 . latin-1)) ; cp1252-dos cp850-dos
  ;; (setq file-name-coding-system 'latin-1)
@@ -1479,17 +1492,18 @@ M-x list-_c_olors-display
  ;; the above allows 'my-init--open-with-external-program' (Sumatra, Irfan, ...), unzip, pdf to work properly
  ;;     without 'encode-filename-or-directory-for-cmd' just below
 
- (defun my-init--encode-filename-or-directory-for-cmd (file-name)
-   "Return FILE-NAME (which can also be a directory or a path) in an encoding which allows injecting in cmd"
-   (encode-coding-string file-name 'latin-1))
+ (when *my-init--windows-p*
+   (defun my-init--encode-filename-or-directory-for-cmd (file-name)
+     "Return FILE-NAME (which can also be a directory or a path) in an encoding which allows injecting in cmd"
+     (encode-coding-string file-name 'latin-1))
 
- (defun my-w32explore-fix-encoding (orig-fun &rest args)
-   "Solve the issue with Ctrl-RET in dired, which was not able to open directory when accents in path.
+   (defun my-w32explore-fix-encoding (orig-fun &rest args)
+     "Solve the issue with Ctrl-RET in dired, which was not able to open directory when accents in path.
 This advice changes the encoding of the argument given to w32explore function in w32-browser.el, which calls shell-execute"
-   (let* ((file-name (car args))
-          (file-name-with-fixed-encoding (my-init--encode-filename-or-directory-for-cmd file-name)))
-     (apply orig-fun file-name-with-fixed-encoding (cdr args))))
- (advice-add 'w32explore :around #'my-w32explore-fix-encoding)
+     (let* ((file-name (car args))
+            (file-name-with-fixed-encoding (my-init--encode-filename-or-directory-for-cmd file-name)))
+       (apply orig-fun file-name-with-fixed-encoding (cdr args))))
+   (advice-add 'w32explore :around #'my-w32explore-fix-encoding))
 
  ;; PREVIOUS VERSION:
  ;; ... which was triggering:
@@ -2809,11 +2823,17 @@ Version 2019-12-02"
                  (paste-image-from-clipboard-to-file-with-imagemagick (destination-file-with-path)
                    "Paste image from clipboard fo file DESTINATION-FILE-WITH-PATH with ImageMagick.
 (v1, available in occisn/emacs-utils GitHub repository + adaptations)"
-                   (unless (my-init--file-exists-p *imagemagick-convert-program*)
-                     (error "Unable to paste image from clipboard to file, since *imagemagick-convert-program* does not contain valid content: %s" *imagemagick-convert-program*))
-                   (let ((cmd (concat "\"" *imagemagick-convert-program* "\" " "clipboard: " destination-file-with-path)))
-                     (message "Pasting image from clipboard to %s with ImageMagick." destination-file-with-path)
-                     (call-process-shell-command cmd nil 0)))) ; end of labels definitions
+                   (if *my-init--windows-p*
+                       (progn
+                         (unless (my-init--file-exists-p *imagemagick-convert-program*)
+                           (error "Unable to paste image from clipboard to file, since *imagemagick-convert-program* does not contain valid content: %s" *imagemagick-convert-program*))
+                         (let ((cmd (concat "\"" *imagemagick-convert-program* "\" " "clipboard: " destination-file-with-path)))
+                           (message "Pasting image from clipboard to %s with ImageMagick." destination-file-with-path)
+                           (call-process-shell-command cmd nil 0)))
+                     ;; Linux: use xclip to get image from clipboard
+                     (let ((cmd (concat "xclip -selection clipboard -t image/png -o > " (shell-quote-argument destination-file-with-path))))
+                       (message "Pasting image from clipboard to %s with xclip." destination-file-with-path)
+                       (call-process-shell-command cmd nil 0))))) ; end of labels definitions
        (let* (
               ;; Ask for sub-directory name ; if "pics" already exists, propose it as default
               (subdirectory-name
@@ -3021,6 +3041,8 @@ Fallback : current word.
 Clipboard can be pasted into Microsoft Word, Microsoft Teams, Thunderbird and Gmail.
 (v1 as of 2025-10-28, available in occisn/emacs-utils GitHub repository)"
    (interactive)
+   (unless *my-init--windows-p*
+     (user-error "CF_HTML clipboard export is only available on Windows"))
    (if (not (use-region-p))
        (message "No active region to export")
      (let* ((region-start (region-beginning))
@@ -3117,6 +3139,8 @@ Requires my/save-region-as-html."
    "Insert raw HTML from the Windows clipboard (CF_HTML) into current buffer, with visible tags.
 (v1 as of 2025-10-28, available in occisn/emacs-utils GitHub repository)"
    (interactive)
+   (unless *my-init--windows-p*
+     (user-error "CF_HTML clipboard paste is only available on Windows"))
    (let* ((html-raw
            (with-temp-buffer
              (call-process
@@ -3217,6 +3241,8 @@ Does not work as such from Thunderbird. Not tested from Gmail.
 Requires my/html-to-org.
 (v1 as of 2025-10-29, available in occisn/emacs-utils GitHub repository)"
    (interactive)
+   (unless *my-init--windows-p*
+     (user-error "CF_HTML clipboard paste is only available on Windows"))
    (let* ((powershell-cmd "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.Clipboard]::GetText([System.Windows.Forms.TextDataFormat]::Html)")
           (html-content (shell-command-to-string 
                          (format "powershell.exe -Command \"%s\"" powershell-cmd))))
@@ -3753,36 +3779,37 @@ reset: M-x calc-reset
                     (not (looking-at-p prompt-regexp)))
              (accept-process-output (get-buffer-process eshell-buffer) 0.1)))))))
 
- ;; === cmd shell
+ ;; === cmd shell (Windows only)
 
- (defun my/open-cmd-shell-external ()
-   "Open cmd in a native window, within the directory of current buffer (if it is a dired or a file)."
-   (interactive)
-   (if (or (buffer-file-name) (derived-mode-p 'dired-mode))
-       (let ((proc (start-process "cmd" nil "cmd.exe" "/C" "start" "cmd.exe" "/K" "cd" default-directory)))
+ (when *my-init--windows-p*
+   (defun my/open-cmd-shell-external ()
+     "Open cmd in a native window, within the directory of current buffer (if it is a dired or a file)."
+     (interactive)
+     (if (or (buffer-file-name) (derived-mode-p 'dired-mode))
+         (let ((proc (start-process "cmd" nil "cmd.exe" "/C" "start" "cmd.exe" "/K" "cd" default-directory)))
+           (set-process-query-on-exit-flag proc nil)
+           (message "Native cms window opened in %s" default-directory))
+       (let ((proc (start-process "powershell" nil "cmd.exe" "/C" "start" "cmd.exe")))
          (set-process-query-on-exit-flag proc nil)
-         (message "Native cms window opened in %s" default-directory))
-     (let ((proc (start-process "powershell" nil "cmd.exe" "/C" "start" "cmd.exe")))
-       (set-process-query-on-exit-flag proc nil)
-       (message "No directory identified. Native cmd window opened."))))
+         (message "No directory identified. Native cmd window opened."))))
 
- (defun my/open-cmd-shell-in-emacs ()
-   "Open a Windows cmd.exe shell inside an Emacs buffer, using UTF-8 encoding and starting in the current buffer's directory (if any)."
-   (interactive)
-   (let* ((default-dir (if (or (buffer-file-name) (derived-mode-p 'dired-mode))
-                           (file-name-directory (or (buffer-file-name) default-directory))
-                         (expand-file-name "~")))
-          (buffer-name (generate-new-buffer-name "*cmd*"))
-          (coding-system-for-read 'utf-8)
-          (coding-system-for-write 'utf-8))
-     (with-current-buffer (get-buffer-create buffer-name)
-       (setq default-directory default-dir)
-       ;; Start cmd in UTF-8 mode (codepage 65001) and set to correct directory
-       (apply #'make-comint-in-buffer "cmd" (current-buffer)
-              "cmd.exe" nil
-              (list "/K" (format "chcp 65001 > nul && cd /d \"%s\"" default-dir)))
-       (pop-to-buffer (current-buffer))
-       (message "cmd.exe started in %s (UTF-8 mode)" default-dir))))
+   (defun my/open-cmd-shell-in-emacs ()
+     "Open a Windows cmd.exe shell inside an Emacs buffer, using UTF-8 encoding and starting in the current buffer's directory (if any)."
+     (interactive)
+     (let* ((default-dir (if (or (buffer-file-name) (derived-mode-p 'dired-mode))
+                             (file-name-directory (or (buffer-file-name) default-directory))
+                           (expand-file-name "~")))
+            (buffer-name (generate-new-buffer-name "*cmd*"))
+            (coding-system-for-read 'utf-8)
+            (coding-system-for-write 'utf-8))
+       (with-current-buffer (get-buffer-create buffer-name)
+         (setq default-directory default-dir)
+         ;; Start cmd in UTF-8 mode (codepage 65001) and set to correct directory
+         (apply #'make-comint-in-buffer "cmd" (current-buffer)
+                "cmd.exe" nil
+                (list "/K" (format "chcp 65001 > nul && cd /d \"%s\"" default-dir)))
+         (pop-to-buffer (current-buffer))
+         (message "cmd.exe started in %s (UTF-8 mode)" default-dir)))))
 
  ;; === powershell
 
@@ -3790,39 +3817,41 @@ reset: M-x calc-reset
    :commands (powershell-mode)
    :config (my-init--message-package-loaded "powershell"))
 
- (defun my/open-powershell-external ()
-   "Open Powershell in a native window, within the directory of current buffer (if it is a dired or a file)."
-   (interactive)
-   (if (or (buffer-file-name) (derived-mode-p 'dired-mode))
-       (let ((proc (start-process "powershell" nil "cmd.exe" "/C" "start" "powershell.exe" "-NoExit" "-Command" (format "Set-Location '%s'" default-directory))))
+ (when *my-init--windows-p*
+   (defun my/open-powershell-external ()
+     "Open Powershell in a native window, within the directory of current buffer (if it is a dired or a file)."
+     (interactive)
+     (if (or (buffer-file-name) (derived-mode-p 'dired-mode))
+         (let ((proc (start-process "powershell" nil "cmd.exe" "/C" "start" "powershell.exe" "-NoExit" "-Command" (format "Set-Location '%s'" default-directory))))
+           (set-process-query-on-exit-flag proc nil)
+           (message "Native Powershell window opened in %s" default-directory))
+       (let ((proc (start-process "powershell" nil "cmd.exe" "/C" "start" "powershell.exe" "-NoExit")))
          (set-process-query-on-exit-flag proc nil)
-         (message "Native Powershell window opened in %s" default-directory))
-     (let ((proc (start-process "powershell" nil "cmd.exe" "/C" "start" "powershell.exe" "-NoExit")))
-       (set-process-query-on-exit-flag proc nil)
-       (message "No directory identified. Native Powershell window opened."))))
+         (message "No directory identified. Native Powershell window opened."))))
 
- (defun my/open-powershell-in-emacs ()
-   "Open PowerShell inside an Emacs buffer, using UTF-8 encoding,
+   (defun my/open-powershell-in-emacs ()
+     "Open PowerShell inside an Emacs buffer, using UTF-8 encoding,
 and starting in the current buffer's directory (if any)."
-   (interactive)
-   (let* ((default-dir (if (or (buffer-file-name) (derived-mode-p 'dired-mode))
-                           (file-name-directory (or (buffer-file-name) default-directory))
-                         (expand-file-name "~")))
-          (buffer-name (generate-new-buffer-name "*PowerShell*"))
-          (process-environment (cons "CHCP=65001" process-environment))
-          (coding-system-for-read 'utf-8)
-          (coding-system-for-write 'utf-8))
-     (with-current-buffer (get-buffer-create buffer-name)
-       (setq default-directory default-dir)
-       ;; Use UTF-8 mode and set console codepage to 65001 inside PowerShell
-       (apply #'make-comint-in-buffer "PowerShell" (current-buffer)
-              "powershell.exe" nil
-              '("-NoExit" "-Command" "chcp 65001; [Console]::OutputEncoding = [Text.Encoding]::UTF8"))
-       (pop-to-buffer (current-buffer))
-       (message "PowerShell started in %s (UTF-8 mode)" default-dir))))
+     (interactive)
+     (let* ((default-dir (if (or (buffer-file-name) (derived-mode-p 'dired-mode))
+                             (file-name-directory (or (buffer-file-name) default-directory))
+                           (expand-file-name "~")))
+            (buffer-name (generate-new-buffer-name "*PowerShell*"))
+            (process-environment (cons "CHCP=65001" process-environment))
+            (coding-system-for-read 'utf-8)
+            (coding-system-for-write 'utf-8))
+       (with-current-buffer (get-buffer-create buffer-name)
+         (setq default-directory default-dir)
+         ;; Use UTF-8 mode and set console codepage to 65001 inside PowerShell
+         (apply #'make-comint-in-buffer "PowerShell" (current-buffer)
+                "powershell.exe" nil
+                '("-NoExit" "-Command" "chcp 65001; [Console]::OutputEncoding = [Text.Encoding]::UTF8"))
+         (pop-to-buffer (current-buffer))
+         (message "PowerShell started in %s (UTF-8 mode)" default-dir)))))
 
- ;; === msys2 bash
+ ;; === msys2 bash (Windows only)
 
+ (when *my-init--windows-p*
  (defun my/open-msys2-external ()
    "Open MSYS2 in a native window, within the directory of current buffer (if it is a dired or a file)."
    (interactive)
@@ -3881,10 +3910,11 @@ and starting in the current buffer's directory (if any)."
            ;; Send cd command
            (comint-send-string proc (format "cd '%s'\n" default-dir)))
          (pop-to-buffer (current-buffer))
-         (message "MSYS2 shell started in %s (UTF-8 mode)" default-dir)))))
+         (message "MSYS2 shell started in %s (UTF-8 mode)" default-dir))))) ) ; end of when *my-init--windows-p* for msys2
 
- ;; === git bash
+ ;; === git bash (Windows only)
 
+ (when *my-init--windows-p*
  (defun my/open-git-bash-external ()
    "Open Git Bash in a native window, within the directory of current buffer (if it is a dired or a file)."
    (interactive)
@@ -3923,9 +3953,9 @@ and starting in the current buffer's directory (if any)."
          (comint-send-string (get-buffer-process (current-buffer))
                              (format "cd '%s'\n" default-dir))
          (pop-to-buffer (current-buffer))
-         (message "Git Bash started in %s (UTF-8 mode)" default-dir)))))
+         (message "Git Bash started in %s (UTF-8 mode)" default-dir))))) ) ; end of when *my-init--windows-p* for git bash
 
- ;; === wsl bash
+ ;; === wsl bash (Windows only: launching WSL from Windows Emacs)
 
  ;; to install WSL on Windows :
  ;;   [cmd] wsl.exe --install
@@ -3936,6 +3966,7 @@ and starting in the current buffer's directory (if any)."
  ;; then to update it:
  ;;   [wsl] sudo apt update && sudo apt full-upgrade
 
+ (when *my-init--windows-p*
  (defun my/open-wsl-shell-external ()
    "Open a visible WSL terminal (bash) window in the directory of the current buffer."
    (interactive)
@@ -4005,12 +4036,36 @@ The prompt is 'fake' and is not updated with successive 'cd'."
            (process-send-string proc "\n")))
        (pop-to-buffer (current-buffer))
        (goto-char (point-max))
-       (message "WSL (comint) started in %s" win-dir))))
+       (message "WSL (comint) started in %s" win-dir)))) ) ; end of when *my-init--windows-p* for wsl
+
+ ;; === Linux shell functions
+
+ (when *my-init--linux-p*
+   (defun my/open-terminal-external ()
+     "Open an external terminal in the current directory."
+     (interactive)
+     (let ((dir (if (or (buffer-file-name) (derived-mode-p 'dired-mode))
+                    (file-name-directory (or (buffer-file-name) default-directory))
+                  (expand-file-name "~"))))
+       (start-process "terminal" nil "x-terminal-emulator" "--working-directory" dir)
+       (message "External terminal opened in %s" dir)))
+
+   (defun my/open-bash-in-emacs ()
+     "Open a bash shell inside an Emacs buffer."
+     (interactive)
+     (let* ((default-dir (if (or (buffer-file-name) (derived-mode-p 'dired-mode))
+                             (file-name-directory (or (buffer-file-name) default-directory))
+                           (expand-file-name "~")))
+            (buf-name (generate-new-buffer-name (format "*bash: %s*" (abbreviate-file-name default-dir)))))
+       (let ((default-directory default-dir))
+         (shell buf-name)
+         (message "bash started in %s" default-dir)))))
 
  ;; === hydra
 
- (defhydra hydra-shells (:exit t :hint nil)
-   "
+ (if *my-init--windows-p*
+     (defhydra hydra-shells (:exit t :hint nil)
+       "
 ^Shells hydra:
 ^-------------
 
@@ -4021,18 +4076,28 @@ msys2 :      _m_ external or _y_ in buffer
 git bash :   _g_ external or _i_ in buffer (Windows native equivalents)
 wsl shell :  _w_ external or _s_ in buffer
 "
-   ("c" #'my/open-cmd-shell-external)
-   ("d" #'my/open-cmd-shell-in-emacs)
-   ("e" #'eshell)
-   ("i" #'my/open-git-bash-in-emacs)
-   ("g" #'my/open-git-bash-external)
-   ("o" #'my/open-powershell-in-emacs)
-   ("m" #'my/open-msys2-external)
-   ("p" #'my/open-powershell-external)
-   ("s" #'my/open-wsl-shell-in-emacs)
-   ("w" #'my/open-wsl-shell-external)
-   ("y" #'my/open-msys2-in-emacs)
-   )
+       ("c" #'my/open-cmd-shell-external)
+       ("d" #'my/open-cmd-shell-in-emacs)
+       ("e" #'eshell)
+       ("i" #'my/open-git-bash-in-emacs)
+       ("g" #'my/open-git-bash-external)
+       ("o" #'my/open-powershell-in-emacs)
+       ("m" #'my/open-msys2-external)
+       ("p" #'my/open-powershell-external)
+       ("s" #'my/open-wsl-shell-in-emacs)
+       ("w" #'my/open-wsl-shell-external)
+       ("y" #'my/open-msys2-in-emacs))
+   (defhydra hydra-shells (:exit t :hint nil)
+     "
+^Shells hydra:
+^-------------
+
+eshell : _e_ in buffer
+bash :   _b_ in buffer or _t_ external terminal
+"
+     ("b" #'my/open-bash-in-emacs)
+     ("e" #'eshell)
+     ("t" #'my/open-terminal-external)))
 
  ) ; end of init section
 
@@ -4527,11 +4592,12 @@ w   to resize cell
 
  ;; === (8) Integration with Windows
 
- (use-package w32-browser
-   ;; requires nothing
-   :after (dired+)
-   :config
-   (my-init--message-package-loaded "w32-browser"))
+ (when *my-init--windows-p*
+   (use-package w32-browser
+     ;; requires nothing
+     :after (dired+)
+     :config
+     (my-init--message-package-loaded "w32-browser")))
 
  ;; Quote of documentaton:
  ;; (‘M-RET’) You can use Windows file associations to act on a file or folder. For example, if you have the application Adobe Acrobat associated with *.pdf files, then clicking ‘mouse-2’ on a *.pdf file in Dired will open the file in Adobe Acrobat.
@@ -4552,14 +4618,21 @@ w   to resize cell
        (message "Trying to open invalid directory in dired:%s" directory))))
  ;; available in general hydra
 
- (defun my/open-current-dired-directory-in-windows-explorer ()
-   "Open curent dired directory in Windows Explorer"
+ (defun my/open-current-dired-directory-in-file-manager ()
+   "Open current dired directory in the system file manager."
    (interactive)
-   (if (equal major-mode 'dired-mode)
-       (progn
-         (message "Opening this dired directory in Windows explorer")
-         (w32explore (expand-file-name default-directory)))
-     (error "This is not a dired buffer. Could not be open in Windows Explorer")))
+   (unless (equal major-mode 'dired-mode)
+     (error "This is not a dired buffer"))
+   (let ((dir (expand-file-name default-directory)))
+     (if *my-init--windows-p*
+         (progn
+           (message "Opening this dired directory in Windows Explorer")
+           (w32explore dir))
+       (message "Opening this dired directory in file manager")
+       (call-process "xdg-open" nil 0 nil dir))))
+
+ (defalias 'my/open-current-dired-directory-in-windows-explorer
+   #'my/open-current-dired-directory-in-file-manager)
  ;; available in dired hydra
 
  ;; === (9) Copy file here
@@ -4598,12 +4671,18 @@ Uses ImageMagick.
    (cl-labels ((paste-image-from-clipboard-to-file-with-imagemagick (destination-file-with-path)
                  "Paste image from clipboard fo file DESTINATION-FILE-WITH-PATH with ImageMagick.
 (v1, available in occisn/emacs-utils GitHub repository + adaptations)"
-                 (unless (my-init--file-exists-p *imagemagick-convert-program*)
-                   (error "Unable to paste image from clipboard to file, since *imagemagick-convert-program* does not contain valid content: %s" *imagemagick-convert-program*))
-                 (let ((cmd (concat "\"" *imagemagick-convert-program* "\" " "clipboard: " destination-file-with-path)))
-                   (message "Pasting image from clipboard to %s with ImageMagick." destination-file-with-path)
-                   (call-process-shell-command cmd)))) ; end of labels definition
-     
+                 (if *my-init--windows-p*
+                     (progn
+                       (unless (my-init--file-exists-p *imagemagick-convert-program*)
+                         (error "Unable to paste image from clipboard to file, since *imagemagick-convert-program* does not contain valid content: %s" *imagemagick-convert-program*))
+                       (let ((cmd (concat "\"" *imagemagick-convert-program* "\" " "clipboard: " destination-file-with-path)))
+                         (message "Pasting image from clipboard to %s with ImageMagick." destination-file-with-path)
+                         (call-process-shell-command cmd)))
+                   ;; Linux: use xclip to get image from clipboard
+                   (let ((cmd (concat "xclip -selection clipboard -t image/png -o > " (shell-quote-argument destination-file-with-path))))
+                     (message "Pasting image from clipboard to %s with xclip." destination-file-with-path)
+                     (call-process-shell-command cmd))))) ; end of labels definition
+
      (let* ((file-short-name (read-string "File name without suffix: "))
             (suffix ".png")
             (destination-file-with-path1 (concat default-directory file-short-name suffix))
@@ -4693,10 +4772,10 @@ _h_: paste image from clipboard to _h_ere (M-x my/paste-image-from-clipboard-to-
 / and g to narrow | P and q to peep-dired (M-x doc-view-dired-cache, M-x doc-view-clear-cache)
 
 Open with:
-   _w_: open this dired directory in _w_indows Explorer (M-x my/open-current-dired-directory-in-windows-explorer)
-   _s_: open with Sumatra
-   _i_: open with _i_rfan View
-   M-RET to open file with Windows application | C-RET to open directory in Windows Explorer (similar to _w_ above)
+   _w_: open this dired directory in file manager (M-x my/open-current-dired-directory-in-file-manager)
+   _s_: open with PDF viewer
+   _i_: open with image viewer
+   M-RET to open file with external application | C-RET to open directory in file manager (similar to _w_ above)
 
 Find: my/find1 (native, buffer), my/_f_ind2 (projectile), my/find3 (projectile, buffer)
 Grep:
@@ -4723,7 +4802,7 @@ Attach file to mail: C-c RET C-a (gnus-dired-attach) {end}"
    ("p" #'my/pt-grep-in-current-dired-directory)
    ("s" #'my/open-with-Sumatra)
    ("u" #'my/unzip)
-   ("w" #'my/open-current-dired-directory-in-windows-explorer)
+   ("w" #'my/open-current-dired-directory-in-file-manager)
    ("x" #'xah-grep-in-current-dired-directory)
    ("z" #'my/zip-content-of-current-directory)) ; end of hydra
 
@@ -4760,22 +4839,23 @@ Attach file to mail: C-c RET C-a (gnus-dired-attach) {end}"
  ;; The Store opens automatically when you type python in the command line.
  ;; Solution: go to “App execution aliases” (French: "Alias d'exécution d'application") and disable Python.
 
- ;; For unoconv, we shall use the Python provided by LibreOffice
+ ;; For unoconv, we shall use the Python provided by LibreOffice (Windows only)
 
- (unless (my-init--file-exists-p *python-executable--in-libreoffice-for-unoconv*)
-   (my-init--warning "!! *python-executable--in-libreoffice-for-unoconv* is nil or does not exist: %s" *python-executable--in-libreoffice-for-unoconv*))
+ (when *my-init--windows-p*
+   (unless (my-init--file-exists-p *python-executable--in-libreoffice-for-unoconv*)
+     (my-init--warning "!! *python-executable--in-libreoffice-for-unoconv* is nil or does not exist: %s" *python-executable--in-libreoffice-for-unoconv*))
 
- (if (my-init--directory-exists-p *python-path-1--in-libreoffice-for-unoconv*)
-     (progn
-       (my-init--add-to-path "Python path (1) [in Libre Office, for unoconv]" *python-path-1--in-libreoffice-for-unoconv*)
-       (my-init--add-to-exec-path "Python path (1) [in Libre Office, for unoconv]" *python-path-1--in-libreoffice-for-unoconv*))
-   (my-init--warning "!! *python-path-1--in-libreoffice-for-unoconv* is nil or does not exist: %s" *python-path-1--in-libreoffice-for-unoconv*))
+   (if (my-init--directory-exists-p *python-path-1--in-libreoffice-for-unoconv*)
+       (progn
+         (my-init--add-to-path "Python path (1) [in Libre Office, for unoconv]" *python-path-1--in-libreoffice-for-unoconv*)
+         (my-init--add-to-exec-path "Python path (1) [in Libre Office, for unoconv]" *python-path-1--in-libreoffice-for-unoconv*))
+     (my-init--warning "!! *python-path-1--in-libreoffice-for-unoconv* is nil or does not exist: %s" *python-path-1--in-libreoffice-for-unoconv*))
 
- (if (my-init--directory-exists-p *python-path-2--in-libreoffice-for-unoconv*)
-     (progn
-       (my-init--add-to-path "Python path (2) [in Libre Office, for unoconv]" *python-path-2--in-libreoffice-for-unoconv*)
-       (my-init--add-to-exec-path "Python path (2) [in Libre Office, for unoconv]" *python-path-2--in-libreoffice-for-unoconv*))
-   (my-init--warning "!! *python-path-2--in-libreoffice-for-unoconv* is nil or does not exist: %s" *python-path-2--in-libreoffice-for-unoconv*))
+   (if (my-init--directory-exists-p *python-path-2--in-libreoffice-for-unoconv*)
+       (progn
+         (my-init--add-to-path "Python path (2) [in Libre Office, for unoconv]" *python-path-2--in-libreoffice-for-unoconv*)
+         (my-init--add-to-exec-path "Python path (2) [in Libre Office, for unoconv]" *python-path-2--in-libreoffice-for-unoconv*))
+     (my-init--warning "!! *python-path-2--in-libreoffice-for-unoconv* is nil or does not exist: %s" *python-path-2--in-libreoffice-for-unoconv*)))
  
  ) ; end of init section
 
@@ -4790,20 +4870,25 @@ Attach file to mail: C-c RET C-a (gnus-dired-attach) {end}"
  "Docview and peep"
  
  ;; ghostscript:
- (if (my-init--file-exists-p *gs-program*)
-     (setq doc-view-ghostscript-program *gs-program*)
-   (my-init--warning "!! *gs-program* is nil or does not exist: %s" *gs-program*))
- 
- ;; for .ps :
- (if (my-init--directory-exists-p *gs-bin-directory*)
-     (my-init--add-to-path "Ghostscript" *gs-bin-directory*)
-   (my-init--warning "!! *gs-bin-directory* is nil or does not exist: %s" *gs-bin-directory*))
- 
- ;; for .dvi :
- ;; in below directory, rename dvipdf into dvipdf.bat
- (if (my-init--directory-exists-p *gs-lib-directory*)
-     (my-init--add-to-exec-path "dvipdf" (my-init--replace-linux-slash-with-two-windows-slashes *gs-lib-directory*))
-   (my-init--warning "!! *gs-lib-directory* is nil or does not exist: %s" *gs-lib-directory*))
+ (if *my-init--windows-p*
+     ;; Windows: Ghostscript portable with explicit paths
+     (progn
+       (if (my-init--file-exists-p *gs-program*)
+           (setq doc-view-ghostscript-program *gs-program*)
+         (my-init--warning "!! *gs-program* is nil or does not exist: %s" *gs-program*))
+       ;; for .ps :
+       (if (my-init--directory-exists-p *gs-bin-directory*)
+           (my-init--add-to-path "Ghostscript" *gs-bin-directory*)
+         (my-init--warning "!! *gs-bin-directory* is nil or does not exist: %s" *gs-bin-directory*))
+       ;; for .dvi :
+       ;; in below directory, rename dvipdf into dvipdf.bat
+       (if (my-init--directory-exists-p *gs-lib-directory*)
+           (my-init--add-to-exec-path "dvipdf" (my-init--replace-linux-slash-with-two-windows-slashes *gs-lib-directory*))
+         (my-init--warning "!! *gs-lib-directory* is nil or does not exist: %s" *gs-lib-directory*)))
+   ;; Linux: Ghostscript expected in PATH
+   (if (executable-find "gs")
+       (setq doc-view-ghostscript-program "gs")
+     (my-init--warning "!! gs (Ghostscript) not found in PATH")))
  ;; To check: (executable-find doc-view-dvipdf-program)
  ;; do not seem to work on pro1 computer (2025-12-07)
  
@@ -4817,10 +4902,11 @@ Attach file to mail: C-c RET C-a (gnus-dired-attach) {end}"
  (if (my-init--directory-exists-p *libreoffice-directory*)
      (let ((prog-name "LibreOffice for unoconv")
            (directory (my-init--replace-linux-slash-with-two-windows-slashes *libreoffice-directory*))
-           (path-env (getenv "UNOPATH")))
+           (path-env (getenv "UNOPATH"))
+           (separator (if *my-init--windows-p* ";" ":")))
        (if (cl-search directory path-env)
-           (my-init--message2 "No need to add %s to Windows UNOPATH since already in: %s" prog-name directory)
-         (setenv "UNOPATH" (concat directory ";" (getenv "UNOPATH")))
+           (my-init--message2 "No need to add %s to UNOPATH since already in: %s" prog-name directory)
+         (setenv "UNOPATH" (concat directory separator (getenv "UNOPATH")))
          (my-init--message2 "%s is added to UNOPATH." prog-name)))
    (my-init--warning "!! *libreoffice-directory* is nil or does not exist: %s" *libreoffice-directory*))
  ;;
@@ -5736,11 +5822,14 @@ d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
  ;; set directory is valid and set path:
  (if (my-init--directory-exists-p *common-lisp-directory*)
      (my-init--add-to-path-and-exec-path "Common Lisp" *common-lisp-directory*)
-   (my-init--warning "Common Lisp directory nil or not valid: %s" *common-lisp-directory*))
+   (if *my-init--linux-p*
+       ;; On Linux, Common Lisp may be in PATH without a dedicated directory
+       (my-init--message2 "Common Lisp: no dedicated directory, assuming in PATH")
+     (my-init--warning "Common Lisp directory nil or not valid: %s" *common-lisp-directory*)))
 
  ;; check program is valid:
- (if (my-init--file-exists-p *common-lisp-program*)
-     nil
+ (unless (or (my-init--file-exists-p *common-lisp-program*)
+             (and *my-init--linux-p* *common-lisp-program* (executable-find *common-lisp-program*)))
    (my-init--warning "Common Lisp program nil or not valid: %s" *common-lisp-program*))
 
  ;; ===
@@ -5750,7 +5839,9 @@ d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
    "Starts external Common Lisp."
    (interactive)
    (let ((cmd (concat "\"" (my-init--replace-linux-slash-with-two-windows-slashes *common-lisp-program*) "\"")))
-     (w32-shell-execute "open" cmd)
+     (if *my-init--windows-p*
+         (w32-shell-execute "open" cmd)
+       (start-process "common-lisp" nil *common-lisp-program*))
      (message "External Common Lisp opened.")))
  ;; available in hydra      
 
@@ -6981,20 +7072,24 @@ Return NIL if no system found.
  ;; === my/dired-clean-build-artifacts
 
  (defun my/delete-to-recycle-bin (file)
-   "Move FILE to Windows Recycle Bin using PowerShell.
+   "Move FILE to trash. On Windows, uses the Recycle Bin via PowerShell.
+On Linux, uses trash-put (from trash-cli package) or move-file-to-trash as fallback.
 Returns t on success, nil on failure.
-Note: (setq delete-by-moving-to-trash t) does not seem enough.
+Note: (setq delete-by-moving-to-trash t) does not seem enough on Windows.
 (v1, available in occisn/emacs-utils GitHub repository, 2025-12-27)"
-   (let* ((file-path (convert-standard-filename file))
-          (ps-command (format 
-                       "Add-Type -AssemblyName Microsoft.VisualBasic; [Microsoft.VisualBasic.FileIO.FileSystem]::DeleteFile('%s', 'OnlyErrorDialogs', 'SendToRecycleBin')"
-                       file-path)))
-     (condition-case err
-         (progn
-           (call-process "powershell.exe" nil nil nil
-                         "-NoProfile" "-NonInteractive" "-Command" ps-command)
-           (not (file-exists-p file)))
-       (error nil))))
+   (condition-case err
+       (if *my-init--windows-p*
+           (let* ((file-path (convert-standard-filename file))
+                  (ps-command (format
+                               "Add-Type -AssemblyName Microsoft.VisualBasic; [Microsoft.VisualBasic.FileIO.FileSystem]::DeleteFile('%s', 'OnlyErrorDialogs', 'SendToRecycleBin')"
+                               file-path)))
+             (call-process "powershell.exe" nil nil nil
+                           "-NoProfile" "-NonInteractive" "-Command" ps-command)
+             (not (file-exists-p file)))
+         ;; Linux: use trash-put from trash-cli
+         (call-process "trash-put" nil nil nil (expand-file-name file))
+         (not (file-exists-p file)))
+     (error nil)))
 
 
  (defun dired-clean--find-files-recursively (dir extensions exceptions)
@@ -7491,26 +7586,38 @@ C-c C-M-a align only visible part
 
  (setq *pdf-viewer-program* nil)
 
- (if (my-init--file-exists-p *sumatra-program*)
-     (setq *pdf-viewer-program*
-           (list (list
-                  "Sumatra PDF"
-                  (concat "\"" *sumatra-program* "\" -reuse-instance %o"))))
-   (my-init--warning "!! *sumatra-program* is nil or does not exist: %s" *sumatra-program*))
+ (if *my-init--windows-p*
+     ;; Windows: use SumatraPDF
+     (if (my-init--file-exists-p *sumatra-program*)
+         (setq *pdf-viewer-program*
+               (list (list
+                      "Sumatra PDF"
+                      (concat "\"" *sumatra-program* "\" -reuse-instance %o"))))
+       (my-init--warning "!! *sumatra-program* is nil or does not exist: %s" *sumatra-program*))
+   ;; Linux: use evince
+   (setq *pdf-viewer-program*
+         (list (list "Evince" "evince %o"))))
 
  (when (null *pdf-viewer-program*)
    (my-init--warning "!! *pdf-viewer-program* is nil: %s" *pdf-viewer-program*))
- 
- (defun my/open-with-Sumatra ()
-   "Open the current file or dired marked files in Sumatra.
-To be called from hydra."
+
+ (defun my/open-pdf-externally ()
+   "Open the current file or dired marked files in the system PDF viewer."
    (interactive)
-   (unless (my-init--file-exists-p *sumatra-program*)
-     (error "Impossible to launch Sumatra since program path not known: %s" *sumatra-program*))
-   (my-init--open-with-external-program
-    "Sumatra"
-    (lambda (file-name)
-      (concat "\"" *sumatra-program* "\"" " -reuse-instance " "\"" file-name "\""))))
+   (if *my-init--windows-p*
+       (progn
+         (unless (my-init--file-exists-p *sumatra-program*)
+           (error "Impossible to launch Sumatra since program path not known: %s" *sumatra-program*))
+         (my-init--open-with-external-program
+          "Sumatra"
+          (lambda (file-name)
+            (concat "\"" *sumatra-program* "\"" " -reuse-instance " "\"" file-name "\""))))
+     (my-init--open-with-external-program
+      "PDF viewer"
+      (lambda (file-name)
+        (concat "evince " (shell-quote-argument file-name))))))
+
+ (defalias 'my/open-with-Sumatra #'my/open-pdf-externally)
 
  ) ; end of init section
 
@@ -7526,9 +7633,13 @@ To be called from hydra."
 
  ;; Sumatra: see above
 
- (if (my-init--directory-exists-p *miktex-directory*)
-     (my-init--add-to-path "MiKTeX" *miktex-directory*)
-   (my-init--warning "!! *miktex-directory* is nil or does not exist: %s" *miktex-directory*))
+ (if *my-init--windows-p*
+     ;; Windows: MiKTeX portable
+     (if (my-init--directory-exists-p *miktex-directory*)
+         (my-init--add-to-path "MiKTeX" *miktex-directory*)
+       (my-init--warning "!! *miktex-directory* is nil or does not exist: %s" *miktex-directory*))
+   ;; Linux: TeX Live expected in PATH
+   (my-init--message2 "LaTeX: assuming TeX Live is available in PATH"))
 
  
  ;; also below, but does not seem to work, at least after the installation of a more recent version of Emacs
@@ -7565,12 +7676,15 @@ To be called from hydra."
        ;; (setq TeX-auto-save t)
        ;; (setq TeX-parse-self t)
        (setq TeX-PDF-mode t)                ; PDF output by default
-       (setq TeX-view-program-list *pdf-viewer-program*) ; Sumatra as PDF viewer
+       (setq TeX-view-program-list *pdf-viewer-program*)
        (setq TeX-view-program-selection
-             '(((output-dvi style-pstricks) "dvips and start")
-               (output-dvi "Yap")
-               (output-pdf "Sumatra PDF")
-               (output-html "start")))
+             (if *my-init--windows-p*
+                 '(((output-dvi style-pstricks) "dvips and start")
+                   (output-dvi "Yap")
+                   (output-pdf "Sumatra PDF")
+                   (output-html "start"))
+               '((output-pdf "Evince")
+                 (output-html "xdg-open"))))
        ;; RefTeX:
        (add-hook 'LaTeX-mode-hook 'turn-on-reftex)
        (setq reftex-plug-into-auctex t)
@@ -7634,18 +7748,23 @@ c : occur
  t
  "Gnuplot"
 
- (unless (my-init--directory-exists-p *gnuplot-directory*)
-   (my-init--warning "!! *gnuplot-directory* is nil or does not exist: %s" *gnuplot-directory*))
+ (if *my-init--windows-p*
+     (progn
+       (unless (my-init--directory-exists-p *gnuplot-directory*)
+         (my-init--warning "!! *gnuplot-directory* is nil or does not exist: %s" *gnuplot-directory*))
+       (unless (my-init--file-exists-p *gnuplot-program*)
+         (my-init--warning "!! *gnuplot-program* is nil or does not exist: %s" *gnuplot-program*)))
+   ;; Linux: gnuplot expected in PATH
+   (unless (executable-find "gnuplot")
+     (my-init--warning "!! gnuplot not found in PATH")))
 
- (unless (my-init--file-exists-p *gnuplot-program*)
-   (my-init--warning "!! *gnuplot-program* is nil or does not exist: %s" *gnuplot-program*))
- 
  (use-package gnuplot-mode
    :mode ("\\.[Gg][Pp]\\'" . gnuplot-mode)
    :requires 'gnuplot
    :init
    (setq gnuplot-program *gnuplot-program*)
-   (my-init--add-to-path-and-exec-path "Gnuplot" *gnuplot-directory*)
+   (when (my-init--directory-exists-p *gnuplot-directory*)
+     (my-init--add-to-path-and-exec-path "Gnuplot" *gnuplot-directory*))
    :config
    (my-init--message-package-loaded "gnuplot-mode")
    ;; (setq auto-mode-alist 
@@ -7743,8 +7862,8 @@ outline : _o_ hide & _a_ show-all
      (error "Trying to unzip several files."))
    (cl-labels ((replace-linux-slash-with-two-windows-slashes (path)
                  "Return PATH string after having replaced slashes by two backslashes.
-For instance: abc/def --> abc\\def"
-                 (replace-regexp-in-string  "/" "\\\\" path)))
+For instance: abc/def --> abc\\def. On Linux, returns PATH unchanged."
+                 (my-init--replace-linux-slash-with-two-windows-slashes path)))
      (let* ((files-list (dired-get-marked-files))
             (file-full-name (car files-list))
             (file-full-name-slash-OK-accents-OK (replace-linux-slash-with-two-windows-slashes file-full-name))
@@ -7779,8 +7898,8 @@ For instance: abc/def --> abc\\def"
      (error "Trying to zip when not in dired-mode."))
    (cl-labels ((replace-linux-slash-with-two-windows-slashes (path)
                  "Return PATH string after having replaced slashes by two backslashes.
-For instance: abc/def --> abc\\def"
-                 (replace-regexp-in-string  "/" "\\\\" path)))
+For instance: abc/def --> abc\\def. On Linux, returns PATH unchanged."
+                 (my-init--replace-linux-slash-with-two-windows-slashes path)))
      (let* ((current-directory-slash-OK-accents-OK (replace-linux-slash-with-two-windows-slashes default-directory))
             (archive-name (concat (read-string "Archive name (without zip suffix): " "archive") ".zip"))
             (cmd (concat "\"" *unzip-program* "\""
@@ -7810,8 +7929,8 @@ For instance: abc/def --> abc\\def"
      (error "Trying to list the content of several files."))
    (cl-labels ((replace-linux-slash-with-two-windows-slashes (path)
                  "Return PATH string after having replaced slashes by two backslashes.
-For instance: abc/def --> abc\\def"
-                 (replace-regexp-in-string  "/" "\\\\" path)))
+For instance: abc/def --> abc\\def. On Linux, returns PATH unchanged."
+                 (my-init--replace-linux-slash-with-two-windows-slashes path)))
      (let* ((files-list (dired-get-marked-files))
             (file-full-name (car files-list))
             (file-full-name-slash-OK-accents-OK (replace-linux-slash-with-two-windows-slashes file-full-name))
@@ -7900,8 +8019,8 @@ Attention: overwrite.
      (error "Trying to burst several files."))
    (cl-labels ((replace-linux-slash-with-two-windows-slashes (path)
                  "Return PATH string after having replaced slashes by two backslashes.
-For instance: abc/def --> abc\\def"
-                 (replace-regexp-in-string  "/" "\\\\" path)))
+For instance: abc/def --> abc\\def. On Linux, returns PATH unchanged."
+                 (my-init--replace-linux-slash-with-two-windows-slashes path)))
      (let* ((files-list (dired-get-marked-files))
             (file-full-name (car files-list))
             (file-full-name-slash-OK-accents-OK (replace-linux-slash-with-two-windows-slashes file-full-name))
@@ -7937,8 +8056,8 @@ For instance: abc/def --> abc\\def"
      (error "Trying to extract from several files."))
    (cl-labels ((replace-linux-slash-with-two-windows-slashes (path)
                  "Return PATH string after having replaced slashes by two backslashes.
-For instance: abc/def --> abc\\def"
-                 (replace-regexp-in-string  "/" "\\\\" path)))
+For instance: abc/def --> abc\\def. On Linux, returns PATH unchanged."
+                 (my-init--replace-linux-slash-with-two-windows-slashes path)))
      (let* ((first-page (read-string "First page: "))
             (last-page (read-string "Last page: "))
             (files-list (dired-get-marked-files))
@@ -7976,8 +8095,8 @@ If necessary : M-x read-only-mode
      (error "Trying to extract from a PDF file when not in dired-mode."))
    (cl-labels ((replace-linux-slash-with-two-windows-slashes (path)
                  "Return PATH string after having replaced slashes by two backslashes.
-For instance: abc/def --> abc\\def"
-                 (replace-regexp-in-string  "/" "\\\\" path)))
+For instance: abc/def --> abc\\def. On Linux, returns PATH unchanged."
+                 (my-init--replace-linux-slash-with-two-windows-slashes path)))
      (let* ((output-file (read-string "Output file (default: output.pdf): " nil nil "output.pdf"))
             (files-list (cl-sort (dired-get-marked-files) 'string-lessp))
             (first-file-full-name (car files-list))
@@ -8011,24 +8130,33 @@ For instance: abc/def --> abc\\def"
  t
  "IrfanView"
 
- (unless (my-init--file-exists-p *irfanview-program*)
-   (my-init--warning "!! *irfanview-program* is nil or does not exist: %s" *irfanview-program*))
+ (when *my-init--windows-p*
+   (unless (my-init--file-exists-p *irfanview-program*)
+     (my-init--warning "!! *irfanview-program* is nil or does not exist: %s" *irfanview-program*)))
 
  (defun my/open-with-Irfan ()           ;  (&optional @fname)
-   "Open the current file or dired marked files in Irfan.
+   "Open the current file or dired marked files in an image viewer.
+On Windows, uses IrfanView. On Linux, uses xdg-open.
 To be called from dired hydra."
    (interactive)
-   (unless (my-init--file-exists-p *irfanview-program*)
-     (error "Impossible to launch Irfan View since program path not known: %s" *irfanview-program*))
-   (my-init--open-with-external-program
-    "Irfan"
-    (lambda (file-name)
-      (concat "\"" *irfanview-program* "\"" " " "\"" file-name "\""))))
+   (if *my-init--windows-p*
+       (progn
+         (unless (my-init--file-exists-p *irfanview-program*)
+           (error "Impossible to launch Irfan View since program path not known: %s" *irfanview-program*))
+         (my-init--open-with-external-program
+          "Irfan"
+          (lambda (file-name)
+            (concat "\"" *irfanview-program* "\"" " " "\"" file-name "\""))))
+     (my-init--open-with-external-program
+      "Image viewer"
+      (lambda (file-name)
+        (concat "xdg-open " (shell-quote-argument file-name))))))
 
- (defun my/launch-irfan ()
-   "Open Irfan"
-   (interactive)
-   (my-init--open-windows-executable "Irfan" *irfanview-program*))
+ (when *my-init--windows-p*
+   (defun my/launch-irfan ()
+     "Open Irfan"
+     (interactive)
+     (my-init--open-windows-executable "Irfan" *irfanview-program*)))
 
  ) ; end of init section
 
@@ -8042,25 +8170,26 @@ To be called from dired hydra."
  t
  "cmd"
 
- (defun my/start-cmd ()
-   "Open a cmd window from current dired buffer or encompassing current file.
+ (when *my-init--windows-p*
+   (defun my/start-cmd ()
+     "Open a cmd window from current dired buffer or encompassing current file.
 To be called from hydra."
-   (interactive)
-   
-   (cond ((string= major-mode "dired-mode")
-          (let ((proc (start-process "cmd" nil "cmd.exe" "/C" "start" "cmd.exe" "/K" "cd" default-directory)))
-            (set-process-query-on-exit-flag proc nil)
-            (my-init--message2 "Native cmd window opened in %s directory" default-directory)))
+     (interactive)
 
-         ((not (null (buffer-file-name)))
-          (let ((proc (start-process "cmd" nil "cmd.exe" "/C" "start" "cmd.exe" "/K" "cd" (file-name-directory (buffer-file-name)))))
-            (set-process-query-on-exit-flag proc nil)
-            (my-init--message2 "Native cmd window opened in directory where %S is located " buffer-file-name)))
+     (cond ((string= major-mode "dired-mode")
+            (let ((proc (start-process "cmd" nil "cmd.exe" "/C" "start" "cmd.exe" "/K" "cd" default-directory)))
+              (set-process-query-on-exit-flag proc nil)
+              (my-init--message2 "Native cmd window opened in %s directory" default-directory)))
 
-         (t
-          (let ((proc (start-process "cmd" nil "cmd.exe" "/C" "start" "cmd.exe")))
-            (set-process-query-on-exit-flag proc nil)
-            (my-init--message2 "Native cmd window opened")))))
+           ((not (null (buffer-file-name)))
+            (let ((proc (start-process "cmd" nil "cmd.exe" "/C" "start" "cmd.exe" "/K" "cd" (file-name-directory (buffer-file-name)))))
+              (set-process-query-on-exit-flag proc nil)
+              (my-init--message2 "Native cmd window opened in directory where %S is located " buffer-file-name)))
+
+           (t
+            (let ((proc (start-process "cmd" nil "cmd.exe" "/C" "start" "cmd.exe")))
+              (set-process-query-on-exit-flag proc nil)
+              (my-init--message2 "Native cmd window opened"))))))
  
  ) ; end of init section
 
@@ -8110,8 +8239,9 @@ To be called from hydra."
      (call-process-shell-command "explorer M:" nil 0)
      (call-process-shell-command "explorer S:" nil 0)))
 
- (defhydra hydra-windows-executables (:exit t :hint nil) ;  :columns 1)
-   "
+ (when *my-init--windows-p*
+   (defhydra hydra-windows-executables (:exit t :hint nil) ;  :columns 1)
+     "
 ^Windows executables:
 ^--------------------
 
@@ -8136,17 +8266,17 @@ F11 full screen
 Alt-F4 and Alt-TAB
 
 (end)"
-   ("b" (my-init--open-windows-executable "Thunderbird" *thunderbird-executable*))
-   ("c" (my-init--open-windows-executable "Chrome" *chrome-executable*))
-   ("e" (my-init--open-windows-executable "Microsoft Excel" *excel-path*))
-   ("f" (my-init--open-windows-executable "Firefox" *firefox-path*))
-   ("i" #'my/launch-irfan)
-   ("p" (my-init--open-windows-executable "Microsoft Powerpoint" *powerpoint-path*))
-   ("t" (my-init--open-windows-executable "Microsoft Teams" *teams-path*))
-   ("w" (my-init--open-windows-executable "Microsoft Word" *word-path*))
-   ) ; end of hydra
+     ("b" (my-init--open-windows-executable "Thunderbird" *thunderbird-executable*))
+     ("c" (my-init--open-windows-executable "Chrome" *chrome-executable*))
+     ("e" (my-init--open-windows-executable "Microsoft Excel" *excel-path*))
+     ("f" (my-init--open-windows-executable "Firefox" *firefox-path*))
+     ("i" #'my/launch-irfan)
+     ("p" (my-init--open-windows-executable "Microsoft Powerpoint" *powerpoint-path*))
+     ("t" (my-init--open-windows-executable "Microsoft Teams" *teams-path*))
+     ("w" (my-init--open-windows-executable "Microsoft Word" *word-path*))
+     ) ; end of hydra
 
- (global-set-key (kbd "C-c w") #'hydra-windows-executables/body)
+   (global-set-key (kbd "C-c w") #'hydra-windows-executables/body))
  
  ) ; end of init section
 
@@ -8255,10 +8385,12 @@ Alt-F4 and Alt-TAB
  ;; open a .R file then C-c C-c to execute within REPL
  ;; also work in org-mode source block (Babel)
 
- (unless (my-init--file-exists-p *R-executable*)
+ (unless (or (my-init--file-exists-p *R-executable*)
+             (and *my-init--linux-p* *R-executable* (executable-find *R-executable*)))
    (my-init--warning "!! *R-executable* is nil or does not exist: %s" *R-executable*))
 
- (unless (my-init--file-exists-p *Rterm-executable*)
+ (unless (or (my-init--file-exists-p *Rterm-executable*)
+             (and *my-init--linux-p* *Rterm-executable* (executable-find *Rterm-executable*)))
    (my-init--warning "!! *Rterm-executable* is nil or does not exist: %s" *Rterm-executable*))
 
  ;; Babel:
@@ -8368,14 +8500,18 @@ Alt-F4 and Alt-TAB
 
  ;; M-x magit-version to test
 
- (if (my-init--directory-exists-p *git-executable-directory*)
-     (my-init--add-to-path-and-exec-path "Git" *git-executable-directory*)
-   (my-init--warning "!! *git-executable-directory* is nil or does not exist: %s" *git-executable-directory*))
+ (if *my-init--windows-p*
+     ;; Windows: add Git to PATH (on Linux, git is natively in PATH)
+     (progn
+       (if (my-init--directory-exists-p *git-executable-directory*)
+           (my-init--add-to-path-and-exec-path "Git" *git-executable-directory*)
+         (my-init--warning "!! *git-executable-directory* is nil or does not exist: %s" *git-executable-directory*))
 
- (let ((diff3-executable (concat *git-diff3-directory* "/diff3.exe")))
-   (if (my-init--file-exists-p diff3-executable)
-       (add-to-list 'exec-path *git-diff3-directory*)
-     (my-init--warning "!! (magit) diff3.exe not found within %s" *git-diff3-directory*)))
+       (let ((diff3-executable (concat *git-diff3-directory* "/diff3.exe")))
+         (if (my-init--file-exists-p diff3-executable)
+             (add-to-list 'exec-path *git-diff3-directory*)
+           (my-init--warning "!! (magit) diff3.exe not found within %s" *git-diff3-directory*))))
+   (my-init--message2 "Git: assuming git and diff3 are available in PATH"))
  ;; (setq ediff-diff3-program "C:/portable-programs/Git/usr/bin/diff3.exe")
  
  (if (>= emacs-major-version 28)
@@ -8563,12 +8699,18 @@ Uses Tesseract and ImageMagick.
    (cl-labels ((paste-image-from-clipboard-to-file-with-imagemagick (destination-file-with-path)
                  "Paste image from clipboard fo file DESTINATION-FILE-WITH-PATH with ImageMagick.
 (v1, available in occisn/emacs-utils GitHub repository + adaptations)"
-                 (unless (my-init--file-exists-p *imagemagick-convert-program*)
-                   (error "Unable to paste image from clipboard to file, since *imagemagick-convert-program* does not contain valid content: %s" *imagemagick-convert-program*))
-                 (let ((cmd (concat "\"" *imagemagick-convert-program* "\" " "clipboard: " destination-file-with-path)))
-                   (message "Pasting image from clipboard to %s with ImageMagick." destination-file-with-path)
-                   (call-process-shell-command cmd nil 0)))) ; end of labels function definitions
-     
+                 (if *my-init--windows-p*
+                     (progn
+                       (unless (my-init--file-exists-p *imagemagick-convert-program*)
+                         (error "Unable to paste image from clipboard to file, since *imagemagick-convert-program* does not contain valid content: %s" *imagemagick-convert-program*))
+                       (let ((cmd (concat "\"" *imagemagick-convert-program* "\" " "clipboard: " destination-file-with-path)))
+                         (message "Pasting image from clipboard to %s with ImageMagick." destination-file-with-path)
+                         (call-process-shell-command cmd nil 0)))
+                   ;; Linux: use xclip to get image from clipboard
+                   (let ((cmd (concat "xclip -selection clipboard -t image/png -o > " (shell-quote-argument destination-file-with-path))))
+                     (message "Pasting image from clipboard to %s with xclip." destination-file-with-path)
+                     (call-process-shell-command cmd nil 0))))) ; end of labels function definitions
+
      (let* ((tmp-file-1 (make-temp-file (concat *temp-directory* "ocr-")))
             (tmp-file-2 (concat (format "%s" tmp-file-1) ".png"))
             (tmp-file-3 (make-temp-file (concat *temp-directory* "ocr-output-")))
@@ -8602,8 +8744,8 @@ Uses Imagemagick and Tesseract.
 
    (cl-labels ((replace-linux-slash-with-two-windows-slashes (path)
                  "Return PATH string after having replaced slashes by two backslashes.
-For instance: abc/def --> abc\\def"
-                 (replace-regexp-in-string  "/" "\\\\" path)))
+For instance: abc/def --> abc\\def. On Linux, returns PATH unchanged."
+                 (my-init--replace-linux-slash-with-two-windows-slashes path)))
      
      (let* ((files-list (dired-get-marked-files))
             (file-full-name (car files-list))
@@ -8664,9 +8806,14 @@ For instance: abc/def --> abc\\def"
 
  ;; === gcc in path
  
- (if (my-init--directory-exists-p *gcc-path*)
-     (my-init--add-to-path-and-exec-path "gcc" *gcc-path*)
-   (my-init--warning "!! *gcc-path* is nil or does not exist: %s" *gcc-path*))
+ (if *my-init--windows-p*
+     ;; Windows: add gcc to PATH
+     (if (my-init--directory-exists-p *gcc-path*)
+         (my-init--add-to-path-and-exec-path "gcc" *gcc-path*)
+       (my-init--warning "!! *gcc-path* is nil or does not exist: %s" *gcc-path*))
+   ;; Linux: gcc expected in PATH
+   (unless (executable-find "gcc")
+     (my-init--warning "!! gcc not found in PATH")))
 
  ;; Note: I have noticed that it is better to avoid space in the path leading to gcc
  
@@ -8823,17 +8970,18 @@ If filename begins with a digit, prefix with X_."
  ;; === stand-alone & compile
 
  (defun my/c-save-compile-and-run-c-file ()
-   "Compile and execute the current C file using gcc on Windows."
+   "Compile and execute the current C file using gcc."
    (interactive)
    (let* ((flags "-Wall -Wextra -Werror -O3 -std=c2x -pedantic")
           (source-file (buffer-file-name))
           (file-name (file-name-nondirectory source-file))
-          (exe-file (concat (file-name-sans-extension file-name) ".exe"))
-          (compile-command (format "gcc %s -o %s %s && %s" 
+          (exe-file (concat (file-name-sans-extension file-name) (if *my-init--windows-p* ".exe" "")))
+          (run-cmd (if *my-init--windows-p* exe-file (concat "./" exe-file)))
+          (compile-command (format "gcc %s -o %s %s && %s"
                                    flags
-                                   exe-file 
-                                   file-name 
-                                   exe-file)))
+                                   exe-file
+                                   file-name
+                                   run-cmd)))
      (if source-file
          (progn
            (save-buffer)
@@ -8868,7 +9016,8 @@ If filename begins with a digit, prefix with X_."
           (flags "-Wall -Wextra -Werror -O3 -std=c2x -pedantic")
           (file-name (file-name-nondirectory buffer-file-name))
           (file-name-without-extension (file-name-sans-extension file-name))
-          (cmd (concat "gcc " file-name " " flags " -o " file-name-without-extension " && time ./" file-name-without-extension ".exe")))
+          (exe-ext (if *my-init--windows-p* ".exe" ""))
+          (cmd (concat "gcc " file-name " " flags " -o " file-name-without-extension exe-ext " && time ./" file-name-without-extension exe-ext)))
      (my--eshell-send-cmd cmd)))
 
  ;; === project & compile
@@ -9087,9 +9236,14 @@ If filename begins with a digit, prefix with X_."
  ;;   (3) [cmd] pip install compiledb
  ;;   (4) test: [cmd] compiledb -h
 
- (if (my-init--directory-exists-p *clangd-path*)
-     (my-init--add-to-path-and-exec-path "clangd" *clangd-path*)
-   (my-init--warning "!! *clangd-path* is nil or does not exist: %s" *clangd-path*))
+ (if *my-init--windows-p*
+     ;; Windows: add portable clangd to PATH
+     (if (my-init--directory-exists-p *clangd-path*)
+         (my-init--add-to-path-and-exec-path "clangd" *clangd-path*)
+       (my-init--warning "!! *clangd-path* is nil or does not exist: %s" *clangd-path*))
+   ;; Linux: clangd expected in PATH
+   (unless (executable-find "clangd")
+     (my-init--warning "!! clangd not found in PATH")))
 
  ;; Treat all .h files as C by default
  (add-to-list 'auto-mode-alist '("\\.h\\'" . c-mode))
@@ -9360,9 +9514,14 @@ SPECIFIC: M-x eglot-shutdown | M-x eglot-reconnect
 
  ;; === gcc in path
  
- (if (my-init--directory-exists-p *gpp-path*)
-     (my-init--add-to-path-and-exec-path "gpp" *gpp-path*)
-   (my-init--warning "!! *gpp-path* is nil or does not exist: %s" *gpp-path*))
+ (if *my-init--windows-p*
+     ;; Windows: add g++ to PATH
+     (if (my-init--directory-exists-p *gpp-path*)
+         (my-init--add-to-path-and-exec-path "gpp" *gpp-path*)
+       (my-init--warning "!! *gpp-path* is nil or does not exist: %s" *gpp-path*))
+   ;; Linux: g++ expected in PATH
+   (unless (executable-find "g++")
+     (my-init--warning "!! g++ not found in PATH")))
 
  ;; === Display line number
  
@@ -9415,17 +9574,18 @@ SPECIFIC: M-x eglot-shutdown | M-x eglot-reconnect
  ;; function 'my/create-shell-window' defined above
 
  (defun my/cpp-save-compile-and-run-cpp-file ()
-   "Compile and execute the current C++ file using g++ on Windows."
+   "Compile and execute the current C++ file using g++."
    (interactive)
    (let* ((flags "-Wall -Wextra -std=c++17 -O3")
           (source-file (buffer-file-name))
           (file-name (file-name-nondirectory source-file))
-          (exe-file (concat (file-name-sans-extension file-name) ".exe"))
-          (compile-command (format "g++ %s -o %s %s && %s" 
+          (exe-file (concat (file-name-sans-extension file-name) (if *my-init--windows-p* ".exe" "")))
+          (run-cmd (if *my-init--windows-p* exe-file (concat "./" exe-file)))
+          (compile-command (format "g++ %s -o %s %s && %s"
                                    flags
-                                   exe-file 
-                                   file-name 
-                                   exe-file)))
+                                   exe-file
+                                   file-name
+                                   run-cmd)))
      (if source-file
          (progn
            (save-buffer)
@@ -9451,7 +9611,8 @@ SPECIFIC: M-x eglot-shutdown | M-x eglot-reconnect
           (flags "-Wall -Wextra -std=c++17 -O3")
           (file-name (file-name-nondirectory buffer-file-name))
           (file-name-without-extension (file-name-sans-extension file-name))
-          (cmd (concat "g++ " file-name " " flags " -o " file-name-without-extension " && time ./" file-name-without-extension ".exe")))
+          (exe-ext (if *my-init--windows-p* ".exe" ""))
+          (cmd (concat "g++ " file-name " " flags " -o " file-name-without-extension exe-ext " && time ./" file-name-without-extension exe-ext)))
      (my--eshell-send-cmd cmd)))
 
  ;; === project & compile
@@ -9556,9 +9717,14 @@ SPECIFIC: M-x eglot-shutdown | M-x eglot-reconnect
  
  ;; === clangd
 
- (if (my-init--directory-exists-p *clangd-path*)
-     (my-init--add-to-path-and-exec-path "clangd" *clangd-path*)
-   (my-init--warning "!! *clangd-path* is nil or does not exist: %s" *clangd-path*))
+ (if *my-init--windows-p*
+     ;; Windows: add portable clangd to PATH
+     (if (my-init--directory-exists-p *clangd-path*)
+         (my-init--add-to-path-and-exec-path "clangd" *clangd-path*)
+       (my-init--warning "!! *clangd-path* is nil or does not exist: %s" *clangd-path*))
+   ;; Linux: clangd expected in PATH
+   (unless (executable-find "clangd")
+     (my-init--warning "!! clangd not found in PATH")))
 
  ;; === treesitter installation
 
@@ -9585,14 +9751,16 @@ SPECIFIC: M-x eglot-shutdown | M-x eglot-reconnect
  
  ;; === Eglot (alternative to lsp)
 
- (if (my-init--file-exists-p *gpp-exe*)
-     (with-eval-after-load 'eglot
-       (add-to-list
-        'eglot-server-programs
-        `((c++-mode c-mode)
-          "clangd"
-          ,(concat "--query-driver=" *gpp-exe*))))
-   (my-init--warning "!! g++.exe not found: %s" *gpp-exe*))
+ (let ((gpp-found (or (my-init--file-exists-p *gpp-exe*)
+                      (and *my-init--linux-p* *gpp-exe* (executable-find *gpp-exe*)))))
+   (if gpp-found
+       (with-eval-after-load 'eglot
+         (add-to-list
+          'eglot-server-programs
+          `((c++-mode c-mode)
+            "clangd"
+            ,(concat "--query-driver=" *gpp-exe*))))
+     (my-init--warning "!! g++ not found: %s" *gpp-exe*)))
 
  (add-hook 'c++-mode-hook 'eglot-ensure)
  (add-hook 'c++-ts-mode-hook 'eglot-ensure)
@@ -9769,11 +9937,19 @@ SPECIFIC: M-x eglot-shutdown | M-x eglot-reconnect
              :before #'my--org-babel-load-python)
 
  ;; \/\/ or choose 'main' Python
- (if (my-init--file-exists-p *python-executable--in-libreoffice-for-unoconv*)
-     (progn
-       (setq python-shell-interpreter *python-executable--in-libreoffice-for-unoconv*)
-       (setq org-babel-python-command (format "\"%s\"" *python-executable--in-libreoffice-for-unoconv*)))
-   (my-init--warning "!! *python-executable--in-libreoffice-for-unoconv* is nil or does not exist: %s" *python-executable--in-libreoffice-for-unoconv*))
+ (if *my-init--windows-p*
+     ;; Windows: use Python from LibreOffice portable
+     (if (my-init--file-exists-p *python-executable--in-libreoffice-for-unoconv*)
+         (progn
+           (setq python-shell-interpreter *python-executable--in-libreoffice-for-unoconv*)
+           (setq org-babel-python-command (format "\"%s\"" *python-executable--in-libreoffice-for-unoconv*)))
+       (my-init--warning "!! *python-executable--in-libreoffice-for-unoconv* is nil or does not exist: %s" *python-executable--in-libreoffice-for-unoconv*))
+   ;; Linux: use system python3
+   (if (executable-find "python3")
+       (progn
+         (setq python-shell-interpreter "python3")
+         (setq org-babel-python-command "python3"))
+     (my-init--warning "!! python3 not found in PATH")))
  
  (defhydra hydra-python (:exit t :hint nil)
    "
@@ -10009,9 +10185,14 @@ From here, you can also copy images from the book with the C keyboard shortcut
 
  ;; https://jblevins.org/projects/markdown-mode/
 
- (if (my-init--directory-exists-p *pandoc-directory*)
-     (my-init--add-to-path-and-exec-path "Pandoc" *pandoc-directory*)
-   (my-init--warning "!! pandoc directory is nil or does not exist: %s" *pandoc-directory*))
+ (if *my-init--windows-p*
+     ;; Windows: add portable Pandoc to PATH
+     (if (my-init--directory-exists-p *pandoc-directory*)
+         (my-init--add-to-path-and-exec-path "Pandoc" *pandoc-directory*)
+       (my-init--warning "!! pandoc directory is nil or does not exist: %s" *pandoc-directory*))
+   ;; Linux: pandoc expected in PATH
+   (unless (executable-find "pandoc")
+     (my-init--warning "!! pandoc not found in PATH")))
  
  (if (>= emacs-major-version 28)
      (use-package markdown-mode
@@ -10211,7 +10392,7 @@ Undo : C-j to cut undo chain? {end}
    ("P" #'hydra-project/body)
    ("S" #'hydra-shells/body)
    ("T" #'my/generate-personal-theme-buffer)
-   ("W" #'hydra-windows-executables/body))
+   ("W" (if (fboundp 'hydra-windows-executables/body) #'hydra-windows-executables/body (lambda () (interactive) (message "Windows executables hydra not available on this platform")))))
 
  (global-set-key (kbd "C-c g") #'hydra-general/body)
 
