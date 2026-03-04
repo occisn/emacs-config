@@ -2750,6 +2750,10 @@ Version 2019-12-02"
  ;; do not deleted invisible text:
  (setq-default org-catch-invisible-edits 'smart) 
 
+ ;; enable syntax highlighting for powershell source blocks
+ (with-eval-after-load 'org
+   (add-to-list 'org-src-lang-modes '("powershell" . powershell)))
+
  ;; disable C-TAB in org-mode so that this key binding could be used
  ;; to change tab
  (with-eval-after-load 'org
@@ -3775,6 +3779,10 @@ reset: M-x calc-reset
        (message "cmd.exe started in %s (UTF-8 mode)" default-dir))))
 
  ;; === powershell
+
+ (use-package powershell
+   :commands (powershell-mode)
+   :config (my-init--message-package-loaded "powershell"))
 
  (defun my/open-powershell-external ()
    "Open Powershell in a native window, within the directory of current buffer (if it is a dired or a file)."
