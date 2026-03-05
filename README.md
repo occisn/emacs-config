@@ -1,6 +1,6 @@
 # emacs-config
 
-This is my _actual_ **init.el** file, on **Windows**.
+This is my _actual_ **init.el** file and initialization files, on **Windows**. Extension to **Linux** under progress.
 
 I use the _same_ configuration file (stored on cloud) on my different computers.
 
