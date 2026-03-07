@@ -325,31 +325,31 @@
    "
 ^C++ hydra:
 ^----------
-FILES: _h_: switch between source and header files | _t_: switch between source and test files
+FILES: [h]: switch between source and header files | [t]: switch between source and test files
        C-c m jump to main | C-c h insert h/hpp header guard
 MOVEMENT:
    move among top-level expressions + select: C-M-a, C-M-e C-M-h
    forward/backward expression: C-M-f, C-M-b
    next/previous sibling C-M-n, C-M-p
    up/down in tree C-M-u C-M-d
-JUMP TO TOP-LEVEL EXP: _c_ : occur | M-x imenu (M-g i) | C-' (list in sidebar)
+JUMP TO TOP-LEVEL EXP: [c] : occur | M-x imenu (M-g i) | C-' (list in sidebar)
 SELECT: select sexp: C-= (expand-region)
 MANIPULATE EXP: [...]
 COLLAPSE: hideshow : C-c f h / s / t : hide / show / toggle current block
                      C-c f H / S     : hide / show all
 MACROS: [...]
-INDENT: _i_ndent (eglot-format-buffer)
+INDENT: [i]ndent (eglot-format-buffer)
 COMMENT: M-; for end of line or selection | C-x C-; for line | M-x comment-region | M-x uncomment-region
-DOCUMENTATION: bottom of screen (automatic) and more with _d_ (M-x eldoc-doc-buffer) or C-h .
+DOCUMENTATION: bottom of screen (automatic) and more with [d] (M-x eldoc-doc-buffer) or C-h .
 REFERENCES: M-. M-, : goto function/variable definition, and back (xref-find-definitions via eglot)
             M-? : find all references (xref-find-references via eglot)
 ABBREV: [...]
 COMPLETE: C-M-i   completion (eglot)
-REFACTOR: _r_efactor symbol at point (eglot-rename) | [projectile]
+REFACTOR: [r]efactor symbol at point (eglot-rename) | [projectile]
 EXECUTE:
    ONE FILE with compile: my/cpp-save-compile-and-run-cpp-file = save, compile and run (g++ ...)
-   ONE FILE with shell: _s_ : show eshell
-                        _x_ : compile & execute in shell (g++ ...)
+   ONE FILE with shell: [s] : show eshell
+                        [x] : compile & execute in shell (g++ ...)
    PROJECT with M-x compile: C-c C-c, compile project
                              my/compile-and-run-makefile-project = save compile and run (M-x compile > make && make run)
                              (M-x compile > make test) or my/test-makefile-project
@@ -360,7 +360,7 @@ EXECUTE:
 DEBUG: C-c a to implement eglot proposed action / correction (eglot-code-actions) | C-h . to access to overlaid eglot/clangd warning
 CLEAN: my/dired-clean-build-artifacts (before resynchronization of Dropbox)
 SPECIFIC: M-x eglot-shutdown | M-x eglot-reconnect
-{end}"
+"
    ("c" #'my-c-occur)
    ("d" #'eldoc-doc-buffer)
    ("h" #'my/toggle-c-h)

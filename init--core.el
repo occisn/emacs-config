@@ -328,7 +328,7 @@ C-u C-x = shows face under point, among other information
 
 l to go back in Emacs documentation
 
-M-x list-_c_olors-display
+M-x list-[c]olors-display
 
 (end)
 "

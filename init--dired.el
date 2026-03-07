@@ -285,31 +285,31 @@ handy : ~ | C-s to search | Windows drives: C: then ^ | copy path to clipboard: 
 C-x C-n to create file without ivy | C-x C-q and C-c C-c to edit dired buffer
 M-w, C-w and C-y to copy/paste files (dired-ranger)
 i to include content of subdirectory (C-u k to remove display) | o to open file or subdirectory in other window
-_c_: _c_opy file here (M-x my/copy-file-here)
-_h_: paste image from clipboard to _h_ere (M-x my/paste-image-from-clipboard-to-here)
+[c]: copy file here (M-x my/copy-file-here)
+[h]: paste image from clipboard to here (M-x my/paste-image-from-clipboard-to-here)
 / and g to narrow | P and q to peep-dired (M-x doc-view-dired-cache, M-x doc-view-clear-cache)
 
 Open with:
-   _w_: open this dired directory in file manager (M-x my/open-current-dired-directory-in-file-manager)
-   _s_: open with PDF viewer
-   _i_: open with image viewer
-   M-RET to open file with external application | C-RET to open directory in file manager (similar to _w_ above)
+   [w]: open this dired directory in file manager (M-x my/open-current-dired-directory-in-file-manager)
+   [s]: open with PDF viewer
+   [i]: open with image viewer
+   M-RET to open file with external application | C-RET to open directory in file manager (similar to [w] above)
 
-Find: my/find1 (native, buffer), my/_f_ind2 (projectile), my/find3 (projectile, buffer)
+Find: my/find1 (native, buffer), my/[f]ind2 (projectile), my/find3 (projectile, buffer)
 Grep:
-   _x_ah / grep in current dired directory
-   a_g_ / grep in current dired directory (pb encoding)
-   _p_t / grep in current dired directory
+   [x]ah / grep in current dired directory
+   a[g] / grep in current dired directory (pb encoding)
+   [p]t / grep in current dired directory
    see also project tools
 Filetags --> see project hydra
 
 Copy last modification date to clipboard: M-x my/copy-file-last-modification-date-to-clipboard
-_a_: clean build artifacts
-Zip: _u_nzip, _z_ip content of current directory;
-     _l_ist zip content, my/zip-add-to-archive-present-in-same-directory
+[a]: clean build artifacts
+Zip: [u]nzip, [z]ip content of current directory;
+     [l]ist zip content, my/zip-add-to-archive-present-in-same-directory
 pdf: M-x my/pdf-burst, M-x my/pdf-extract, M-x my/pdf-join
 Files: my/list-big-files-in-current-directory-and-subdirectories, my/list-directories-with-many-files-or-direct-subdirectories (# of files), my/list-directories-of-big-size, my/list-directories-containing-zip-files, my/find-files-with-same-size-in-same-subdirectory
-Attach file to mail: C-c RET C-a (gnus-dired-attach) {end}"
+Attach file to mail: C-c RET C-a (gnus-dired-attach)"
    ("a" #'my/dired-clean-build-artifacts)
    ("c" #'my/copy-file-here)
    ("h" #'my/paste-image-from-clipboard-to-here)

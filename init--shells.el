@@ -359,12 +359,12 @@ The prompt is 'fake' and is not updated with successive 'cd'."
 ^Shells hydra:
 ^-------------
 
-eshell :     _e_ in buffer
-cmd shell :  _c_ external or _d_ in buffer
-powershell : _p_ external or _o_ in buffer
-msys2 :      _m_ external or _y_ in buffer
-git bash :   _g_ external or _i_ in buffer (Windows native equivalents)
-wsl shell :  _w_ external or _s_ in buffer
+eshell :     [e] in buffer
+cmd shell :  [c] external or [d] in buffer
+powershell : [p] external or [o] in buffer
+msys2 :      [m] external or [y] in buffer
+git bash :   [g] external or [i] in buffer (Windows native equivalents)
+wsl shell :  [w] external or [s] in buffer
 "
        ("c" #'my/open-cmd-shell-external)
        ("d" #'my/open-cmd-shell-in-emacs)
@@ -382,8 +382,8 @@ wsl shell :  _w_ external or _s_ in buffer
 ^Shells hydra:
 ^-------------
 
-eshell : _e_ in buffer
-bash :   _b_ in buffer or _t_ external terminal
+eshell : [e] in buffer
+bash :   [b] in buffer or [t] external terminal
 "
      ("b" #'my/open-bash-in-emacs)
      ("e" #'eshell)

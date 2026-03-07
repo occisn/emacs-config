@@ -771,33 +771,33 @@ With prefix argument NO-TOC, suppress table of contents."
    "
 ^Org-mode hydra:
 ^---------------
-_h_: occur in _h_eadlines (based on org-occur)
-_o_: _o_ccur in all document || M-x occur (M-s o) || _c_ : my occur
+[h]: occur in headlines (based on org-occur)
+[o]: occur in all document || M-x occur (M-s o) || [c] : my occur
 Navigate in text: C-UP or C-DOWN to move by paragraphs | M-h to select paragraph
                   Alt-V to scroll up | C-v to scroll down
                   C-c C-SPC ace jump | C-l to center screen
                   C-SPC to mark | C-u C-SPC to go to previous mark
          in tree: C-c C-n or C-c C-p to move by heading | C-c C-b or C-c C-f same level
                   C-c C-u to move to parent heading
-         search in headings : C-s [swiper] * foo | C-M-s > ^*.* foo > C-s or C-r 
-Blocks: copy src _b_lock || C-(cvu) to go to block header || TAB sur BEGIN ou END || (org-show-all) (org-hide-block-all)
+         search in headings : C-s [swiper] * foo | C-M-s > ^*.* foo > C-s or C-r
+Blocks: copy src [b]lock || C-(cvu) to go to block header || TAB sur BEGIN ou END || (org-show-all) (org-hide-block-all)
                    #+STARTUP: hideblocks #+STARTUP: nohideblocks
 Embedded: C-c C-x C-v = org-toggle-inline-images ; #+ STARTUP: inlineimages
           LaTeX : C-c C-x C-l ; #+ STARTUP: latexpreview
 Tree: TAB and Shift-TAB to develop or reduce the current or whole tree
       M-(SHIFT-)LEFT to modify the current level (so Ctrl to move)
       M-UP to move a block
-      _n_, _w_: _n_arrow (C-x n s or M-x org-narrow-to-subtree) then _w_iden (C-x n w or M-x widen)
-      C-c / r : sparse-tree  
+      [n], [w]: narrow (C-x n s or M-x org-narrow-to-subtree) then widen (C-x n w or M-x widen)
+      C-c / r : sparse-tree
 Links: C-c C-l to create or edit [ [file:abc][name] ], [ [myimage.png] ]
        C-c C-o to follow
 Abbrev: C-_, C-q SPACE, M-x unexpand-abbrev
 Table: C-c } to see raw/col # | C-c C-c to update (in TBLFM) |  org-table-export pour exporter une table en CSV | M-S-RIGHT to insert column
-Appearance : _v_ olivetti-mode
-_e_ : import/export
+Appearance : [v] olivetti-mode
+[e] : import/export
 Agenda: C-c a a || C-c a 1 pour custom ; et C-a t pour tasks
 LaTeX fragments: C-c C-x C-l (org-toggle-latex-fragment)
-Web site: _s_witch between FR and EN org files {end}"
+Web site: [s]witch between FR and EN org files"
    ("b" #'my/copy-block)
    ("c" #'my-org-occur)
    ("e" #'hydra-org-export/body)
@@ -817,12 +817,12 @@ Web site: _s_witch between FR and EN org files {end}"
 ^-----------------------------
 
 Copy from org to clipboard, under following format:
-   _1_ Word / Teams / Thunderbird / Gmail
-   _2_ markdown
+   [1] Word / Teams / Thunderbird / Gmail
+   [2] markdown
 
 Paste into org-mode from clipboard under following format:
-   _3_ from Word / Teams into org
-   _4_ from markdown into org
+   [3] from Word / Teams into org
+   [4] from markdown into org
 "
    ("1" #'my/org-copy-region-ready-to-be-pasted-into-Word-Teams-Thunderbird-Gmail)
    ("2" #'my/org-region-to-markdown-clipboard)

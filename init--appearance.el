@@ -567,9 +567,9 @@
 ^Appearance hydra:
 ^-----------------
 
-_m_: toogle _m_enu bar
-_s_: toggle _s_croll bar
-_t_: toggle _t_ool bar
+[m]: toogle menu bar
+[s]: toggle scroll bar
+[t]: toggle tool bar
 
 M-x keycast-mode: show current key and its meaning on the command line
 "

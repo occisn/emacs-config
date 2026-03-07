@@ -133,8 +133,8 @@ C-c C-c  change mode
 C-c C-t  underlying text
 
 doc-view-cache-directory
-M-x doc-view-dired-cache   leads to doc-view cache into _d_ired
-M-x doc-view-clear-cache   _c_lears cache
+M-x doc-view-dired-cache   leads to doc-view cache into [d]ired
+M-x doc-view-clear-cache   [c]lears cache
 
 (end)
 "
@@ -472,7 +472,7 @@ preview in browser : C-c C-c p
 
 M-x my/md-convert-region-to-anchor-and-kill 
 
-_3_ : copy from markdown to clipboard, under org-mode format
+[3] : copy from markdown to clipboard, under org-mode format
 
 M-x markdown-table-align (modifies buffer)
 

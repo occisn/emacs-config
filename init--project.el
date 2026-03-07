@@ -357,7 +357,7 @@ Projectile:
 - C-c p D    open root in dired (idem C-p p modifié)
 - C-c p e    recently-visited project file (not enabled?)
 - C-c p ESC  switch to the most recently selected Projectile buffer.
-- _a_ list of projets (~/.emacs.d/projectile-bookmarks.eld)
+- [a] list of projets (~/.emacs.d/projectile-bookmarks.eld)
 
 Find:
 - C-c p d
@@ -366,22 +366,22 @@ Find:
 Git : C-x g to access the status buffer
 
 FILETAGS:
-- _t_: my/find-file-with-given-filetag
-- _l_: my/list-all-filetags-in-project
+- [t]: my/find-file-with-given-filetag
+- [l]: my/list-all-filetags-in-project
 
-Grep : 
+Grep :
 - with ag: C-c p s s [then C-c to to show in another window]
            M-x projectile-ag (show in another window)
-           a_g_ / grep in projectile project (pb encoding ?)
+           a[g] / grep in projectile project (pb encoding ?)
 - with ripgrep: C-c p s r [then C-c o to show in another window]
                 M-x projectile-ripgrep [does not seem to work]
-- projectile-_p_t (M-x projectile-pt)
-- my projectile _s_earch (pb accents)
-- _x_ah / grep in projectile project
+- projectile-[p]t (M-x projectile-pt)
+- my projectile [s]earch (pb accents)
+- [x]ah / grep in projectile project
 - C-c p s g  (grep by pt ?)
 
 Search & replace:
-- C-c p r : search and replace (Y to approve all) {end}"
+- C-c p r : search and replace (Y to approve all)"
    ("a" (lambda () (interactive) (find-file "~/.emacs.d/projectile-bookmarks.eld")))
    ("g" #'my/ag-grep-in-projectile-project)
    ("l" #'my/list-all-filetags-in-project)

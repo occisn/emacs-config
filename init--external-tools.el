@@ -299,13 +299,13 @@ To be called from hydra."
 ^Windows executables:
 ^--------------------
 
-_w_: Microsoft Word
-_e_: Microsoft Excel
-_p_: Microsoft Powerpoint
-_b_: Thunderbird
-_f_: Firefox
-_c_: Chrome
-_i_: Irfan
+[w]: Microsoft Word
+[e]: Microsoft Excel
+[p]: Microsoft Powerpoint
+[b]: Thunderbird
+[f]: Firefox
+[c]: Chrome
+[i]: Irfan
 
 Win-1 et Win-t launch applications from task bar
 Win-S-s        screenshot (or W-^-S or W-fn-Impr)

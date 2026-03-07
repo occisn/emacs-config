@@ -30,7 +30,7 @@
    "
 ^SQL hydra:
 ^----------
-outline : _o_ hide & _a_ show-all
+outline : [o] hide & [a] show-all
 "
    ("a" #'outline-show-all)
    ("o" #'outline-hide-body))

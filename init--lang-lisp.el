@@ -1539,12 +1539,11 @@ Files are moved to Windows Recycle Bin."
 Common Lisp :
    M-n, M-p to navigate
    RET to follow link
-   _f_ilter some compilation notes
+   [f]ilter some compilation notes
 
 C and C++:
    C-c C-k to interrupt compilation or run
 
-{end}
 "
 
    ("f" #'my/slime-compilation-delete-some-compilation-notes))
@@ -1565,7 +1564,7 @@ MOVEMENT:
                   C-M-up           go to beginning of (...) or higher one
                   C-M-f            go to closing parenthesis
                   C-M-down         go to inner (...)
-JUMP TO TOP-LEVEL EXP: _m_: i_m_enu (M-g i) || M-x occur (M-s o) || _c_ : my occur || C-' (list in sidebar)
+JUMP TO TOP-LEVEL EXP: [m]: i[m]enu (M-g i) || M-x occur (M-s o) || [c] : my occur || C-' (list in sidebar)
 SELECT: C-= to expand region (expand-region) || C-M-h to put region around whole current or following defun (mark-defun)
 MANIPULATE EXP: M-(              wrap an sexp (paredit)
                 M-UP             splice (remove delimiter of current sexp) and kill previous
@@ -1575,9 +1574,9 @@ MANIPULATE EXP: M-(              wrap an sexp (paredit)
                 C-LEFT or C-}    barf out (force a closing parenthesis) ; (a b|c d e f) --> (a b) c d e f
                 C-RIGHT or C-)   slurp in next sexp (paredit) ; (a b|c) d --> (a b c d)
                 C-M-t            transpose sexps or make them circulate
-COLLAPSE: [Outline: _o_utline-hide-body vs outline-show-_a_ll ; collapse/expand: _h_ide vs _s_how]
+COLLAPSE: [Outline: [o]utline-hide-body vs outline-show-[a]ll ; collapse/expand: [h]ide vs [s]how]
 MACROS: Macro expander: C-c m ou C-c e || q
-INDENT: C-M-q on current sexp || _i_: _i_ndent-buffer (M-x my/indent-lisp-buffer)
+INDENT: C-M-q on current sexp || [i]: indent-buffer (M-x my/indent-lisp-buffer)
 COMMENT: region M-; to comment/uncomment (paredit)
 DOCUMENTATION: 'C-h i m elisp' or 'C-h r TAB ENT' elisp manual, then 'i' for index -- 'or M-x elisp-index-search'
                'M-x info-apropos' search in all info documents || M-x elisp-index-search
@@ -1609,7 +1608,7 @@ DEBUG: (1) unexpected : c(ontinue), e(val), q(uit) (2) edebug: C-u C-M-x --> SPA
    "
 ^Common Lisp hydra:
 ^------------------
-FILES: _s_witch between src and tests | go to _a_sd | go to _p_ackage
+FILES: [s]witch between src and tests | go to [a]sd | go to [p]ackage
 MOVEMENT:
    Navigate top-level sexp : C-UP and C-DOWN to move within top-level sexps
                              C-M-a/e to move to beginning/end of current or preceding defun (beginning-of-defun, end-of-defun)
@@ -1618,7 +1617,7 @@ MOVEMENT:
                   C-M-up           go to beginning of (...) or higher one
                   C-M-f            go to closing parenthesis
                   C-M-down         go to inner (...)
-JUMP TO TOP-LEVEL EXP: _m_: i_m_enu (M-g i) || M-x occur (M-s o) ||  _c_ : my occur || C-' (list in sidebar) 
+JUMP TO TOP-LEVEL EXP: [m]: i[m]enu (M-g i) || M-x occur (M-s o) || [c] : my occur || C-' (list in sidebar)
 SELECT: C-= to expand region (expand-region) || C-M-h to put region around whole current or following defun (mark-defun)
 MANIPULATE EXP: M-(              wrap an sexp (paredit)
                 M-UP             splice (remove delimiter of current sexp) and kill previous
@@ -1628,9 +1627,9 @@ MANIPULATE EXP: M-(              wrap an sexp (paredit)
                 C-LEFT or C-}    barf out (force closing parenthesis) ; (a b|c d e f) --> (a b) c d e f
                 C-RIGHT or C-)   slurp in next sexp (paredit) ; (a b|c) d --> (a b c d)
                 C-M-t            transpose sexps or make them circulate
-COLLAPSE: _o_utline-hide-body vs outline-show-all ; collapse/expand: _h_ide vs hs-show-all | hs-toggle-hiding
+COLLAPSE: [o]utline-hide-body vs outline-show-all ; collapse/expand: [h]ide vs hs-show-all | hs-toggle-hiding
 MACROS: Macro expander: C-c RETURN || C-c C-m || C-c M-m to fully expand
-INDENT: C-M-q on current sexp || _i_: _i_ndent-buffer (M-x my/indent-lisp-buffer)
+INDENT: C-M-q on current sexp || [i]: indent-buffer (M-x my/indent-lisp-buffer)
 COMMENT: region M-; to comment/uncomment (paredit)
 DOCUMENTATION: docstring global var: C-c C-d d, (describe var) || fields (inspect var), q || hyperspec C-c C-d h || (apropos 'ts-get') || C-h m [l to go back]
                C-c I (add ') to inspect a symbol
@@ -1655,8 +1654,8 @@ EXECUTE:
 DEBUG: Debug: q || v to jump into code, RETURN, M-., i, e, r
        Disassemble : C-c M-d | Inspect : C-c I 'foo ; l to go back   | Trace: C-c C-t on the symbol | Navigate within warnings/errors: M-n, M-p
 CLEAN: my/dired-clean-build-artifacts
-SPECIFIC: Slime: _e_ : slime || M-x slime || ,quit
-{end}"
+SPECIFIC: Slime: [e] : slime || M-x slime || ,quit
+"
    ("a" #'my/go-to-asd)
    ("c" #'my-cl-occur)
    ("e" #'slime)
