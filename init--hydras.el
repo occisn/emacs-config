@@ -42,7 +42,7 @@ Macros : F3 and F4 | M-x kmacro-name-last-macro gives a name to the last defined
          repeat macro until error (M-0 C-x e) = my/repeat-macro-until-error | register store C-x C-k x r (kmacro-to-register) | call C-x r j r
 Packages: M-x package-install                 | C-x M-: repeat last M-x
 Tests: ERT [t]ests associated with init files (my/launch-tests)
-Other hydras: [A]ppearance, [F]onts, [T]hemes, [H]elp & documentation, [M]ode-dependent (C-c d), [P]roject (C-c p h), [W]indows (C-c w), [I]=professional [S]hells, Mails (C-c m)
+Other hydras: [A]ppearance, [F]onts, [T]hemes, [H]elp & documentation, [M]ode-dependent (C-c d), [P]roject (C-c p h), [W]indows or Linux (C-c w), [I]=professional [S]hells, Mails (C-c m)
 Undo : C-j to cut undo chain?
 "
    ;; ("c" #'my/ready-to-calc) ;; to remove

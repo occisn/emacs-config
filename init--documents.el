@@ -77,16 +77,17 @@
  ;; Unoconv:
  ;; Zip can be downloaded from Github
  ;;
- (if (my-init--directory-exists-p *libreoffice-directory*)
-     (let ((prog-name "LibreOffice for unoconv")
-           (directory (my-init--replace-linux-slash-with-two-windows-slashes *libreoffice-directory*))
-           (path-env (getenv "UNOPATH"))
-           (separator (if *my-init--windows-p* ";" ":")))
-       (if (cl-search directory path-env)
-           (my-init--message2 "No need to add %s to UNOPATH since already in: %s" prog-name directory)
-         (setenv "UNOPATH" (concat directory separator (getenv "UNOPATH")))
-         (my-init--message2 "%s is added to UNOPATH." prog-name)))
-   (my-init--warning "!! *libreoffice-directory* is nil or does not exist: %s" *libreoffice-directory*))
+ (when *my-init--windows-p*
+   (if (my-init--directory-exists-p *libreoffice-directory*)
+       (let ((prog-name "LibreOffice for unoconv")
+             (directory (my-init--replace-linux-slash-with-two-windows-slashes *libreoffice-directory*))
+             (path-env (getenv "UNOPATH"))
+             (separator ";"))
+         (if (cl-search directory path-env)
+             (my-init--message2 "No need to add %s to UNOPATH since already in: %s" prog-name directory)
+           (setenv "UNOPATH" (concat directory separator (getenv "UNOPATH")))
+           (my-init--message2 "%s is added to UNOPATH." prog-name)))
+     (my-init--warning "!! *libreoffice-directory* is nil or does not exist: %s" *libreoffice-directory*)))
  ;;
  ;; test 1: "python unoconv -h" on command line shall give the list of possible unoconv arguments
  ;; test 2 : put a test file next to unoconv

@@ -332,23 +332,26 @@ Fallback : current word.
  t
  "org-mode F (copy to clipboard with format conversion)"
 
+ (when (and *my-init--linux-p* (not (executable-find "xclip")))
+   (my-init--warning "!! xclip not found in PATH (needed for org clipboard HTML copy/paste)"))
+
  (defun my/org-copy-region-ready-to-be-pasted-into-Word-Teams-Thunderbird-Gmail ()
    "Export Org-mode region to Windows CF_HTML clipboard format (including StartHTML, EndHTML, StartFragment, EndFragment markers).
 Clipboard can be pasted into Microsoft Word, Microsoft Teams, Thunderbird and Gmail.
 (v1 as of 2025-10-28, available in occisn/emacs-utils GitHub repository)"
    (interactive)
-   (unless *my-init--windows-p*
-     (user-error "CF_HTML clipboard export is only available on Windows"))
+   (unless (or *my-init--windows-p* *my-init--linux-p*)
+     (user-error "Clipboard export not supported on this platform"))
    (if (not (use-region-p))
        (message "No active region to export")
      (let* ((region-start (region-beginning))
             (region-end (region-end))
             (html-body (org-export-string-as
                         (buffer-substring region-start region-end)
-                        'html t '(:with-toc nil 
+                        'html t '(:with-toc nil
                                             :html-postamble nil
                                             :preserve-breaks t))))
-       
+
        ;; Extract body content and replace <p> tags with <br>
        (setq html-body
              (with-temp-buffer
@@ -357,40 +360,51 @@ Clipboard can be pasted into Microsoft Word, Microsoft Teams, Thunderbird and Gm
                (if (re-search-forward "<body[^>]*>\\(\\(.\\|\n\\)*\\)</body>" nil t)
                    (match-string 1)
                  html-body)))
-       
+
        ;; Replace paragraph tags with line breaks
        (setq html-body
              (replace-regexp-in-string "<p[^>]*>" "" html-body))
        (setq html-body
              (replace-regexp-in-string "</p>" "<br>" html-body))
-       
-       ;; Build CF_HTML format (use \n only, Windows will handle conversion)
-       (let* ((html-fragment (concat "<!--StartFragment-->" html-body "<!--EndFragment-->"))
-              (html-full (concat "<html>\n<body>\n" html-fragment "\n</body>\n</html>"))
-              (header "Version:0.9\nStartHTML:%010d\nEndHTML:%010d\nStartFragment:%010d\nEndFragment:%010d\n")
-              (header-length (length (format header 0 0 0 0)))
-              (start-html header-length)
-              (end-html (+ start-html (string-bytes html-full)))
-              (start-fragment (+ start-html 
-                                 (string-bytes (substring html-full 0 (string-match "<!--StartFragment-->" html-full)))
-                                 (string-bytes "<!--StartFragment-->")))
-              (end-fragment (+ start-html (string-bytes (substring html-full 0 (string-match "<!--EndFragment-->" html-full)))))
-              (cf-html (concat (format header start-html end-html start-fragment end-fragment)
-                               html-full)))
-         
-         ;; Write to temp file and use PowerShell to set clipboard
-         (let ((temp-file (make-temp-file "cf-html-" nil ".txt")))
-           (with-temp-file temp-file
-             (set-buffer-file-coding-system 'utf-8-unix)
-             (insert cf-html))
-           
-           (call-process "powershell.exe" nil nil nil
-                         "-Command"
-                         (format "$content = Get-Content -Path '%s' -Raw -Encoding UTF8; Add-Type -AssemblyName System.Windows.Forms; $data = New-Object System.Windows.Forms.DataObject; $bytes = [System.Text.Encoding]::UTF8.GetBytes($content); $stream = New-Object System.IO.MemoryStream(,$bytes); $data.SetData('HTML Format', $stream); [System.Windows.Forms.Clipboard]::SetDataObject($data, $true); $stream.Close()"
-                                 (replace-regexp-in-string "/" "\\\\" temp-file)))
-           
-           (delete-file temp-file)
-           (message "Region copied as CF_HTML to clipboard"))))))
+
+       (cond
+        ;; === Windows: CF_HTML via PowerShell ===
+        (*my-init--windows-p*
+         (let* ((html-fragment (concat "<!--StartFragment-->" html-body "<!--EndFragment-->"))
+                (html-full (concat "<html>\n<body>\n" html-fragment "\n</body>\n</html>"))
+                (header "Version:0.9\nStartHTML:%010d\nEndHTML:%010d\nStartFragment:%010d\nEndFragment:%010d\n")
+                (header-length (length (format header 0 0 0 0)))
+                (start-html header-length)
+                (end-html (+ start-html (string-bytes html-full)))
+                (start-fragment (+ start-html
+                                   (string-bytes (substring html-full 0 (string-match "<!--StartFragment-->" html-full)))
+                                   (string-bytes "<!--StartFragment-->")))
+                (end-fragment (+ start-html (string-bytes (substring html-full 0 (string-match "<!--EndFragment-->" html-full)))))
+                (cf-html (concat (format header start-html end-html start-fragment end-fragment)
+                                 html-full)))
+           (let ((temp-file (make-temp-file "cf-html-" nil ".txt")))
+             (with-temp-file temp-file
+               (set-buffer-file-coding-system 'utf-8-unix)
+               (insert cf-html))
+             (call-process "powershell.exe" nil nil nil
+                           "-Command"
+                           (format "$content = Get-Content -Path '%s' -Raw -Encoding UTF8; Add-Type -AssemblyName System.Windows.Forms; $data = New-Object System.Windows.Forms.DataObject; $bytes = [System.Text.Encoding]::UTF8.GetBytes($content); $stream = New-Object System.IO.MemoryStream(,$bytes); $data.SetData('HTML Format', $stream); [System.Windows.Forms.Clipboard]::SetDataObject($data, $true); $stream.Close()"
+                                   (replace-regexp-in-string "/" "\\\\" temp-file)))
+             (delete-file temp-file)
+             (message "Region copied as CF_HTML to clipboard"))))
+
+        ;; === Linux: HTML via xclip ===
+        (*my-init--linux-p*
+         (unless (executable-find "xclip")
+           (user-error "xclip not found — install with: sudo apt install xclip"))
+         (let ((html-full (concat "<html><body>" html-body "</body></html>")))
+           (with-temp-buffer
+             (insert html-full)
+             (call-process-region (point-min) (point-max)
+                                  "xclip" nil nil nil
+                                  "-selection" "clipboard"
+                                  "-t" "text/html"))
+           (message "Region copied as HTML to clipboard via xclip")))))))
  
  (defun my/PREVIOUS-org-copy-to-clipboard-for-microsoft-word-and-teams ()
    "Copy buffer to clipboard as HTML.
@@ -432,21 +446,32 @@ Requires my/save-region-as-html."
  "org-mode G (copy/paste from clipboard with format conversion)"
 
  (defun my/paste-clipboard-as-raw-html ()
-   "Insert raw HTML from the Windows clipboard (CF_HTML) into current buffer, with visible tags.
-(v1 as of 2025-10-28, available in occisn/emacs-utils GitHub repository)"
+   "Insert raw HTML from clipboard into current buffer, with visible tags.
+On Windows uses CF_HTML via PowerShell; on Linux uses xclip.
+(v2 as of 2026-03-14, available in occisn/emacs-utils GitHub repository)"
    (interactive)
-   (unless *my-init--windows-p*
-     (user-error "CF_HTML clipboard paste is only available on Windows"))
+   (unless (or *my-init--windows-p* *my-init--linux-p*)
+     (user-error "Clipboard HTML paste not supported on this platform"))
    (let* ((html-raw
-           (with-temp-buffer
-             (call-process
-              "powershell.exe" nil t nil
-              "-NoProfile" "-Command"
-              "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.Clipboard]::GetText([System.Windows.Forms.TextDataFormat]::Html)")
-             (buffer-string)))
+           (cond
+            (*my-init--windows-p*
+             (with-temp-buffer
+               (call-process
+                "powershell.exe" nil t nil
+                "-NoProfile" "-Command"
+                "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.Clipboard]::GetText([System.Windows.Forms.TextDataFormat]::Html)")
+               (buffer-string)))
+            (*my-init--linux-p*
+             (unless (executable-find "xclip")
+               (user-error "xclip not found — install with: sudo apt install xclip"))
+             (with-temp-buffer
+               (call-process "xclip" nil t nil
+                             "-selection" "clipboard"
+                             "-t" "text/html" "-o")
+               (buffer-string)))))
           ;; Extract fragment between <!--StartFragment--> and <!--EndFragment-->
           (fragment
-           (if (string-match "<!--StartFragment-->(.*)<!--EndFragment-->" html-raw)
+           (if (string-match "<!--StartFragment-->\\(.*\\)<!--EndFragment-->" html-raw)
                (match-string 1 html-raw)
              html-raw)))
      (insert fragment)))
@@ -532,23 +557,31 @@ Requires my/save-region-as-html."
 
  (defun my/org-paste-from-Teams-Word-as-org ()
    "Paste from clipboard and convert to org-mode format.
-Content of the clipboard may come from Microsoft Teams or Word.
-Does not work as such from Thunderbird. Not tested from Gmail.
+Content of the clipboard may come from Microsoft Teams, Word, or any HTML source.
+On Windows uses CF_HTML via PowerShell; on Linux uses xclip.
 Requires my/html-to-org.
-(v1 as of 2025-10-29, available in occisn/emacs-utils GitHub repository)"
+(v2 as of 2026-03-14, available in occisn/emacs-utils GitHub repository)"
    (interactive)
-   (unless *my-init--windows-p*
-     (user-error "CF_HTML clipboard paste is only available on Windows"))
-   (let* ((powershell-cmd "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.Clipboard]::GetText([System.Windows.Forms.TextDataFormat]::Html)")
-          (html-content (shell-command-to-string 
-                         (format "powershell.exe -Command \"%s\"" powershell-cmd))))
+   (unless (or *my-init--windows-p* *my-init--linux-p*)
+     (user-error "Clipboard HTML paste not supported on this platform"))
+   (let* ((html-content
+           (cond
+            (*my-init--windows-p*
+             (let ((powershell-cmd "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.Clipboard]::GetText([System.Windows.Forms.TextDataFormat]::Html)"))
+               (shell-command-to-string
+                (format "powershell.exe -Command \"%s\"" powershell-cmd))))
+            (*my-init--linux-p*
+             (unless (executable-find "xclip")
+               (user-error "xclip not found — install with: sudo apt install xclip"))
+             (shell-command-to-string
+              "xclip -selection clipboard -t text/html -o 2>/dev/null")))))
      (if (string-empty-p (string-trim html-content))
          (message "No HTML content in clipboard")
        ;; Extract the actual HTML fragment (Windows clipboard includes metadata)
        (let* ((fragment-start (string-match "<!--StartFragment-->" html-content))
               (fragment-end (string-match "<!--EndFragment-->" html-content))
               (html (if (and fragment-start fragment-end)
-                        (substring html-content 
+                        (substring html-content
                                    (+ fragment-start (length "<!--StartFragment-->"))
                                    fragment-end)
                       html-content))
@@ -817,11 +850,11 @@ Web site: [s]witch between FR and EN org files"
 ^-----------------------------
 
 Copy from org to clipboard, under following format:
-   [1] Word / Teams / Thunderbird / Gmail
+   [1] Word / Teams / Thunderbird / Gmail (Windows: CF_HTML, Linux: xclip)
    [2] markdown
 
 Paste into org-mode from clipboard under following format:
-   [3] from Word / Teams into org
+   [3] from Word / Teams / HTML into org (Windows: CF_HTML, Linux: xclip)
    [4] from markdown into org
 "
    ("1" #'my/org-copy-region-ready-to-be-pasted-into-Word-Teams-Thunderbird-Gmail)

@@ -110,6 +110,23 @@
    :tags '(example)
    (should (= 4 (+ 2 2))))
 
+ (when *my-init--linux-p*
+   (ert-deftest test-linux-core-tools ()
+     "Check that essential Linux tools are available."
+     :tags '(init linux)
+     (should (executable-find "git"))
+     (should (executable-find "grep"))
+     (should (executable-find "find")))
+
+   (ert-deftest test-linux-optional-tools ()
+     "Check optional tools and report missing ones."
+     :tags '(init linux)
+     (dolist (tool '("gcc" "g++" "gnuplot" "R" "sbcl" "evince"
+                     "xclip" "7z" "tesseract" "pdftk" "pandoc"
+                     "gs" "convert" "python3"))
+       (unless (executable-find tool)
+         (message "Optional tool not found: %s" tool)))))
+
  ) ; end of init section
 
 ;;; ===

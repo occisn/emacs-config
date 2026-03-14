@@ -81,6 +81,12 @@
 (defvar *my-init--linux-p* (eq system-type 'gnu/linux)
   "Non-nil when running on GNU/Linux (including WSL).")
 
+(defvar *my-init--wsl-p*
+  (and *my-init--linux-p*
+       (string-match-p "microsoft\\|WSL"
+                       (or (shell-command-to-string "uname -r") "")))
+  "Non-nil when running on WSL.")
+
 ;;; ===
 ;;; === Customized init messages
 
@@ -654,124 +660,160 @@ d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
  t
  "Paths to directories and files, and some constants"
 
- ;; the following 'nil' shall be replaced,
- ;; within 'personal--directories-and-files.el'
- ;; by the relevant paths.
+ ;; Default values for all path variables.
+ ;; These are declared with defvar so they exist even if the personal file is absent (e.g. on Linux).
+ ;; The personal file overrides them with setq.
 
- (setq *context* nil)                   ; 'perso, 'pro1 etc.
+ (defvar *context* nil "Context: 'perso, 'pro1, etc.")
 
- (setq *dropbox-directory* "C:/Users/.../Dropbox/"
-       *local-repos-directory* "C:/Users/.../local-repos"
-       *emacs-config-directory* nil ; directory containing this init.el
-       *this-init-file* "C:/.../init.el"
-       *downloads-directory* "C:/.../Downloads/"
-       *my-main-directory* "C:/.../MyFiles/"
-       *ongoing-directory* "C:/.../WorkInProgress/"
-       *temp-directory* "C:/Users/.../AppData/Local/Temp/"
-       ;; note: it also exists built-in 'temporary-file-directory'
-       *F12-temp-file* "C:/.../temp.org"
-       
-       ;; whatever the context (perso or pro), we define both F10 files
-       ;; in order to be able to switch:
-       *F10-file-perso* "C:/.../todo.org"
-       *F10-file-pro1* "C:/.../todo.org"
-       ;; initial F10 file:
-       *F10-file* "C:/.../todo.org"
-       
-       *dired+-directory* "C:/.../dired+/"
-       *xah-find-file* "C://xah-find-20210805.2124/xah-find.el"
+ ;; Directories
+ (defvar *dropbox-directory* nil "Path to Dropbox directory.")
+ (defvar *local-repos-directory* nil "Path to local-repos directory.")
+ (defvar *emacs-config-directory* nil "Directory containing this init.el.")
+ (defvar *this-init-file* nil "Path to this init.el.")
+ (defvar *downloads-directory* nil "Path to Downloads directory.")
+ (defvar *my-main-directory* nil "Path to main personal files directory.")
+ (defvar *ongoing-directory* nil "Path to work-in-progress directory.")
+ (defvar *temp-directory* nil "Path to temp directory.")
+ ;; note: it also exists built-in 'temporary-file-directory'
+ (defvar *F12-temp-file* nil "Path to F12 temp org file.")
+ ;; whatever the context (perso or pro), we define both F10 files
+ ;; in order to be able to switch:
+ (defvar *F10-file-perso* nil "Path to personal todo.org.")
+ (defvar *F10-file-pro1* nil "Path to professional todo.org.")
+ (defvar *F10-file* nil "Path to initial F10 todo file.")
 
-       *imagemagick-convert-program* "c:/.../ImageMagick-7.0.11-4-portable-Q16-x64/convert.exe"
+ (defvar *dired+-directory* nil "Path to dired+ package directory.")
+ (defvar *xah-find-file* nil "Path to xah-find.el.")
 
-       *python-executable--in-libreoffice-for-unoconv* "c:/.../LibreOfficePortable/App/libreoffice/program/python.exe"
-       *python-path-1--in-libreoffice-for-unoconv* "c:/.../LibreOfficePortable/App/libreoffice/program"
-       *python-path-2--in-libreoffice-for-unoconv* "c:/.../LibreOfficePortable/App/libreoffice/program/python-core-3.7.7/bin"
+ ;; External tools
+ (defvar *imagemagick-convert-program* nil "Path to ImageMagick convert executable.")
 
-       *gs-program* "c:/.../Ghostscript/bin/gswin64c.exe"
-       *gs-bin-directory* "C:/.../Ghostscript/bin"
-       *gs-lib-directory* "C:/.../Ghostscript/lib"
+ (defvar *python-executable--in-libreoffice-for-unoconv* nil "Path to Python in LibreOffice.")
+ (defvar *python-path-1--in-libreoffice-for-unoconv* nil "First Python path for LibreOffice.")
+ (defvar *python-path-2--in-libreoffice-for-unoconv* nil "Second Python path for LibreOffice.")
 
-       *libreoffice-directory* "C:/.../LibreOfficePortable"
+ (defvar *gs-program* nil "Path to Ghostscript executable.")
+ (defvar *gs-bin-directory* nil "Path to Ghostscript bin directory.")
+ (defvar *gs-lib-directory* nil "Path to Ghostscript lib directory.")
 
-       *pt-directory* "c:/.../pt_windows_amd64/"
-       *ag-directory* "c:/.../ag-2020-07-05_2.2.0-58-g5a1c8d8-x64/"
+ (defvar *libreoffice-directory* nil "Path to LibreOffice directory.")
 
-       *sbcl--inferior-lisp-program* "sbcl"
-       *sbcl--common-lisp-directory* "C:/.../SBCL 2.4.10"
-       *sbcl--common-lisp-program* "C:/.../SBCL 2.4.10/sbcl.exe"
+ (defvar *pt-directory* nil "Path to pt (platinum searcher) directory.")
+ (defvar *ag-directory* nil "Path to ag (silver searcher) directory.")
 
-       *clisp--inferior-lisp-program* "clisp"
-       *clisp--common-lisp-directory* "C:/.../clisp-2.49"
-       *clisp--common-lisp-program* "C:/.../clisp-2.49/clisp.exe"
+ ;; Common Lisp implementations
+ (defvar *sbcl--inferior-lisp-program* nil "SBCL program name for inferior-lisp.")
+ (defvar *sbcl--common-lisp-directory* nil "Path to SBCL directory.")
+ (defvar *sbcl--common-lisp-program* nil "Path to SBCL executable.")
 
-       *ccl--inferior-lisp-program* "wx86cl64"
-       *ccl--common-lisp-directory* "C:/.../ccl-1.13-windowsx86/ccl"
-       *ccl--common-lisp-program* "C:/.../ccl-1.13-windowsx86/ccl/wx86cl64.exe"
+ (defvar *clisp--inferior-lisp-program* nil "CLISP program name for inferior-lisp.")
+ (defvar *clisp--common-lisp-directory* nil "Path to CLISP directory.")
+ (defvar *clisp--common-lisp-program* nil "Path to CLISP executable.")
 
-       *abcl--inferior-lisp-program* "abcl"
-       *abcl--common-lisp-directory* "C:/.../abcl-bin-1.7.1/abcl-bin-1.7.1"
-       *abcl--common-lisp-program* "C:/.../abcl-bin-1.7.1/abcl-bin-1.7.1/abcl.bat"
-       ;; this bat file contains: java -jar "C:\...\abcl-bin-1.7.1\abcl-bin-1.7.1\abcl.jar"
+ (defvar *ccl--inferior-lisp-program* nil "CCL program name for inferior-lisp.")
+ (defvar *ccl--common-lisp-directory* nil "Path to CCL directory.")
+ (defvar *ccl--common-lisp-program* nil "Path to CCL executable.")
 
-       *emacs-c-source* "c:/.../emacs-30.2-source/src/"
+ (defvar *abcl--inferior-lisp-program* nil "ABCL program name for inferior-lisp.")
+ (defvar *abcl--common-lisp-directory* nil "Path to ABCL directory.")
+ (defvar *abcl--common-lisp-program* nil "Path to ABCL executable.")
+ ;; ABCL bat file contains: java -jar "C:\...\abcl-bin-1.7.1\abcl-bin-1.7.1\abcl.jar"
 
-       *sumatra-program* "c:/.../SumatraPDF-3.1.2-64/SumatraPDF.exe"
+ (defvar *common-lisp-program* nil "Path to the active Common Lisp executable.")
+ (defvar *inferior-lisp-program* nil "Program name for inferior-lisp.")
 
-       *miktex-directory* "c:/.../MiKTeX 21.8 portable/texmfs/install/miktex/bin/x64"
-       *latex-preview-pics-directory* "C:/Users/.../AppData/Local/Temp/emacs-latex-preview-pics/"
+ (defvar *emacs-c-source* nil "Path to Emacs C source directory.")
 
-       *gnuplot-directory* "c:/.../GnuPlot/gp527-win64-mingw/gnuplot/bin"
-       *gnuplot-program* "c:/.../GnuPlot/gp527-win64-mingw/gnuplot/bin/gnuplot.exe"
+ ;; Document tools
+ (defvar *sumatra-program* nil "Path to SumatraPDF executable.")
 
-       *unzip-program* "c:/.../7-ZipPortable/App/7-Zip64/7z.exe"
+ (defvar *miktex-directory* nil "Path to MiKTeX bin directory.")
+ (defvar *latex-preview-pics-directory* nil "Path to LaTeX preview pics temp directory.")
 
-       *pdftk-program-name* "PDFtk Server"
-       *pdftk-program* "c:/.../PDFTKBuilderPortable/App/pdftkbuilder/pdftk.exe"
+ (defvar *gnuplot-directory* nil "Path to Gnuplot bin directory.")
+ (defvar *gnuplot-program* nil "Path to Gnuplot executable.")
 
-       *irfanview-program* "c:/.../IrfanViewPortable/IrfanViewPortable.exe"
+ (defvar *unzip-program* nil "Path to 7z executable.")
 
-       *ditaa-jar* "c:/.../ditaa/ditaa0_9.jar"
+ (defvar *pdftk-program-name* nil "Display name for PDFtk.")
+ (defvar *pdftk-program* nil "Path to PDFtk executable.")
 
-       *R-executable* "c:/.../R-Portable/App/R-Portable/bin/x64/R.exe"
-       *Rterm-executable* "c:/.../R-Portable/App/R-Portable/bin/x64/Rterm.exe"
+ (defvar *irfanview-program* nil "Path to IrfanView executable.")
 
-       *msys2-bash-executable* "C:/.../msys2.exe"
-       *msys2-shell-cmd* "C:/.../msys2_shell.cmd"
-       
-       *git-bash-executable* "C:/.../Git/bin/bash.exe"
-       *git-executable-directory* "C:/.../Git/bin"
-       *git-diff3-directory* "C:/.../Git/usr/bin"    
+ (defvar *ditaa-jar* nil "Path to ditaa jar file.")
 
-       *tesseract-tessdata-dir* "C:/.../Tesseract-OCR/tessdata"
-       *tesseract-exe* "C:/.../Tesseract-OCR/tesseract.exe"
+ ;; Statistics tools
+ (defvar *R-executable* nil "Path to R executable.")
+ (defvar *Rterm-executable* nil "Path to Rterm executable.")
 
-       *maxima-directory* "C:/.../maxima-5.47.0/bin"
+ ;; Shell tools
+ (defvar *msys2-bash-executable* nil "Path to MSYS2 executable.")
+ (defvar *msys2-shell-cmd* nil "Path to MSYS2 shell cmd.")
 
-       *pandoc-directory* "c:/.../pandoc-3.1.11.1"
-       *pandoc-executable-name* (if *my-init--windows-p* "pandoc.exe" "pandoc")
+ (defvar *git-bash-executable* nil "Path to Git Bash executable.")
+ (defvar *git-executable-directory* nil "Path to Git bin directory.")
+ (defvar *git-diff3-directory* nil "Path to Git usr/bin directory (for diff3).")
 
-       *my-signature* "(my signature for mail)"
+ ;; OCR
+ (defvar *tesseract-tessdata-dir* nil "Path to Tesseract tessdata directory.")
+ (defvar *tesseract-exe* nil "Path to Tesseract OCR executable.")
 
-       *my-commun-directory* "c:/.../"
+ ;; Other tools
+ (defvar *maxima-directory* nil "Path to Maxima bin directory.")
 
-       *word-path* "C:/.../WINWORD.EXE"
-       *excel-path* "C:/.../EXCEL.EXE"
-       *powerpoint-path* "C://.../POWERPNT.EXE"
-       *teams-path* "C:/.../Teams.exe"
-       *firefox-path* "C:/../firefox.exe"
-       *thunderbird-executable* "C:/.../Thunderbird.exe"
-       *chrome-executable "C:/.../chrome.exe"
+ (defvar *pandoc-directory* nil "Path to Pandoc directory.")
+ (defvar *pandoc-executable-name* nil "Path to Pandoc executable.")
 
-       *gcc-path* "C:/.../bin"
-       *gpp-path* "C:/.../bin"
-       *gpp-exe* "C:/.../bin/g++.exe"
-       *clangd-path* "c:/.../clangd_21.1.0/bin/"
-       *c-tree-sitter-dll* "c:/.../.emacs.d/tree-sitter/libtree-sitter-c.dll"
-       *cpp-tree-sitter-dll* "c:/.../.emacs.d/tree-sitter/libtree-sitter-cpp.dll"
-       
-       ) ; end of setq
+ (defvar *my-signature* nil "Personal mail signature.")
+
+ (defvar *my-commun-directory* nil "Path to common shared directory.")
+
+ ;; Windows applications
+ (defvar *word-path* nil "Path to Microsoft Word executable.")
+ (defvar *excel-path* nil "Path to Microsoft Excel executable.")
+ (defvar *powerpoint-path* nil "Path to Microsoft PowerPoint executable.")
+ (defvar *teams-path* nil "Path to Microsoft Teams executable.")
+ (defvar *firefox-path* nil "Path to Firefox executable.")
+ (defvar *thunderbird-executable* nil "Path to Thunderbird executable.")
+ (defvar *chrome-executable* nil "Path to Chrome executable.")
+
+ ;; Compilers
+ (defvar *gcc-path* nil "Path to GCC bin directory.")
+ (defvar *gpp-path* nil "Path to G++ bin directory.")
+ (defvar *gpp-exe* nil "Path to g++ executable.")
+ (defvar *clangd-path* nil "Path to clangd bin directory.")
+ (defvar *c-tree-sitter-dll* nil "Path to C tree-sitter DLL.")
+ (defvar *cpp-tree-sitter-dll* nil "Path to C++ tree-sitter DLL.")
 
  (my-init--load-additional-init-file "personal--directories-and-files-and-constants.el")
+
+ ;; Auto-detect Linux tools in PATH if not already set by personal file
+ (when *my-init--linux-p*
+   (unless *gs-program*                    (setq *gs-program* (executable-find "gs")))
+   (unless *pdftk-program*                 (setq *pdftk-program* (executable-find "pdftk")))
+   (unless *unzip-program*                 (setq *unzip-program* (executable-find "7z")))
+   (unless *imagemagick-convert-program*   (setq *imagemagick-convert-program* (executable-find "convert")))
+   (unless *tesseract-exe*                 (setq *tesseract-exe* (executable-find "tesseract")))
+   (unless *gnuplot-program*               (setq *gnuplot-program* (executable-find "gnuplot")))
+   (unless *sbcl--common-lisp-program*     (setq *sbcl--common-lisp-program* (executable-find "sbcl")))
+   (unless *R-executable*                  (setq *R-executable* (executable-find "R")))
+   (unless *Rterm-executable*              (setq *Rterm-executable* (or (executable-find "Rterm") *R-executable*)))
+   (unless *pandoc-executable-name*        (setq *pandoc-executable-name* (executable-find "pandoc")))
+   (unless *gpp-exe*                       (setq *gpp-exe* (executable-find "g++")))
+   ;; Tesseract tessdata directory
+   (unless *tesseract-tessdata-dir*
+     (let ((dir "/usr/share/tesseract-ocr/4.00/tessdata/"))
+       (when (file-directory-p dir) (setq *tesseract-tessdata-dir* dir))))
+   ;; Emacs C sources
+   (unless *emacs-c-source*
+     (let ((dir (format "/usr/share/emacs/%s/src/" emacs-version)))
+       (when (file-directory-p dir) (setq *emacs-c-source* dir))))
+   ;; Derived variables
+   (when *sbcl--common-lisp-program*
+     (unless *sbcl--inferior-lisp-program* (setq *sbcl--inferior-lisp-program* "sbcl"))
+     (unless *common-lisp-program*         (setq *common-lisp-program* *sbcl--common-lisp-program*))
+     (unless *inferior-lisp-program*       (setq *inferior-lisp-program* *sbcl--inferior-lisp-program*))))
 
  ) ; end of init section
 
@@ -831,7 +873,10 @@ v1 as of 2025-09-07; available in occisn/elisp-utils GitHub repository"
                         gcs-done))
 
         (newline)
-        (insert (format "Computer: %s on %s, %s\n" (system-name) system-type system-configuration))
+        (insert (format "Computer: %s on %s%s, %s\n"
+                        (system-name) system-type
+                        (if *my-init--wsl-p* " (WSL)" "")
+                        system-configuration))
 
         (newline)
         (insert (format "Native compilation: %s, %s and %s\n" (featurep 'native-compile) (native-comp-available-p) (featurep 'comp)))

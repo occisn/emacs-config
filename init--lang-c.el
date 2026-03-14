@@ -468,10 +468,14 @@ If filename begins with a digit, prefix with X_."
  ;; and c++
  ;; to compile and install
  
- (if (my-init--file-exists-p *c-tree-sitter-dll*)
-     ;; Remap c-mode to c-ts-mode (Tree-sitter version):
-     (add-to-list 'major-mode-remap-alist '(c-mode . c-ts-mode))
-   (my-init--warning "!! c tree-sitter dll not found: %s" *c-tree-sitter-dll*))
+ (let ((ts-lib (or *c-tree-sitter-dll*
+                   (and *my-init--linux-p*
+                        (let ((so (expand-file-name "tree-sitter/libtree-sitter-c.so" user-emacs-directory)))
+                          (when (file-exists-p so) so))))))
+   (if (my-init--file-exists-p ts-lib)
+       ;; Remap c-mode to c-ts-mode (Tree-sitter version):
+       (add-to-list 'major-mode-remap-alist '(c-mode . c-ts-mode))
+     (my-init--warning "!! c tree-sitter dll not found: %s" ts-lib)))
 
  ;; === lsp (alternative to eglot)
 

@@ -555,9 +555,10 @@ d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
  
  ;; projectile-pt (platinum):
 
- (if (my-init--directory-exists-p *pt-directory*)
-     (my-init--add-to-path-and-exec-path "pt" *pt-directory*)
-   (my-init--warning "!! *pt-directory* is nil or does not exist: %s" *pt-directory*))
+ (when *my-init--windows-p*
+   (if (my-init--directory-exists-p *pt-directory*)
+       (my-init--add-to-path-and-exec-path "pt" *pt-directory*)
+     (my-init--warning "!! *pt-directory* is nil or does not exist: %s" *pt-directory*)))
  
  (use-package pt
    :commands (my/pt-grep-in-current-dired-directory projectile-pt)
@@ -573,9 +574,10 @@ d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
 
  ;; ag (silver):
 
- (if (my-init--directory-exists-p *ag-directory*)
-     (my-init--add-to-path-and-exec-path "ag" *ag-directory*)
-   (my-init--warning "!! *ag-directory* is nil or does not exist: %s" *ag-directory*))
+ (when *my-init--windows-p*
+   (if (my-init--directory-exists-p *ag-directory*)
+       (my-init--add-to-path-and-exec-path "ag" *ag-directory*)
+     (my-init--warning "!! *ag-directory* is nil or does not exist: %s" *ag-directory*)))
 
  (use-package ag
    :commands (my/ag-grep-in-current-dired-directory my/ag-grep-in-projectile-project)

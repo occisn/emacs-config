@@ -1,6 +1,6 @@
 # emacs-config
 
-This is my _actual_ **init.el** file and initialization files, on **Windows**. Extension to **Linux** under progress.
+This is my _actual_ **init.el** file and initialization files, on **Windows** and **Linux** (including WSL).
 
 I use the _same_ configuration file (stored on cloud) on my different computers.
 
@@ -12,7 +12,7 @@ Some comments in the file have probably become outdated over time.
 
 What I like about my configuration:
 
-**(1)** The loading time is quite short: < 3 s on my (standard) laptop, despite the 7K+ lines of code. Loading of many packages is deferred.
+**(1)** The loading time is quite short: < 3 s on my (standard) laptop, despite the 11K+ lines of code. Loading of many packages is deferred.
 
 **(2)** Just after startup, a dedicated buffer provides a summary of the initialization process, the time spent loading each package, and executing each section of init.el. In case of initalization slowdown, this makes analysis easier. See screenshot below.
 
@@ -29,6 +29,8 @@ What I like about my configuration:
 **(8)** Fine-tuning of Emacs as Emacs Lisp, Common Lisp, C and C++ IDE
 
 **(9)** Easy copy/paste with formatting from/to external applications
+
+**(10)** Cross-platform support: automatic detection of tools on Linux, platform-specific hydras for launching applications, and WSL-aware fallbacks
 
 Any comment? Open an [issue](https://github.com/occisn/emacs-config/issues), or start a discussion [here](https://github.com/occisn/emacs-config/discussions) or [at profile level](https://github.com/occisn/occisn/discussions).
 

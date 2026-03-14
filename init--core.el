@@ -510,7 +510,7 @@ M-x list-[c]olors-display
  ;; Coding system used for network connections.
 
  (let ((tmp (if (boundp 'coding-system-for-read) coding-system-for-read "UNBOUND")))
-   (setq coding-system-for-read (if *my-init--windows-p* 'utf-8-dos 'utf-8-unix))
+   (setq coding-system-for-read (if *my-init--windows-p* 'utf-8-dos nil))
    (my-init--message2 "Encoding: coding-system-for-read was %s and is now %s" tmp coding-system-for-read))
  ;; crucial for FIND et projectile
  ;; Specify the coding system for read operations.

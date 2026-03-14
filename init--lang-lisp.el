@@ -874,8 +874,12 @@ With Electric Indent Mode enabled, inserts a newline and indents
  ;; === (EL) Emacs C sources
 
  (if (my-init--directory-exists-p *emacs-c-source*)
-     (setq find-function-C-source-directory (my-init--replace-linux-slash-with-two-windows-slashes *emacs-c-source*))
-   (my-init--warning "!! Emacs C sources directory is not valid: %s" *emacs-c-source*))
+     (setq find-function-C-source-directory
+           (if *my-init--windows-p*
+               (my-init--replace-linux-slash-with-two-windows-slashes *emacs-c-source*)
+             *emacs-c-source*))
+   (when *my-init--windows-p*
+     (my-init--warning "!! Emacs C sources directory is not valid: %s" *emacs-c-source*)))
  ;; sources downloaded from https://ftp.gnu.org/pub/gnu/emacs/
  ;; or rather: http://git.savannah.gnu.org/cgit/emacs.git
 

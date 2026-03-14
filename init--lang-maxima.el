@@ -9,9 +9,10 @@
  t
  "Maxima language"
 
- (if (my-init--directory-exists-p *maxima-directory*)
-     (my-init--add-to-path-and-exec-path "Maxima" *maxima-directory*)
-   (my-init--warning "!! *maxima-directory* is nil or does not exist: %s" *maxima-directory*))
+ (when *my-init--windows-p*
+   (if (my-init--directory-exists-p *maxima-directory*)
+       (my-init--add-to-path-and-exec-path "Maxima" *maxima-directory*)
+     (my-init--warning "!! *maxima-directory* is nil or does not exist: %s" *maxima-directory*)))
 
  ;; reference: https://orgmode.org/worg/org-contrib/babel/languages/ob-doc-maxima.html
 

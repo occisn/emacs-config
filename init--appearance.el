@@ -279,8 +279,20 @@
 
  ;; The font which is chosen:
  (if (my-init--font-exists-p "DM Mono")
-     (my-init--set-font-if-exists "DM Mono" 9)
-   (my-init--warning "Font is not available: DM Mono"))
+     (my-init--set-font-if-exists "DM Mono" (if *my-init--wsl-p* 12 9))
+   ;; DM Mono not available: on Linux, try common fallback fonts
+   (if (and *my-init--linux-p*
+            (cond
+             ((my-init--font-exists-p "DejaVu Sans Mono")
+              (set-face-attribute 'default nil :family "DejaVu Sans Mono" :height 100)
+              (my-init--message2 "Font DM Mono not available, using DejaVu Sans Mono as fallback")
+              t)
+             ((my-init--font-exists-p "Liberation Mono")
+              (set-face-attribute 'default nil :family "Liberation Mono" :height 100)
+              (my-init--message2 "Font DM Mono not available, using Liberation Mono as fallback")
+              t)))
+       nil ; fallback succeeded, no warning needed
+     (my-init--warning "Font is not available: DM Mono")))
  ;; I like also:
  (when nil
    (my-init--set-font-if-exists "Cascadia Code" 9)

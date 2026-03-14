@@ -331,7 +331,38 @@ Alt-F4 and Alt-TAB
      ) ; end of hydra
 
    (global-set-key (kbd "C-c w") #'hydra-windows-executables/body))
- 
+
+ (when *my-init--linux-p*
+   (defun my-init--open-linux-program (name program &rest args)
+     "Open Linux program PROGRAM (display NAME), checking it exists first."
+     (if (executable-find program)
+         (let ((proc (apply #'start-process name nil program args)))
+           (set-process-query-on-exit-flag proc nil)
+           (my-init--message2 "%s launched." name))
+       (user-error "%s not found in PATH" program)))
+
+   (defhydra hydra-linux-apps (:exit t :hint nil)
+     "
+^Linux applications:
+^-------------------
+
+[f]: Firefox    [c]: Chrome      [b]: Thunderbird
+[w]: Writer     [e]: Calc        [p]: Impress
+[i]: Image viewer (xdg-open)
+
+(end)"
+     ("b" (my-init--open-linux-program "Thunderbird" "thunderbird"))
+     ("c" (my-init--open-linux-program "Chrome" "google-chrome"))
+     ("e" (my-init--open-linux-program "LibreOffice Calc" "libreoffice" "--calc"))
+     ("f" (my-init--open-linux-program "Firefox" "firefox"))
+     ("i" (let ((f (read-file-name "Image: ")))
+            (start-process "viewer" nil "xdg-open" f)))
+     ("p" (my-init--open-linux-program "LibreOffice Impress" "libreoffice" "--impress"))
+     ("w" (my-init--open-linux-program "LibreOffice Writer" "libreoffice" "--writer"))
+     ) ; end of hydra
+
+   (global-set-key (kbd "C-c w") #'hydra-linux-apps/body))
+
  ) ; end of init section
 
 
