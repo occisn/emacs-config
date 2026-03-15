@@ -9,6 +9,11 @@
  t
  "shells"
 
+ ;; === Display line number in shell scripts
+
+ (dolist (mode '(sh-mode-hook bash-ts-mode-hook))
+   (add-hook mode (lambda () (display-line-numbers-mode 1))))
+
  ;; === eshell
 
  (defun my--org-babel-load-eshell (&rest _args)
