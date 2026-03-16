@@ -74,6 +74,10 @@
                     (not (looking-at-p prompt-regexp)))
              (accept-process-output (get-buffer-process eshell-buffer) 0.1)))))))
 
+ ;; === cmd syntax highlighting in org-mode source blocks
+ (with-eval-after-load 'org-src
+   (add-to-list 'org-src-lang-modes '("cmd" . bat)))
+
  ;; === cmd shell (Windows only)
 
  (when *my-init--windows-p*
