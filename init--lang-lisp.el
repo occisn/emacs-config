@@ -1148,14 +1148,14 @@ Removes:
                  (while (and (not (eobp))
                              (not (looking-at "^$")))
                    (forward-line 1))
-                 (delete-region start (point))))))))
-     (goto-char (point-min))
-     (cond ((= 0 nb-deletions)
-            (message "No deletion performed."))
-           ((= 1 nb-deletions)
-            (message "1 deletion performed."))
-           (t
-            (message "%s deletions performed" nb-deletions)))))
+                 (delete-region start (point)))))))
+      (goto-char (point-min))
+      (cond ((= 0 nb-deletions)
+             (message "No deletion performed."))
+            ((= 1 nb-deletions)
+             (message "1 deletion performed."))
+            (t
+             (message "%s deletions performed" nb-deletions))))))
 
 
  ;; ===
