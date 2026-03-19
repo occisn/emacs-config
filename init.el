@@ -933,7 +933,9 @@ v1 as of 2025-09-07; available in occisn/elisp-utils GitHub repository"
 
         (goto-char (point-min)))        ; end of with-current-buffer
 
-      (switch-to-buffer (get-buffer-create "*init-stats*"))) ; end of when
+      ;; Only switch to *init-stats* if no file was passed on the command line
+      (unless (> (length command-line-args) 1)
+        (switch-to-buffer (get-buffer-create "*init-stats*")))) ; end of when
 
     (when (= 2 (count-windows))
       (read-string "Two windows detected. Press ENTER to focus on 'scratch' window: ")
