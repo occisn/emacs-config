@@ -1241,9 +1241,24 @@ Return NIL if no system found.
        (error "No ASDF system associated with this buffer"))
      (slime-oos system 'load-op :force t)))
 
+ (defun my/slime-load-current-system ()
+   "Load the ASDF system associated with the current buffer."
+   (interactive)
+   (let ((system (my/asdf-system-shortest-name)))
+     (unless system
+       (error "No ASDF system associated with this buffer"))
+     (slime-oos system 'load-op)))
+
+ (defun my/slime-load-or-force-reload-current-system (force)
+   "Load current ASDF system. With prefix arg FORCE, force reload."
+   (interactive "P")
+   (if force
+       (my/slime-force-reload-current-system)
+     (my/slime-load-current-system)))
+
  (with-eval-after-load 'slime
    (define-key slime-mode-map (kbd "C-c C-l")
-               #'my/slime-force-reload-current-system))
+               #'my/slime-load-or-force-reload-current-system))
 
  (with-eval-after-load 'slime
    (define-key slime-mode-map (kbd "C-c C-r")
@@ -1273,9 +1288,24 @@ Return NIL if no system found.
        (error "No ASDF system associated with this buffer"))
      (slime-oos system 'test-op :force t)))
 
+ (defun my/slime-test-current-system ()
+   "Test the ASDF system associated with the current buffer."
+   (interactive)
+   (let ((system (my/asdf-system-shortest-name)))
+     (unless system
+       (error "No ASDF system associated with this buffer"))
+     (slime-oos system 'test-op)))
+
+ (defun my/slime-test-or-force-test-current-system (force)
+   "Test current ASDF system. With prefix arg FORCE, force test."
+   (interactive "P")
+   (if force
+       (my/slime-force-test-current-system)
+     (my/slime-test-current-system)))
+
  (with-eval-after-load 'slime
    (define-key slime-mode-map (kbd "C-c C-t")
-               #'my/slime-force-test-current-system))
+               #'my/slime-test-or-force-test-current-system))
 
  (defun my/slime-call-main ()
    "Clear REPL, insert (package::main ), and execute immediately."
@@ -1649,7 +1679,7 @@ EXECUTE:
    ONE FILE: C-c C-k
    REPL: C-c C-z to jump in REPL || C-c C-j to execute in REPL || M-n || M-p || *,** || /,// || (foo M-
    ASDF: ,load-system etc from REPL (but *slime-compilation* does not update) | C-c C-c to recompile function
-   SLIME: C-c C-l force load [equivalent of relevant , in REPL] | C-c C-t force test [idem] | C-c C-n show compilation notes
+   SLIME: C-c C-l load | C-u C-c C-l force load | C-c C-t test | C-u C-c C-t force test | C-c C-n show compilation notes
           C-c C-r to restart inferior lisp [equivalent of relevant , in REPL] | C-c C-m to execute main
           M-x slime-compile-system (compiles an ASDF system)
           C-c C-c to recompile function | avoid C-c C-k | ,q to stop slime
