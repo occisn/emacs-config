@@ -277,33 +277,10 @@
 
      (switch-to-buffer buf)))           ; end of defun
 
- ;; The font which is chosen:
- (if (my-init--font-exists-p "DM Mono")
-     (my-init--set-font-if-exists "DM Mono" (if *my-init--wsl-p* 12 9))
-   ;; DM Mono not available: on Linux, try common fallback fonts
-   (if (and *my-init--linux-p*
-            (cond
-             ((my-init--font-exists-p "DejaVu Sans Mono")
-              (set-face-attribute 'default nil :family "DejaVu Sans Mono" :height 100)
-              (my-init--message2 "Font DM Mono not available, using DejaVu Sans Mono as fallback")
-              t)
-             ((my-init--font-exists-p "Liberation Mono")
-              (set-face-attribute 'default nil :family "Liberation Mono" :height 100)
-              (my-init--message2 "Font DM Mono not available, using Liberation Mono as fallback")
-              t)))
-       nil ; fallback succeeded, no warning needed
-     (my-init--warning "Font is not available: DM Mono")))
- ;; I like also:
- (when nil
-   (my-init--set-font-if-exists "Cascadia Code" 9)
-   (my-init--set-font-if-exists "Droid Sans Mono" 8)
-   (my-init--set-font-if-exists "Consolas" 9)
-   (my-init--set-font-if-exists "Meslo" 10)
-   (my-init--set-font-if-exists "Hack" 8)
-   (my-init--set-font-if-exists "Roboto Mono" 8)
-   (my-init--set-font-if-exists "Fira Code" 9)
-   (my-init--set-font-if-exists "Martian Mono" 8) ; to be tested
-   )                                              ; end of when nil
+ ;; The font which is chosen (see personal--font.el):
+ ;; (my-init--set-font-if-exists "DM Mono" 9)
+ ;; (my-init--set-font-if-exists "Cascadia Code" 9)
+ (my-init--load-additional-init-file-if-exists "personal--font.el")
  ) ; end of init section
 
 
@@ -902,29 +879,16 @@ M-x keycast-mode: show current key and its meaning on the command line
  ;; - standard-themes / standard-ligh-tinted
  ;; - green-is-the-new-black-theme
 
- ;; The theme which is chosen:
- ;; (my--load-theme-by-name "Moe Light")
- (my/load-shade-of-purple-customized)
+ ;; Dark or light background mode preference (see personal--background-mode.el):
+ ;; (setq *my-preferred-background-mode* 'dark)  ; or 'light
+ (defvar *my-preferred-background-mode* nil "Preferred background mode: 'dark, 'light, or nil (use theme default).")
+ (my-init--load-additional-init-file-if-exists "personal--background-mode.el")
 
- ;; I like also:
- (when nil
-
-   ;; LIGHT:
-   (my--load-theme-by-name "Leuven") ; perhaps to be repeated at the end of init file
-                                        ; otherwise effects are missing: note titles, color or =xxx=, etc.
-   ;; standard light tinted
-   (my--load-theme-by-name "Moe Light")
-   
-   ;; DARK:
-   (my--load-theme-by-name "Shades of purple")
-   (my--load-theme-by-name "Shades of purple (customized)")
-   (my--load-theme-by-name "Modus Vivendi")
-   (my--load-theme-by-name "Modus Vivendi (customized)") ; <-- preferred dark
-   ;; tomorrow deep blue
-   ;; dracula
-   (my--load-theme-by-name "Doom Challenger Deep")
-   (my--load-theme-by-name "_My dark")
-   ) ; end of when nil
+ ;; The theme which is chosen (see personal--theme.el):
+ ;; (my--load-theme-by-name "Shades of purple (customized)")
+ ;; (my--load-theme-by-name "Leuven")
+ ;; (my/load-shade-of-purple-customized)
+ (my-init--load-additional-init-file-if-exists "personal--theme.el")
 
  (defun my/generate-personal-theme-buffer () 
    "Create a buffer showing available themes and useful commands."

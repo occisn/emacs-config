@@ -146,6 +146,13 @@
         (my-init--warning "Could not load '%s'" filename1)
         (message "Could not load '%s'" filename1)))))
 
+(defun my-init--load-additional-init-file-if-exists (filename1)
+  "Load additional init file if it exists; do nothing otherwise."
+  (let ((file-with-path (concat (file-name-directory (or load-file-name buffer-file-name)) filename1)))
+    (when (my-init--file-exists-p file-with-path)
+      (my-init--message2 "Loading %s..." filename1)
+      (load-file file-with-path))))
+
 
 ;;; ===
 ;;; === "Warning: ‘let’ with empty body" attributable to paredit
