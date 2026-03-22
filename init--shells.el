@@ -361,10 +361,16 @@ The prompt is 'fake' and is not updated with successive 'cd'."
          (message "bash started in %s" default-dir)))))
 
  ;; === open WSL bashrc
+ ;; TIP: when you edited .bashrc from Windows, it saved the file with
+ ;; \r\n line endings instead of Unix \n, which breaks bash.
+ ;; Fix it with this one command in WSL:
+ ;;   sed -i 's/\r//' ~/.bashrc
 
  (defun my/open-wsl-bashrc ()
    "Open the WSL .bashrc file for editing."
    (interactive)
+   (unless *my-init--wsl-p*
+     (user-error "This command is only available when Emacs is running under WSL"))
    (let ((bashrc (bound-and-true-p *wsl-bashrc-path*)))
      (unless bashrc
        (user-error "Variable *wsl-bashrc-path* is not set (check personal--directories-and-files-and-constants.el)"))
