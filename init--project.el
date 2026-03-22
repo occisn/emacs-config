@@ -375,7 +375,7 @@ Grep :
            a[g] / grep in projectile project (pb encoding ?)
 - with ripgrep: C-c p s r [then C-c o to show in another window]
                 M-x projectile-ripgrep [does not seem to work]
-- projectile-[p]t (M-x projectile-pt)
+- projectile-[p]t (M-x projectile-pt) (Windows only)
 - my projectile [s]earch (pb accents)
 - [x]ah / grep in projectile project
 - C-c p s g  (grep by pt ?)
@@ -385,7 +385,9 @@ Search & replace:
    ("a" (lambda () (interactive) (find-file "~/.emacs.d/projectile-bookmarks.eld")))
    ("g" #'my/ag-grep-in-projectile-project)
    ("l" #'my/list-all-filetags-in-project)
-   ("p" #'projectile-pt)
+   ("p" (if *my-init--windows-p*
+            (call-interactively #'projectile-pt)
+          (user-error "projectile-pt is only available on Windows")))
    ("s" #'my/projectile-search)
    ("t" #'my/find-file-with-given-filetag)
    ("x" #'xah-grep-in-projectile-project)) ; end of hydra
