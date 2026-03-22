@@ -759,6 +759,8 @@ d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
  (defvar *msys2-shell-cmd* nil "Path to MSYS2 shell cmd.")
 
  (defvar *git-bash-executable* nil "Path to Git Bash executable.")
+
+ (defvar *wsl-bashrc-path* nil "Path to the WSL .bashrc file.")
  (defvar *git-executable-directory* nil "Path to Git bin directory.")
  (defvar *git-diff3-directory* nil "Path to Git usr/bin directory (for diff3).")
 

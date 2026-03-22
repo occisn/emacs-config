@@ -360,6 +360,18 @@ The prompt is 'fake' and is not updated with successive 'cd'."
          (shell buf-name)
          (message "bash started in %s" default-dir)))))
 
+ ;; === open WSL bashrc
+
+ (defun my/open-wsl-bashrc ()
+   "Open the WSL .bashrc file for editing."
+   (interactive)
+   (let ((bashrc (bound-and-true-p *wsl-bashrc-path*)))
+     (unless bashrc
+       (user-error "Variable *wsl-bashrc-path* is not set (check personal--directories-and-files-and-constants.el)"))
+     (unless (my-init--file-exists-p bashrc)
+       (user-error "WSL .bashrc not found at %s" bashrc))
+     (find-file bashrc)))
+
  ;; === hydra
 
  (if *my-init--windows-p*
@@ -391,11 +403,13 @@ wsl shell :  [w] external or [s] in buffer
 ^Shells hydra:
 ^-------------
 
-eshell : [e] in buffer
-bash :   [b] in buffer or [t] external terminal
+eshell :  [e] in buffer
+bash :    [b] in buffer or [t] external terminal
+bashrc :  [r] open WSL .bashrc
 "
      ("b" #'my/open-bash-in-emacs)
      ("e" #'eshell)
+     ("r" #'my/open-wsl-bashrc)
      ("t" #'my/open-terminal-external)))
 
  ) ; end of init section
