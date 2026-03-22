@@ -870,7 +870,6 @@ M-x keycast-mode: show current key and its meaning on the command line
          (message "No theme associated with this name: %s" theme-name)
        (funcall (eval theme-fn)))))
 
- 
 
  ;; and also:
  ;; - Dracula theme
@@ -882,8 +881,8 @@ M-x keycast-mode: show current key and its meaning on the command line
  ;; Dark or light background mode preference (see personal--background-mode.el):
  ;; (setq *my-preferred-background-mode* 'dark)  ; or 'light
  (defvar *my-preferred-background-mode* nil "Preferred background mode: 'dark, 'light, or nil (use theme default).")
- (my-init--load-additional-init-file-if-exists "personal--background-mode.el")
-
+ ;; will be modified by theme
+ 
  ;; The theme which is chosen (see personal--theme.el):
  ;; (my--load-theme-by-name "Shades of purple (customized)")
  ;; (my--load-theme-by-name "Leuven")
