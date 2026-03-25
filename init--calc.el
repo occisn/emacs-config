@@ -141,15 +141,10 @@ Start and stop :
    q
 
 Digit grouping: 'd g' to activate | d , SPC to set separator
-
 Empty stack: C-u 0 DEL
-
 Toggle algebraic mode on/off : m a 
-
 Copy the stack (to past in another window) : M-w
-
 ` to edit top element of the stack
-
 Compact instructions (to be called on source file): my/calc-compact-to-clipboard
 
 Macros :
@@ -160,12 +155,10 @@ Macros :
    Z E to edit
    M-x read kbd macro to read a macro from text file
 
-F6 M-x my/calc-read-macro
+F6 M-x my/calc-read-macro then X
 F7 M-x my/calc-select-markdown-code-and-read-calc-macro
 
-reset: M-x calc-reset
-
-{end}
+reset: M-x calc-reset {end}
 " 
    ;; ("e" #'a-function)
    )                                    ; end of hydra
