@@ -235,21 +235,10 @@
  t
  "Initialization speed-up"
 
- (my-init--message2 "Garbage collector threshold is %s." gc-cons-threshold) ; 800 K
- (setq gc-cons-threshold (* 100 1000 1000))
- (setq gc-cons-threshold most-positive-fixnum)
- (my-init--message2 "Garbage collector threshold set at %s." gc-cons-threshold)
- 
- ;; Trick to speed up start-up: file-name-handler-alist
- (defvar init--file-name-handler-alist-original file-name-handler-alist)
- (setq file-name-handler-alist nil)
-
- ;; avoid loading packages twice
- (setq package-enable-at-startup nil)
-
- ;; Avoid splash screen (C-h C-a to display splash screen later):
- (setq inhibit-startup-screen t)
- (setq inhibit-startup-message t)) ; end of my-init--with-duration-measured-section
+ ;; Speed-up tricks (GC threshold, file-name-handler-alist, package-enable-at-startup,
+ ;; splash screen, GUI chrome) are now in early-init.el.
+ (my-init--message2 "Garbage collector threshold is %s." gc-cons-threshold)
+ ) ; end of my-init--with-duration-measured-section
 
 
 ;;; ===
@@ -979,8 +968,9 @@ v1 as of 2025-09-07; available in occisn/elisp-utils GitHub repository"
          ;; ("marmalade" . "http://marmalade-repo.org/packages/")
          ))
 
- (when nil
-   (package-initialize))
+ ;; early-init.el sets package-enable-at-startup to nil, so we must
+ ;; initialize packages explicitly here.
+ (package-initialize)
 
  (require 'use-package)
 
@@ -1017,7 +1007,7 @@ Shall be used in the 'config' section of each package."
  
  (use-package hydra
    :ensure t
-   :defer t
+   :defer nil
    :config
    (my-init--message-package-loaded "hydra")))
 
