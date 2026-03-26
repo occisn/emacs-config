@@ -83,8 +83,10 @@
 
 (defvar *my-init--wsl-p*
   (and *my-init--linux-p*
-       (string-match-p "microsoft\\|WSL"
-                       (or (shell-command-to-string "uname -r") "")))
+       (file-exists-p "/proc/version")
+       (with-temp-buffer
+         (insert-file-contents "/proc/version")
+         (string-match-p "microsoft\\|WSL" (buffer-string))))
   "Non-nil when running on WSL.")
 
 ;;; ===
