@@ -58,7 +58,6 @@
 
  (use-package counsel-projectile
    ;; requires counsel-0.10.0, projectile-0.14.0
-   :defer nil
    :after (projectile)
    ;; :requires (projectile)
    ;; :commands (my-init--counsel-projectile-switch-project-action-dired counsel-projectile-switch-project-by-name)

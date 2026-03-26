@@ -332,12 +332,9 @@ Attach file to mail: C-c RET C-a (gnus-dired-attach)"
 ;;; ===== DIRED COLORS VIA ADAPTED-DIREDFL =====
 ;;; ============================================
 
-(my-init--with-duration-measured-section
- t
- "Dired colors"
-
- (my-init--load-additional-init-file "init--dired-colors.el")
- )
+(let ((dir (file-name-directory (or load-file-name buffer-file-name))))
+  (with-eval-after-load 'dired
+    (load-file (concat dir "init--dired-colors.el"))))
 
 
 
