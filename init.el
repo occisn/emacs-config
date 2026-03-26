@@ -971,8 +971,12 @@ v1 as of 2025-09-07; available in occisn/elisp-utils GitHub repository"
          ))
 
  ;; early-init.el sets package-enable-at-startup to nil, so we must
- ;; initialize packages explicitly here.
- (package-initialize)
+ ;; initialize packages explicitly here.  On Emacs 28+ the startup
+ ;; code already calls package-activate-all (setting
+ ;; package--initialized), so skip the redundant call to avoid the
+ ;; "Unnecessary call to 'package-initialize'" warning.
+ (unless (bound-and-true-p package--initialized)
+   (package-initialize))
 
  (require 'use-package)
 
