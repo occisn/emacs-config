@@ -205,7 +205,6 @@
 
  ;; This package highlights the location where local variables is created (bound, for example by let) as well as quoted and backquoted constant expressions.
  (use-package lisp-extra-font-lock
-   :defer nil
    :mode ("\\.el\\'" . emacs-lisp-mode)
    ("\\.lisp\\'" . lisp-mode)
    :hook ((emacs-lisp-mode lisp-mode slime-repl-mode) . lisp-extra-font-lock-global-mode)
@@ -260,8 +259,7 @@
  ;; It uses pluggable back-ends and front-ends to retrieve and display completion candidates.
 
  (use-package company                   ; company-mode
-   :defer nil
-   :hook ((emacs-lisp-mode lisp-mode) . company-mode) 
+   :hook ((emacs-lisp-mode lisp-mode) . company-mode)
    :config
    ;; (add-hook 'after-init-hook 'global-company-mode)
    ;; (add-hook 'after-init-hook 'global-company-mode)
