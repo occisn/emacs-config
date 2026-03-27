@@ -136,6 +136,8 @@
 
 ;;; ===
 ;;; === Function to load additional init file
+;;; Use `load' instead of `load-file' so that byte-compiled .elc files
+;;; are automatically preferred over .el when present.
 
 (defun my-init--load-additional-init-file (filename1)
   "Load additional init file, for instance 'init-abbrev', and throws a message (no error) if it does not exist."
@@ -143,7 +145,7 @@
     (if (my-init--file-exists-p file-with-path)
         (progn
           (my-init--message2 "Loading %s..." filename1)
-          (load-file file-with-path))
+          (load (file-name-sans-extension file-with-path) nil nil t))
       (progn
         (my-init--warning "Could not load '%s'" filename1)
         (message "Could not load '%s'" filename1)))))
@@ -153,7 +155,7 @@
   (let ((file-with-path (concat (file-name-directory (or load-file-name buffer-file-name)) filename1)))
     (when (my-init--file-exists-p file-with-path)
       (my-init--message2 "Loading %s..." filename1)
-      (load-file file-with-path))))
+      (load (file-name-sans-extension file-with-path) nil nil t))))
 
 
 ;;; ===
