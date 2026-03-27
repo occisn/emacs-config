@@ -1083,11 +1083,16 @@ Shall be used in the 'config' section of each package."
    (setq file-name-handler-alist init--file-name-handler-alist-original)
    (makunbound 'init--file-name-handler-alist-original))
 
- ;; Make Emacs more responsive
- (setq gc-cons-threshold (* 2 1000 1000))
- (setq gc-cons-threshold 100000000) ; 100 MB before garbage collection
+ ;; GCMH: smart GC — high threshold during activity, GC when idle
+ (load (expand-file-name "packages-manual/gcmh/gcmh"
+                         (file-name-directory (or load-file-name buffer-file-name)))
+       nil nil nil t)
+ (setq gcmh-idle-delay 'auto
+       gcmh-auto-idle-delay-factor 10
+       gcmh-high-cons-threshold (* 100 1024 1024)) ; 100 MB
+ (gcmh-mode 1)
  (setq read-process-output-max (* 1024 1024)) ; 1mb
- (my-init--message2 "Garbage collector threshold set at %s." gc-cons-threshold)
+ (my-init--message2 "GCMH mode enabled (high threshold: %s)." gcmh-high-cons-threshold)
  
  ) ; end of init section
 
