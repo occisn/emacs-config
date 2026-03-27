@@ -450,8 +450,7 @@ If filename begins with a digit, prefix with X_."
    (unless (executable-find "clangd")
      (my-init--warning "!! clangd not found in PATH")))
 
- ;; Treat all .h files as C by default
- (add-to-list 'auto-mode-alist '("\\.h\\'" . c-mode))
+ ;; .h → c-mode: moved to init.el (deferred loading section)
 
  ;; === treesitter installation
 

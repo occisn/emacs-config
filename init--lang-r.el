@@ -9,6 +9,8 @@
  t
  "R language"
 
+ (add-hook 'R-mode-hook (lambda () (display-line-numbers-mode 1)))
+
  ;; M-x R to launch REPL
  ;; open a .R file then C-c C-c to execute within REPL
  ;; also work in org-mode source block (Babel)
@@ -21,15 +23,7 @@
              (and *my-init--linux-p* *Rterm-executable* (executable-find *Rterm-executable*)))
    (my-init--warning "!! *Rterm-executable* is nil or does not exist: %s" *Rterm-executable*))
 
- ;; Babel:
- (defun my--org-babel-load-R (&rest _args)
-   (message "Preparing org-mode babel for R...")
-   (add-to-list 'org-babel-load-languages '(R . t))
-   (org-babel-do-load-languages 'org-babel-load-languages org-babel-load-languages)
-   (advice-remove 'org-babel-execute-src-block #'my--org-babel-load-R))
-
- (advice-add 'org-babel-execute-src-block
-             :before #'my--org-babel-load-R)
+ ;; Babel: advice moved to init.el (deferred loading section)
 
  ;; Babl complement:
  (setq org-babel-R-command (format "\"%s\" --slave --no-save" *R-executable* ))

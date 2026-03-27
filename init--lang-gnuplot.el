@@ -9,6 +9,8 @@
  t
  "Gnuplot"
 
+ (add-hook 'gnuplot-mode-hook (lambda () (display-line-numbers-mode 1)))
+
  (if *my-init--windows-p*
      (progn
        (unless (my-init--directory-exists-p *gnuplot-directory*)
@@ -32,15 +34,7 @@
    ;;   (append '(("\\.\\(gp\\|gnuplot\\)$" . gnuplot-mode)) auto-mode-alist))
    )
 
- ;; babel for Gnuplot:
- (defun my--org-babel-load-gnuplot (&rest _args)
-   (message "Preparing org-mode babel for gnuplot...")
-   (add-to-list 'org-babel-load-languages '(gnuplot . t))
-   (org-babel-do-load-languages 'org-babel-load-languages org-babel-load-languages)
-   (advice-remove 'org-babel-execute-src-block #'my--org-babel-load-gnuplot))
-
- (advice-add 'org-babel-execute-src-block
-             :before #'my--org-babel-load-gnuplot)
+ ;; babel: advice moved to init.el (deferred loading section)
 
  ;; ... and Gnuplot package shall be installed
  ;; inspiration: https://emacs.stackexchange.com/questions/59517/org-plot-with-gnuplot-searching-for-program-no-such-file-or-direcotry-aspell 

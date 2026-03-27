@@ -9,6 +9,9 @@
  t
  "LaTeX"
 
+ (dolist (mode '(latex-mode-hook LaTeX-mode-hook plain-tex-mode-hook))
+   (add-hook mode (lambda () (display-line-numbers-mode 1))))
+
  ;; Sumatra: see above
 
  (if *my-init--windows-p*
@@ -85,16 +88,8 @@
    (occur "^% \\*\\*\\*")
    (other-window 1))
 
- ;; babel for LaTeX:
- (defun my--org-babel-load-latex (&rest _args)
-   (message "Preparing org-mode babel for latex...")
-   (add-to-list 'org-babel-load-languages '(latex . t))
-   (org-babel-do-load-languages 'org-babel-load-languages org-babel-load-languages)
-   (advice-remove 'org-babel-execute-src-block #'my--org-babel-load-latex))
+ ;; babel: advice moved to init.el (deferred loading section)
 
- (advice-add 'org-babel-execute-src-block
-             :before #'my--org-babel-load-latex)
- 
  (setq org-latex-pdf-process
        '("pdflatex -interaction nonstopmode -output-directory %o %f"))
  

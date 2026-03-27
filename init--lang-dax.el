@@ -93,6 +93,8 @@
      (modify-syntax-entry ?\n ">" table)
      table))
 
+ (add-hook 'DAX-mode-hook (lambda () (display-line-numbers-mode 1)))
+
  (define-derived-mode DAX-mode fundamental-mode "DAX mode"
    "Major mode for editing Power BI DAX"
    :syntax-table dax--mode-syntax-table

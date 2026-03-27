@@ -12,6 +12,7 @@
  (use-package json-mode
    :mode ("\\.json\\'" . json-mode)
    :ensure t
+   :hook (json-mode . display-line-numbers-mode)
    :config (my-init--message-package-loaded "json-mode"))
 
  ) ; end of init section
@@ -29,6 +30,7 @@
  (use-package yaml-mode
    :mode ("\\.yaml\\'" . yaml-mode)
    :ensure t
+   :hook (yaml-mode . display-line-numbers-mode)
    :config (my-init--message-package-loaded "yaml-mode"))
  
  ) ; end of init section

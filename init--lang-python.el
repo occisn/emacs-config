@@ -21,15 +21,7 @@
  (dolist (mode '(python-mode-hook python-ts-mode-hook))
    (add-hook mode (lambda () (display-line-numbers-mode 1))))
 
- ;; Babel:
- (defun my--org-babel-load-python (&rest _args)
-   (message "Preparing org-mode babel for python...")
-   (add-to-list 'org-babel-load-languages '(python . t))
-   (org-babel-do-load-languages 'org-babel-load-languages org-babel-load-languages)
-   (advice-remove 'org-babel-execute-src-block #'my--org-babel-load-python))
-
- (advice-add 'org-babel-execute-src-block
-             :before #'my--org-babel-load-python)
+ ;; Babel: advice moved to init.el (deferred loading section)
 
  ;; \/\/ or choose 'main' Python
  (if *my-init--windows-p*

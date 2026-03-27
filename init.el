@@ -1043,17 +1043,78 @@ Shall be used in the 'config' section of each package."
  (my-init--load-additional-init-file "init--documents.el")
  (my-init--load-additional-init-file "init--external-tools.el")
  (my-init--load-additional-init-file "init--network.el")
- (my-init--load-additional-init-file "init--lang-sql.el")
- (my-init--load-additional-init-file "init--lang-gnuplot.el")
- (my-init--load-additional-init-file "init--lang-json-yaml.el")
- (my-init--load-additional-init-file "init--lang-latex.el")
- (my-init--load-additional-init-file "init--lang-c.el")
- (my-init--load-additional-init-file "init--lang-cpp.el")
- (my-init--load-additional-init-file "init--lang-python.el")
- (my-init--load-additional-init-file "init--lang-r.el")
+ ;; --- Eager loads (tiny modules, no natural trigger) ---
  (my-init--load-additional-init-file "init--lang-maxima.el")
- (my-init--load-additional-init-file "init--lang-scilab.el")
- (my-init--load-additional-init-file "init--lang-dax.el")
+ (my-init--load-additional-init-file "init--lang-json-yaml.el")
+
+ ;; --- DAX: autoload + file association ---
+ (autoload 'DAX-mode
+   (file-name-sans-extension
+    (concat (file-name-directory (or load-file-name buffer-file-name))
+            "init--lang-dax.el"))
+   "Major mode for editing Power BI DAX." t)
+ (add-to-list 'auto-mode-alist '("\\.dax\\'" . DAX-mode))
+
+ ;; --- Org-babel advice (must register at startup; modules load later) ---
+ ;; Each function loads its babel language on first C-c C-c, then removes itself.
+
+ (defun my--org-babel-load-python (&rest _args)
+   (message "Preparing org-mode babel for python...")
+   (add-to-list 'org-babel-load-languages '(python . t))
+   (org-babel-do-load-languages 'org-babel-load-languages org-babel-load-languages)
+   (advice-remove 'org-babel-execute-src-block #'my--org-babel-load-python))
+ (advice-add 'org-babel-execute-src-block :before #'my--org-babel-load-python)
+
+ (defun my--org-babel-load-R (&rest _args)
+   (message "Preparing org-mode babel for R...")
+   (add-to-list 'org-babel-load-languages '(R . t))
+   (org-babel-do-load-languages 'org-babel-load-languages org-babel-load-languages)
+   (advice-remove 'org-babel-execute-src-block #'my--org-babel-load-R))
+ (advice-add 'org-babel-execute-src-block :before #'my--org-babel-load-R)
+
+ (defun my--org-babel-load-gnuplot (&rest _args)
+   (message "Preparing org-mode babel for gnuplot...")
+   (add-to-list 'org-babel-load-languages '(gnuplot . t))
+   (org-babel-do-load-languages 'org-babel-load-languages org-babel-load-languages)
+   (advice-remove 'org-babel-execute-src-block #'my--org-babel-load-gnuplot))
+ (advice-add 'org-babel-execute-src-block :before #'my--org-babel-load-gnuplot)
+
+ (defun my--org-babel-load-latex (&rest _args)
+   (message "Preparing org-mode babel for latex...")
+   (add-to-list 'org-babel-load-languages '(latex . t))
+   (org-babel-do-load-languages 'org-babel-load-languages org-babel-load-languages)
+   (advice-remove 'org-babel-execute-src-block #'my--org-babel-load-latex))
+ (advice-add 'org-babel-execute-src-block :before #'my--org-babel-load-latex)
+
+ ;; --- Deferred language modules (loaded on first file open) ---
+ ;; Note: my-init--load-additional-init-file uses load-file-name to resolve
+ ;; its directory, but inside with-eval-after-load that variable points to
+ ;; the triggering package, not init.el. So we capture the directory now.
+ (let ((init-dir (file-name-directory (or load-file-name buffer-file-name))))
+
+   ;; .h files → c-mode (must be set before first open)
+   (add-to-list 'auto-mode-alist '("\\.h\\'" . c-mode))
+
+   (with-eval-after-load 'cc-mode
+     (load (file-name-sans-extension (concat init-dir "init--lang-c.el")) nil nil nil t)
+     (load (file-name-sans-extension (concat init-dir "init--lang-cpp.el")) nil nil nil t))
+
+   (with-eval-after-load 'python
+     (load (file-name-sans-extension (concat init-dir "init--lang-python.el")) nil nil nil t))
+
+   (with-eval-after-load 'ess
+     (load (file-name-sans-extension (concat init-dir "init--lang-r.el")) nil nil nil t))
+
+   (with-eval-after-load 'tex-mode
+     (load (file-name-sans-extension (concat init-dir "init--lang-latex.el")) nil nil nil t))
+
+   (with-eval-after-load 'sql
+     (load (file-name-sans-extension (concat init-dir "init--lang-sql.el")) nil nil nil t))
+
+   (with-eval-after-load 'gnuplot-mode
+     (load (file-name-sans-extension (concat init-dir "init--lang-gnuplot.el")) nil nil nil t)))
+
+ ;; Scilab: removed (empty module)
  (my-init--load-additional-init-file "init--magit.el")
  (my-init--load-additional-init-file "init--hydras.el")
  (my-init--load-additional-init-file "init--tests.el")
