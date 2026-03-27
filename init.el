@@ -145,7 +145,7 @@
     (if (my-init--file-exists-p file-with-path)
         (progn
           (my-init--message2 "Loading %s..." filename1)
-          (load (file-name-sans-extension file-with-path) nil nil t))
+          (load (file-name-sans-extension file-with-path) nil nil nil t))
       (progn
         (my-init--warning "Could not load '%s'" filename1)
         (message "Could not load '%s'" filename1)))))
@@ -155,7 +155,7 @@
   (let ((file-with-path (concat (file-name-directory (or load-file-name buffer-file-name)) filename1)))
     (when (my-init--file-exists-p file-with-path)
       (my-init--message2 "Loading %s..." filename1)
-      (load (file-name-sans-extension file-with-path) nil nil t))))
+      (load (file-name-sans-extension file-with-path) nil nil nil t))))
 
 
 ;;; ===
