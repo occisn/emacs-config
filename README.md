@@ -12,7 +12,7 @@ Some comments in the file have probably become outdated over time.
 
 What I like about my configuration:
 
-**(1)** The loading time is quite short: < 3 s on my (standard) laptop, despite the 11K+ lines of code. Loading of many packages is deferred.
+**(1)** The loading time is quite short: < 4 s on my (standard) laptop, despite the 10K+ lines of code. Loading of many packages is deferred.
 
 **(2)** Just after startup, a dedicated buffer provides a summary of the initialization process, the time spent loading each package, and executing each section of init.el. In case of initalization slowdown, this makes analysis easier. See screenshot below.
 
