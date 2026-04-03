@@ -1305,13 +1305,52 @@ Return NIL if no system found.
    (define-key slime-mode-map (kbd "C-c C-t")
                #'my/slime-test-or-force-test-current-system))
 
+ (defun my/slime--extract-defpackage-from-file (filepath)
+   "Read FILEPATH and return the package name from its first `defpackage' form.
+Return nil if no `defpackage' is found."
+   (when (file-exists-p filepath)
+     (with-temp-buffer
+       (insert-file-contents filepath)
+       (goto-char (point-min))
+       (when (re-search-forward
+              "(defpackage\\s-+\\(?:#:\\|:\\)?\\([^ \t\n)]+\\)" nil t)
+         (match-string 1)))))
+
+ (defun my/slime--asd-first-source-file (asd-dir)
+   "Find the first (:file ...) component in the current .asd buffer.
+Return its absolute path (with .lisp extension) relative to ASD-DIR,
+or nil if none found."
+   (save-excursion
+     (goto-char (point-min))
+     (when (re-search-forward "(:\\(?:file\\)\\s-+\"\\([^\"]+\\)\")" nil t)
+       (let ((name (match-string 1)))
+         (expand-file-name (concat name ".lisp") asd-dir)))))
+
  (defun my/slime-call-main ()
-   "Clear REPL, insert (package::main ), and execute immediately."
+   "Clear REPL, insert (package::main), and execute immediately.
+Works in .lisp files (via `slime-current-package') and .asd files
+\(by opening package.lisp or the first source file to find `defpackage',
+stripping \"-tests\" suffix if present)."
    (interactive)
-   (let* ((raw-pkg (slime-current-package))
-          (pkg-name (if raw-pkg 
-                        (replace-regexp-in-string "^:" "" raw-pkg) 
-                      "cl-user"))
+   (let* ((pkg-name
+           (if (and buffer-file-name
+                    (string= "asd" (file-name-extension buffer-file-name)))
+               ;; In .asd files: find defpackage in package.lisp or first source file
+               (let* ((asd-dir (file-name-directory buffer-file-name))
+                      (package-file (expand-file-name "package.lisp" asd-dir))
+                      (name (or (my/slime--extract-defpackage-from-file package-file)
+                                (let ((first-src (my/slime--asd-first-source-file asd-dir)))
+                                  (when first-src
+                                    (my/slime--extract-defpackage-from-file first-src))))))
+                 (unless name
+                   (user-error "No defpackage found in package.lisp or first source file"))
+                 ;; Strip -tests suffix if present
+                 (replace-regexp-in-string "-tests\\'" "" name))
+             ;; In .lisp files: use slime-current-package
+             (let ((raw-pkg (slime-current-package)))
+               (if raw-pkg
+                   (replace-regexp-in-string "^:" "" raw-pkg)
+                 "cl-user"))))
           (call-string (format "(%s::main)" pkg-name)))
      ;; Switch to REPL
      (slime-switch-to-output-buffer)
