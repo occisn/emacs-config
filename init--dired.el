@@ -299,7 +299,7 @@ In C projects, run `make clean'.  In CL projects, load the ASDF system
    (interactive "P")
    (let ((type (my-init--dired-project-type)))
      (cond
-      ((eq type 'c) (my/c-projectile-make-clean))
+      ((eq type 'c) (require 'cc-mode) (my/c-projectile-make-clean))
       ((eq type 'common-lisp) (my/slime-load-or-force-reload-current-system force))
       (t (user-error "Trying to use C or Common Lisp keybinding in a project of unrecognized type")))))
 
@@ -309,7 +309,7 @@ In C projects, run `make'.  In CL projects, call main."
    (interactive "P")
    (let ((type (my-init--dired-project-type)))
      (cond
-      ((eq type 'c) (my/c-projectile-make))
+      ((eq type 'c) (require 'cc-mode) (my/c-projectile-make))
       ((eq type 'common-lisp) (my/slime-call-main))
       (t (user-error "Trying to use C or Common Lisp keybinding in a project of unrecognized type")))))
 
@@ -319,7 +319,7 @@ In C projects, run `make run'.  In CL projects, restart inferior lisp."
    (interactive)
    (let ((type (my-init--dired-project-type)))
      (cond
-      ((eq type 'c) (my/c-projectile-make-run))
+      ((eq type 'c) (require 'cc-mode) (my/c-projectile-make-run))
       ((eq type 'common-lisp)
        (slime-switch-to-output-buffer)
        (slime-restart-inferior-lisp))
@@ -332,7 +332,7 @@ In C projects, run `make test'.  In CL projects, test the ASDF system
    (interactive "P")
    (let ((type (my-init--dired-project-type)))
      (cond
-      ((eq type 'c) (my/c-projectile-make-test))
+      ((eq type 'c) (require 'cc-mode) (my/c-projectile-make-test))
       ((eq type 'common-lisp) (my/slime-test-or-force-test-current-system force))
       (t (user-error "Trying to use C or Common Lisp keybinding in a project of unrecognized type")))))
 
