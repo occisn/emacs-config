@@ -342,6 +342,36 @@ In C projects, run `make test'.  In CL projects, test the ASDF system
    (define-key dired-mode-map (kbd "C-c C-r") #'my/dired-project-run)
    (define-key dired-mode-map (kbd "C-c C-t") #'my/dired-project-test))
 
+ ;; === (14.6) Project-specific dired hydras
+
+ (defhydra hydra-dired-c (:exit t :hint nil)
+   "
+^Specific dired hydra (C project):
+^---------------------------------
+
+C-c C-l to clean (C-c p c c > make clean)
+C-c C-m to make (C-c p c c > make clean)
+C-c C-r to run (C-c p c c > make run) (or C-c p u ?)
+C-c C-t to test (C-c p c c > make test)
+
+[d]: normal dired hydra"
+   ("d" #'hydra-dired/body))
+
+ (defhydra hydra-dired-cl (:exit t :hint nil)
+   "
+^Specific dired hydra (Common Lisp project):
+^-------------------------------------------
+
+    C-c C-l  load
+C-u C-c C-l  force load
+    C-c C-t  test
+C-u C-c C-t  force test
+C-c C-r      restart inferior lisp
+C-c C-m      execute main
+
+[d]: normal dired hydra"
+   ("d" #'hydra-dired/body))
+
  ;; === (15) Hydra
 
  (defhydra hydra-dired (:exit t :hint nil)
