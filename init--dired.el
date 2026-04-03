@@ -275,6 +275,73 @@ Uses ImageMagick.
      "Compatibility shim for missing dired-pop-to-buffer."
      (pop-to-buffer buffer nil noreselect)))
 
+ ;; === (14.5) Project-specific keybindings in Dired
+ ;;
+ ;; C-c C-l / C-c C-m / C-c C-r / C-c C-t dispatch to the right
+ ;; project command based on project type (C/Makefile or Common Lisp/.asd).
+
+ (defun my-init--dired-project-type ()
+   "Detect the project type from the current dired buffer.
+Returns `c' for C/Makefile projects, `common-lisp' for ASDF/Common Lisp
+projects, or nil if unrecognized.
+Detection is based on the projectile project root."
+   (let ((root (ignore-errors (projectile-project-root))))
+     (cond
+      ((null root) nil)
+      ((file-exists-p (expand-file-name "Makefile" root)) 'c)
+      ((directory-files root nil "\\.asd\\'" t) 'common-lisp)
+      (t nil))))
+
+ (defun my/dired-project-clean (&optional force)
+   "Dispatch project clean/load command based on project type.
+In C projects, run `make clean'.  In CL projects, load the ASDF system
+\(with FORCE prefix, force reload)."
+   (interactive "P")
+   (let ((type (my-init--dired-project-type)))
+     (cond
+      ((eq type 'c) (my/c-projectile-make-clean))
+      ((eq type 'common-lisp) (my/slime-load-or-force-reload-current-system force))
+      (t (user-error "Trying to use C or Common Lisp keybinding in a project of unrecognized type")))))
+
+ (defun my/dired-project-build (&optional _arg)
+   "Dispatch project build/main command based on project type.
+In C projects, run `make'.  In CL projects, call main."
+   (interactive "P")
+   (let ((type (my-init--dired-project-type)))
+     (cond
+      ((eq type 'c) (my/c-projectile-make))
+      ((eq type 'common-lisp) (my/slime-call-main))
+      (t (user-error "Trying to use C or Common Lisp keybinding in a project of unrecognized type")))))
+
+ (defun my/dired-project-run ()
+   "Dispatch project run command based on project type.
+In C projects, run `make run'.  In CL projects, restart inferior lisp."
+   (interactive)
+   (let ((type (my-init--dired-project-type)))
+     (cond
+      ((eq type 'c) (my/c-projectile-make-run))
+      ((eq type 'common-lisp)
+       (slime-switch-to-output-buffer)
+       (slime-restart-inferior-lisp))
+      (t (user-error "Trying to use C or Common Lisp keybinding in a project of unrecognized type")))))
+
+ (defun my/dired-project-test (&optional force)
+   "Dispatch project test command based on project type.
+In C projects, run `make test'.  In CL projects, test the ASDF system
+\(with FORCE prefix, force test)."
+   (interactive "P")
+   (let ((type (my-init--dired-project-type)))
+     (cond
+      ((eq type 'c) (my/c-projectile-make-test))
+      ((eq type 'common-lisp) (my/slime-test-or-force-test-current-system force))
+      (t (user-error "Trying to use C or Common Lisp keybinding in a project of unrecognized type")))))
+
+ (with-eval-after-load 'dired
+   (define-key dired-mode-map (kbd "C-c C-l") #'my/dired-project-clean)
+   (define-key dired-mode-map (kbd "C-c C-m") #'my/dired-project-build)
+   (define-key dired-mode-map (kbd "C-c C-r") #'my/dired-project-run)
+   (define-key dired-mode-map (kbd "C-c C-t") #'my/dired-project-test))
+
  ;; === (15) Hydra
 
  (defhydra hydra-dired (:exit t :hint nil)
@@ -309,7 +376,8 @@ Zip: [u]nzip, [z]ip content of current directory;
      [l]ist zip content, my/zip-add-to-archive-present-in-same-directory
 pdf: M-x my/pdf-burst, M-x my/pdf-extract, M-x my/pdf-join
 Files: my/list-big-files-in-current-directory-and-subdirectories, my/list-directories-with-many-files-or-direct-subdirectories (# of files), my/list-directories-of-big-size, my/list-directories-containing-zip-files, my/find-files-with-same-size-in-same-subdirectory
-Attach file to mail: C-c RET C-a (gnus-dired-attach)"
+Attach file to mail: C-c RET C-a (gnus-dired-attach)
+Project: C-c C-l clean/load | C-c C-m make/main | C-c C-r run/restart | C-c C-t test (detects C vs CL)"
    ("a" #'my/dired-clean-build-artifacts)
    ("c" #'my/copy-file-here)
    ("h" #'my/paste-image-from-clipboard-to-here)

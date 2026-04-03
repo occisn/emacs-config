@@ -1203,21 +1203,29 @@ Return NIL if no system found.
 
  ;; Alternative:
  (defun my/asdf-system-shortest-name ()
-   "Return the ASDF system name with the shortest .asd filename."
+   "Return the ASDF system name with the shortest .asd filename.
+Works from file buffers (using buffer-file-name) and dired buffers
+\(using default-directory)."
    (interactive)
-   (when buffer-file-name
-     (let* ((asd-dir
-             (locate-dominating-file
-              buffer-file-name
-              (lambda (dir)
-                (directory-files dir nil "\\.asd\\'")))))
-       (when asd-dir
-         (car
-          (sort
-           (mapcar #'file-name-base
-                   (directory-files asd-dir nil "\\.asd\\'"))
-           (lambda (a b)
-             (< (length a) (length b)))))))))
+   (let* ((start-dir (cond
+                      ((derived-mode-p 'dired-mode)
+                       (dired-current-directory))
+                      (buffer-file-name
+                       (file-name-directory buffer-file-name))
+                      (t nil))))
+     (when start-dir
+       (let* ((asd-dir
+               (locate-dominating-file
+                start-dir
+                (lambda (dir)
+                  (directory-files dir nil "\\.asd\\'")))))
+         (when asd-dir
+           (car
+            (sort
+             (mapcar #'file-name-base
+                     (directory-files asd-dir nil "\\.asd\\'"))
+             (lambda (a b)
+               (< (length a) (length b))))))))))
 
  (defun my/asdf-force-reload-system-corresponding-to-current-buffer ()
    "Force reload current ASDF system.
@@ -1328,29 +1336,54 @@ or nil if none found."
 
  (defun my/slime-call-main ()
    "Clear REPL, insert (package::main), and execute immediately.
-Works in .lisp files (via `slime-current-package') and .asd files
-\(by opening package.lisp or the first source file to find `defpackage',
+Works in .lisp files (via `slime-current-package'), .asd files,
+and dired buffers (by finding the .asd file and extracting `defpackage',
 stripping \"-tests\" suffix if present)."
    (interactive)
    (let* ((pkg-name
-           (if (and buffer-file-name
-                    (string= "asd" (file-name-extension buffer-file-name)))
-               ;; In .asd files: find defpackage in package.lisp or first source file
-               (let* ((asd-dir (file-name-directory buffer-file-name))
-                      (package-file (expand-file-name "package.lisp" asd-dir))
-                      (name (or (my/slime--extract-defpackage-from-file package-file)
-                                (let ((first-src (my/slime--asd-first-source-file asd-dir)))
-                                  (when first-src
-                                    (my/slime--extract-defpackage-from-file first-src))))))
-                 (unless name
-                   (user-error "No defpackage found in package.lisp or first source file"))
-                 ;; Strip -tests suffix if present
-                 (replace-regexp-in-string "-tests\\'" "" name))
-             ;; In .lisp files: use slime-current-package
+           (cond
+            ;; In dired buffers: find .asd, then extract defpackage
+            ((derived-mode-p 'dired-mode)
+             (let* ((asd-dir
+                     (locate-dominating-file
+                      default-directory
+                      (lambda (dir)
+                        (directory-files dir nil "\\.asd\\'"))))
+                    (asd-file (when asd-dir
+                                (car (sort
+                                      (directory-files asd-dir t "\\.asd\\'")
+                                      (lambda (a b)
+                                        (< (length a) (length b)))))))
+                    (asd-file-dir (when asd-file (file-name-directory asd-file)))
+                    (name (when asd-file-dir
+                            (or (my/slime--extract-defpackage-from-file
+                                 (expand-file-name "package.lisp" asd-file-dir))
+                                (with-temp-buffer
+                                  (insert-file-contents asd-file)
+                                  (let ((first-src (my/slime--asd-first-source-file asd-file-dir)))
+                                    (when first-src
+                                      (my/slime--extract-defpackage-from-file first-src))))))))
+               (unless name
+                 (user-error "No defpackage found for project in %s" default-directory))
+               (replace-regexp-in-string "-tests\\'" "" name)))
+            ;; In .asd files: find defpackage in package.lisp or first source file
+            ((and buffer-file-name
+                  (string= "asd" (file-name-extension buffer-file-name)))
+             (let* ((asd-dir (file-name-directory buffer-file-name))
+                    (package-file (expand-file-name "package.lisp" asd-dir))
+                    (name (or (my/slime--extract-defpackage-from-file package-file)
+                              (let ((first-src (my/slime--asd-first-source-file asd-dir)))
+                                (when first-src
+                                  (my/slime--extract-defpackage-from-file first-src))))))
+               (unless name
+                 (user-error "No defpackage found in package.lisp or first source file"))
+               (replace-regexp-in-string "-tests\\'" "" name)))
+            ;; In .lisp files: use slime-current-package
+            (t
              (let ((raw-pkg (slime-current-package)))
                (if raw-pkg
                    (replace-regexp-in-string "^:" "" raw-pkg)
-                 "cl-user"))))
+                 "cl-user")))))
           (call-string (format "(%s::main)" pkg-name)))
      ;; Switch to REPL
      (slime-switch-to-output-buffer)
