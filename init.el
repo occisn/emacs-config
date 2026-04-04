@@ -1043,6 +1043,7 @@ Shall be used in the 'config' section of each package."
  (my-init--load-additional-init-file "init--documents.el")
  (my-init--load-additional-init-file "init--external-tools.el")
  (my-init--load-additional-init-file "init--network.el")
+ (my-init--load-additional-init-file "init--lang-html-css.el")
  ;; --- Eager loads (tiny modules, no natural trigger) ---
  (my-init--load-additional-init-file "init--lang-maxima.el")
  (my-init--load-additional-init-file "init--lang-json-yaml.el")
@@ -1095,9 +1096,21 @@ Shall be used in the 'config' section of each package."
    ;; .h files → c-mode (must be set before first open)
    (add-to-list 'auto-mode-alist '("\\.h\\'" . c-mode))
 
-   (with-eval-after-load 'cc-mode
+   (defun my-init--load-lang-c ()
      (load (file-name-sans-extension (concat init-dir "init--lang-c.el")) nil nil nil t)
-     (load (file-name-sans-extension (concat init-dir "init--lang-cpp.el")) nil nil nil t))
+     (remove-hook 'c-mode-hook #'my-init--load-lang-c)
+     (remove-hook 'c-ts-mode-hook #'my-init--load-lang-c)
+     (run-hooks (derived-mode-hook-name major-mode)))
+   (add-hook 'c-mode-hook #'my-init--load-lang-c)
+   (add-hook 'c-ts-mode-hook #'my-init--load-lang-c)
+
+   (defun my-init--load-lang-cpp ()
+     (load (file-name-sans-extension (concat init-dir "init--lang-cpp.el")) nil nil nil t)
+     (remove-hook 'c++-mode-hook #'my-init--load-lang-cpp)
+     (remove-hook 'c++-ts-mode-hook #'my-init--load-lang-cpp)
+     (run-hooks (derived-mode-hook-name major-mode)))
+   (add-hook 'c++-mode-hook #'my-init--load-lang-cpp)
+   (add-hook 'c++-ts-mode-hook #'my-init--load-lang-cpp)
 
    (with-eval-after-load 'python
      (load (file-name-sans-extension (concat init-dir "init--lang-python.el")) nil nil nil t))
