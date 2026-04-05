@@ -142,16 +142,45 @@
    (unless (equal major-mode 'dired-mode)
      (error "This is not a dired buffer"))
    (let ((dir (expand-file-name default-directory)))
-     (if *my-init--windows-p*
-         (progn
-           (message "Opening this dired directory in Windows Explorer")
-           (w32explore dir))
+     (cond
+      (*my-init--windows-p*
+       (message "Opening this dired directory in Windows Explorer")
+       (w32explore dir))
+      (*my-init--wsl-p*
+       (message "Opening this dired directory in Windows Explorer (WSL)")
+       (call-process "explorer.exe" nil 0 nil
+                     (string-trim (shell-command-to-string
+                                   (format "wslpath -w %s" (shell-quote-argument dir))))))
+      (t
        (message "Opening this dired directory in file manager")
-       (call-process "xdg-open" nil 0 nil dir))))
+       (call-process "xdg-open" nil 0 nil dir)))))
 
  (defalias 'my/open-current-dired-directory-in-windows-explorer
    #'my/open-current-dired-directory-in-file-manager)
  ;; available in dired hydra
+
+ (when *my-init--wsl-p*
+   (defun my/dired-wsl-open-file-externally ()
+     "Open the file at point with its associated Windows application via explorer.exe."
+     (interactive)
+     (let* ((file (dired-get-file-for-visit))
+            (win-path (string-trim (shell-command-to-string
+                                    (format "wslpath -w %s" (shell-quote-argument file))))))
+       (message "Opening %s with Windows application" (file-name-nondirectory file))
+       (call-process "explorer.exe" nil 0 nil win-path)))
+
+   (defun my/dired-wsl-open-in-explorer ()
+     "Open the directory of file at point in Windows Explorer, selecting the file."
+     (interactive)
+     (let* ((file (dired-get-file-for-visit))
+            (win-path (string-trim (shell-command-to-string
+                                    (format "wslpath -w %s" (shell-quote-argument file))))))
+       (message "Opening in Explorer: %s" win-path)
+       (call-process "explorer.exe" nil 0 nil (concat "/select," win-path))))
+
+   (with-eval-after-load 'dired
+     (define-key dired-mode-map (kbd "<M-return>") #'my/dired-wsl-open-file-externally)
+     (define-key dired-mode-map (kbd "<C-return>") #'my/dired-wsl-open-in-explorer)))
 
  ;; === (9) Copy file here
 
