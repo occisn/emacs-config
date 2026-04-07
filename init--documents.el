@@ -443,7 +443,10 @@ From here, you can also copy images from the book with the C keyboard shortcut
 
  (add-hook 'markdown-mode-hook
            (lambda ()
-             (add-hook 'before-save-hook #'my/markdown-align-all-tables nil t)))
+             (add-hook 'before-save-hook #'my/markdown-align-all-tables nil t)
+             (when (my-init--dark-background-p)
+               (set-face-attribute 'markdown-pre-face nil :foreground "#FF69B4" :weight 'bold)
+               (set-face-attribute 'markdown-inline-code-face nil :foreground "#FF69B4" :weight 'bold))))
 
  (defun my/md-convert-region-to-anchor-and-kill ()
    "Convert current '## a b c' headline into #a-b-c anchor ready to be pasted."
