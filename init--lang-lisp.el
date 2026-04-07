@@ -259,7 +259,7 @@
  ;; It uses pluggable back-ends and front-ends to retrieve and display completion candidates.
 
  (use-package company                   ; company-mode
-   :hook ((emacs-lisp-mode lisp-mode) . company-mode)
+   :hook ((emacs-lisp-mode lisp-mode slime-repl-mode) . company-mode)
    :config
    ;; (add-hook 'after-init-hook 'global-company-mode)
    ;; (add-hook 'after-init-hook 'global-company-mode)
@@ -419,13 +419,6 @@ Otherwise, split vertically and start (or show) ielm in the other window."
  ;; === (CL) Slime, including arguments ala eldoc
  ;; ===      C-c C-x pour time monitoring
 
- (defun his-tracing-function (orig-fun &rest args)
-   (message "fn called with args %S" args)
-   (let ((res (apply orig-fun args)))
-     (message "fn returned %S" res)
-     res))
-
- (advice-add 'slime-retrieve-arglist :around #'his-tracing-function)
 
  (use-package slime
    ;; :defer nil
