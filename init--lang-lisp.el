@@ -1328,7 +1328,7 @@ or nil if none found."
          (expand-file-name (concat name ".lisp") asd-dir)))))
 
  (defun my/slime-call-main ()
-   "Clear REPL, insert (package::main), and execute immediately.
+   "Clear REPL, insert (in-package xxx) (main), and execute immediately.
 Works in .lisp files (via `slime-current-package'), .asd files,
 and dired buffers (by finding the .asd file and extracting `defpackage',
 stripping \"-tests\" suffix if present)."
@@ -1377,7 +1377,7 @@ stripping \"-tests\" suffix if present)."
                (if raw-pkg
                    (replace-regexp-in-string "^:" "" raw-pkg)
                  "cl-user")))))
-          (call-string (format "(%s::main)" pkg-name)))
+          (call-string (format "(in-package %s) (main)" pkg-name)))
      ;; Switch to REPL
      (slime-switch-to-output-buffer)
      (goto-char (point-max))
@@ -1743,7 +1743,7 @@ EXECUTE:
    REPL: C-c C-z to jump in REPL || C-c C-j to execute in REPL || M-n || M-p || *,** || /,// || (foo M-
    ASDF: ,load-system etc from REPL (but *slime-compilation* does not update) | C-c C-c to recompile function
    SLIME: C-c C-l load | C-u C-c C-l force load | C-c C-t test | C-u C-c C-t force test | C-c C-n show compilation notes
-          C-c C-r to restart inferior lisp [equivalent of relevant , in REPL] | C-c C-m to execute main
+          C-c C-r to restart inferior lisp [equivalent of relevant , in REPL] | C-c C-m to execute (in-package) (main)
           M-x slime-compile-system (compiles an ASDF system)
           C-c C-c to recompile function | avoid C-c C-k | ,q to stop slime
    Test in REPL: C-c SPC || delete fasl (from dired): M-x my/delete-fasl-files
