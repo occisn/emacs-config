@@ -500,22 +500,25 @@ codepage issues with accented filenames."
  ;; Fix: nov.el's CSS query for the unique identifier ignores
  ;; namespace prefixes (e.g. dc:identifier), causing "Unique
  ;; identifier not found by its name" errors on some epub files.
+ ;; Search the full DOM by id, and generate a fallback identifier
+ ;; if all lookups fail so the epub always opens.
  (defun my/nov-content-unique-identifier-fix (orig-fun content)
    "Advice around `nov-content-unique-identifier'.
-Fall back to searching all metadata children by id attribute when
-nov's CSS selector fails to match namespace-prefixed elements."
+Fall back to searching the full DOM by id attribute when nov's
+CSS selector fails to match namespace-prefixed elements.
+As a last resort, generate an identifier from the content hash
+so the epub still opens (only save-place is affected)."
    (condition-case _
        (funcall orig-fun content)
      (error
-      (let* ((name (nov-content-unique-identifier-name content))
-             (match (seq-find
-                     (lambda (node)
-                       (equal (dom-attr node 'id) name))
-                     (dom-children
-                      (esxml-query "package>metadata" content)))))
+      (let* ((name (condition-case nil
+                       (nov-content-unique-identifier-name content)
+                     (error "unknown")))
+             (match (car (dom-by-id content
+                                    (concat "\\`" (regexp-quote name) "\\'")))))
         (if (and match (car (dom-children match)))
             (intern (car (dom-children match)))
-          (error "Unique identifier not found by its name: %s" name))))))
+          (intern (format "nov-%s" (md5 (format "%s" content)))))))))
 
  ;; Fallback when Emacs lacks zlib: at least fix accented filenames
  ;; on Windows by copying to a temp file with an ASCII-safe name.
