@@ -374,12 +374,174 @@ For instance: abc/def --> abc\\def. On Linux, returns PATH unchanged."
  "epub"
 
  (use-package nov
-   ;; :mode ("\\.epub\\'" . nov-mode)
-   :hook (nov-mode . nov-mode)
    :init (add-to-list 'auto-mode-alist '("\\.epub\\'" . nov-mode))
    :config (my-init--message-package-loaded "nov (for epub)"))
  ;; https://tech.toryanderson.com/2022/11/23/viewing-epub-in-emacs/
  ;; https://lucidmanager.org/productivity/reading-ebooks-with-emacs/
+
+ ;; Pure-Elisp epub (zip) extraction — replaces the external unzip
+ ;; process that nov.el spawns.  Two benefits:
+ ;; 1. Speed: eliminates process-creation overhead (significant on
+ ;;    Windows) and avoids any WSL ↔ Windows filesystem penalty.
+ ;; 2. Accents: handles non-ASCII filenames natively, no codepage
+ ;;    issues.
+ ;; Requires Emacs compiled with zlib support (standard since Emacs 25).
+ ;; Falls back to the accent-only workaround if zlib is unavailable.
+
+ (if (fboundp 'zlib-decompress-region)
+     (progn
+       (defun my/nov--read-u16 ()
+         "Read little-endian unsigned 16-bit integer at point; advance by 2."
+         (let ((lo (char-after (point)))
+               (hi (char-after (1+ (point)))))
+           (forward-char 2)
+           (+ lo (ash hi 8))))
+
+       (defun my/nov--read-u32 ()
+         "Read little-endian unsigned 32-bit integer at point; advance by 4."
+         (let ((b0 (char-after (point)))
+               (b1 (char-after (+ (point) 1)))
+               (b2 (char-after (+ (point) 2)))
+               (b3 (char-after (+ (point) 3))))
+           (forward-char 4)
+           (+ b0 (ash b1 8) (ash b2 16) (ash b3 24))))
+
+       (defun my/nov--u32-to-bytes (n)
+         "Encode N as 4-byte little-endian unibyte string."
+         (unibyte-string (logand n #xff)
+                         (logand (ash n -8) #xff)
+                         (logand (ash n -16) #xff)
+                         (logand (ash n -24) #xff)))
+
+       (defun my/nov-unzip-epub-elisp (directory filename)
+         "Extract epub/zip FILENAME into DIRECTORY using pure Elisp.
+No external process is spawned — decompression uses Emacs's
+built-in zlib.  This avoids process-creation overhead and Windows
+codepage issues with accented filenames."
+         (message "[nov elisp extractor] extracting %s ..." filename)
+         (redisplay)
+         (let ((time-start (current-time))
+               (coding-system-for-write 'no-conversion)
+               (inhibit-message t))
+           (with-temp-buffer
+             (set-buffer-multibyte nil)
+             (insert-file-contents-literally filename)
+             ;; Locate end-of-central-directory record (PK\005\006)
+             (goto-char (max (point-min) (- (point-max) 65557)))
+             (unless (search-forward "PK\005\006" nil t)
+               (error "Not a valid ZIP/EPUB file: %s" filename))
+             (let* ((eocd (- (point) 4))
+                    (_ (goto-char (+ eocd 10)))
+                    (n-entries (my/nov--read-u16))
+                    (_ (goto-char (+ eocd 16)))
+                    (cd-offset (my/nov--read-u32)))
+               (goto-char (+ (point-min) cd-offset))
+               (dotimes (_ n-entries)
+                 (unless (looking-at-p "PK\001\002")
+                   (error "Corrupt central directory in %s" filename))
+                 (let* ((e (point))
+                        (_ (goto-char (+ e 10)))
+                        (method (my/nov--read-u16))
+                        (_ (goto-char (+ e 16)))
+                        (crc32-raw (buffer-substring (point) (+ (point) 4)))
+                        (_ (goto-char (+ e 20)))
+                        (comp-size (my/nov--read-u32))
+                        (uncomp-size (my/nov--read-u32))
+                        (_ (goto-char (+ e 28)))
+                        (name-len (my/nov--read-u16))
+                        (extra-len (my/nov--read-u16))
+                        (comment-len (my/nov--read-u16))
+                        (_ (goto-char (+ e 42)))
+                        (local-off (my/nov--read-u32))
+                        (_ (goto-char (+ e 46)))
+                        (name (decode-coding-string
+                               (buffer-substring (point) (+ (point) name-len))
+                               'utf-8))
+                        (out (expand-file-name name directory)))
+                   (goto-char (+ e 46 name-len extra-len comment-len))
+                   (if (string-suffix-p "/" name)
+                       (make-directory out t)
+                     (make-directory (file-name-directory out) t)
+                     (save-excursion
+                       (goto-char (+ (point-min) local-off 26))
+                       (let* ((ln (my/nov--read-u16))
+                              (le (my/nov--read-u16))
+                              (beg (+ (point-min) local-off 30 ln le))
+                              (end (+ beg comp-size))
+                              (raw (buffer-substring beg end)))
+                         (cond
+                          ;; STORE (method 0) — raw copy
+                          ((= method 0)
+                           (with-temp-buffer
+                             (set-buffer-multibyte nil)
+                             (insert raw)
+                             (write-region (point-min) (point-max) out nil 'silent)))
+                          ;; DEFLATE (method 8) — wrap in gzip envelope, decompress
+                          ((= method 8)
+                           (with-temp-buffer
+                             (set-buffer-multibyte nil)
+                             ;; Minimal gzip header (RFC 1952)
+                             (insert "\037\213\010\0\0\0\0\0\0\003")
+                             (insert raw)
+                             ;; Gzip trailer: CRC32 + original size (both LE)
+                             (insert crc32-raw)
+                             (insert (my/nov--u32-to-bytes uncomp-size))
+                             (unless (zlib-decompress-region (point-min) (point-max))
+                               (error "Decompression failed for %s in %s" name filename))
+                             (write-region (point-min) (point-max) out nil 'silent)))
+                          (t
+                           (error "Unsupported ZIP method %d for %s" method name))))))))))
+           (message "[nov elisp extractor] extraction done in %.2fs"
+                    (float-time (time-subtract (current-time) time-start)))
+           (redisplay)
+           ;; Post-processing (same as original nov-unzip-epub)
+           (let (child)
+             (while (setq child (nov-contains-nested-directory-p directory))
+               (nov-unnest-directory directory child)))
+           (nov-fix-permissions directory)
+           (message "[nov elisp extractor] all done in %.2fs"
+                    (float-time (time-subtract (current-time) time-start)))
+           (redisplay))
+         0)
+
+       (advice-add 'nov-unzip-epub :override #'my/nov-unzip-epub-elisp))
+
+     ;; Fix: nov.el's CSS query for the unique identifier ignores
+     ;; namespace prefixes (e.g. dc:identifier), causing "Unique
+     ;; identifier not found by its name" errors on some epub files.
+     (defun my/nov-content-unique-identifier-fix (orig-fun content)
+       "Advice around `nov-content-unique-identifier'.
+Fall back to searching all metadata children by id attribute when
+nov's CSS selector fails to match namespace-prefixed elements."
+       (condition-case _
+           (funcall orig-fun content)
+         (error
+          (let* ((name (nov-content-unique-identifier-name content))
+                 (match (seq-find
+                         (lambda (node)
+                           (equal (dom-attr node 'id) name))
+                         (dom-children
+                          (esxml-query "package>metadata" content)))))
+            (if (and match (car (dom-children match)))
+                (intern (car (dom-children match)))
+              (error "Unique identifier not found by its name: %s" name))))))
+     (advice-add 'nov-content-unique-identifier
+                 :around #'my/nov-content-unique-identifier-fix)
+
+   ;; Fallback when Emacs lacks zlib: at least fix accented filenames
+   ;; on Windows by copying to a temp file with an ASCII-safe name.
+   (when *my-init--windows-p*
+     (defun my/nov--copy-to-safe-temp-name (orig-fun path)
+       "Advice around `nov--initialize-temp-dir' for accented filenames.
+Copy the epub to a temp file with an ASCII name so that the
+external unzip process does not choke on Windows codepage issues."
+       (if (string-match "[^\x00-\x7f]" path)
+           (let* ((ext (file-name-extension path))
+                  (tmp (make-temp-file "nov-safe-" nil (concat "." ext))))
+             (copy-file path tmp t)
+             (funcall orig-fun tmp))
+         (funcall orig-fun path)))
+     (advice-add 'nov--initialize-temp-dir :around #'my/nov--copy-to-safe-temp-name)))
 
 
  (defhydra hydra-nov (:exit t :hint nil)
