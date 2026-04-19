@@ -794,6 +794,55 @@ d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
 When non-nil, `my/open-vps-1' (see `init--network.el') uses it as the
 TRAMP host and as the SSHFS-Win Manager connection name.")
 
+ (defvar *my-init--vps-sshfs-path* nil
+   "Drive letter mounted by SSHFS-Win Manager onto the VPS home directory
+(Windows only), e.g. \"R:/\", or nil.
+Set in personal--directories-and-files-and-constants.el.")
+
+ ;; Remote / FTP-1 (shared-hosting SFTP)
+ (defvar *my-init--ftp-1-ssh-alias* nil
+   "SSH host alias (from `~/.ssh/config') for FTP-1 shared hosting, or nil.
+When non-nil, `my/open-ftp-1' (see `init--network.el') uses it as the
+TRAMP host and as the SSHFS-Win Manager connection name.")
+
+ (defvar *my-init--ftp-1-sshfs-path* nil
+   "Drive letter mounted by SSHFS-Win Manager onto FTP-1 shared hosting
+(Windows only), e.g. \"Q:/\", or nil.
+Set in personal--directories-and-files-and-constants.el.")
+
+ (defvar *my-init--ftp-1-wsl-mount* nil
+   "Local path where FTP-1 is mounted via sshfs (WSL/Linux only), or nil.
+When set, `my/open-ftp-1' opens this path instead of going through
+TRAMP `/sftp:', avoiding the tramp-gvfs/GVFS/D-Bus dependency chain
+(often broken on headless WSL).  Mirrors the Windows SSHFS-Win pattern.
+Mount manually in a WSL shell (after `sudo apt install sshfs'):
+  sshfs <alias>: <mount-point>
+Set in personal--directories-and-files-and-constants.el, e.g.
+  (setq *my-init--ftp-1-wsl-mount* \"~/mnt/ovh\")")
+
+ ;; Remote / SSHFS-Win (shared Windows plumbing)
+ (defvar *my-init--sshfs-win-manager-exe* nil
+   "Full path to SSHFS-Win Manager executable (Windows only), or nil.
+Set in personal--directories-and-files-and-constants.el.  winget
+installs at %LOCALAPPDATA%/Programs/sshfs-win-manager/SSHFS-Win Manager.exe.")
+
+ ;; Remote / Performance flags
+ (defvar *my-init--deactivate-projectile-on-remote-p* t
+   "If non-nil, skip projectile on all remote paths.
+Covers WSL TRAMP paths (VPS `sshx', FTP-1 `sftp') and Windows SSHFS-Win
+mounts (VPS drive, FTP-1 drive).  Projectile's marker-file probes walk
+up to /, issuing ~300 `file-exists-p' calls per project lookup; on
+remote paths each becomes a round-trip and dominates cold-path Dired
+time.  Default t (deactivation ON) — set to nil in personal file to
+let projectile run on remote.")
+
+ (defvar *my-init--deactivate-dired-icons-on-remote-p* t
+   "If non-nil, disable `all-the-icons-dired-mode' on all remote paths.
+Covers WSL TRAMP paths and Windows SSHFS-Win mounts (both VPS and FTP-1).
+Per-entry `file-symlink-p' + icon text-property allocation profiles at
+~53% of cold-path Dired time on SSHFS mounts.  Default t (deactivation
+ON) — set to nil in personal file to let icons render on remote.")
+
  ;; Personal identity
  (defvar *my-init--welcome-user-name* nil
    "First name to insert in the `*init-stats*' welcome line.
