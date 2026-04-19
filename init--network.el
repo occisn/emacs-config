@@ -44,7 +44,7 @@
  ;; both Windows OpenSSH and modern plink) mangles line endings in the
  ;; shell-setup echo, gluing two prompts onto one line. For Windows, use
  ;; SSHFS-Win instead — see `my/open-vps-1' below. For one-off shell
- ;; access, use `plink hetzner' from cmd/PowerShell.
+ ;; access, use `plink <alias>' from cmd/PowerShell (alias from ~/.ssh/config).
  (setq tramp-default-method "sshx")
 
  (setq tramp-verbose 1)
@@ -109,9 +109,9 @@
  ;; and reads the OpenSSH key directly, side-stepping that entirely.
  (defvar *my-init--vps-sshfs-path*
    "R:/"
-   "Drive letter mounted by SSHFS-Win Manager onto the VPS home of `noccis'.
-Configured in the Manager GUI as connection `hetzner' using
-`C:/Users/noccis/.ssh/id_ed25519' for key auth.")
+   "Drive letter mounted by SSHFS-Win Manager onto the VPS home directory.
+Configured in the Manager GUI as connection `*my-init--vps-ssh-alias*'
+using an OpenSSH private key for auth.")
 
  ;; Auto-launch SSHFS-Win Manager when `my/open-vps-1' is called and the
  ;; VPS drive isn't accessible. winget installs the Manager at
@@ -138,7 +138,8 @@ if the Manager executable is missing."
             (my-init--file-exists-p *my-init--sshfs-win-manager-exe*))
        (progn
          (start-process "sshfs-win-manager" nil *my-init--sshfs-win-manager-exe*)
-         (message "VPS not mounted — SSHFS-Win Manager launched. Connect `hetzner', then re-run `my/open-vps-1'."))
+         (message "VPS not mounted — SSHFS-Win Manager launched. Connect `%s', then re-run `my/open-vps-1'."
+                  (or *my-init--vps-ssh-alias* "the VPS")))
      (user-error "VPS not mounted and SSHFS-Win Manager not found at %s"
                  *my-init--sshfs-win-manager-exe*)))
 
@@ -146,16 +147,19 @@ if the Manager executable is missing."
    "Open the VPS home directory in Dired.
 On Windows: via SSHFS-Win mount (`*my-init--vps-sshfs-path*'). If the
 mount is not currently available, launch SSHFS-Win Manager so the user
-can connect `hetzner', then re-run this command once connected.
-On WSL/Linux: via TRAMP `sshx' to the `hetzner' alias.
+can connect the VPS (alias `*my-init--vps-ssh-alias*'), then re-run
+this command once connected.
+On WSL/Linux: via TRAMP `sshx' to `*my-init--vps-ssh-alias*'.
 
 `gc-cons-threshold' is bumped to 100 MB for the duration: cold-path
 Dired over SSHFS was measured at ~36% GC (≈5s out of 14s)."
    (interactive)
+   (unless *my-init--vps-ssh-alias*
+     (user-error "`*my-init--vps-ssh-alias*' is not set (check personal--directories-and-files-and-constants.el)"))
    (let ((gc-cons-threshold (* 100 1024 1024)))
      (cond
       ((not *my-init--windows-p*)
-       (dired "/sshx:hetzner:"))
+       (dired (format "/sshx:%s:" *my-init--vps-ssh-alias*)))
       (t
        ;; Trust the real operation, not a preflight check: SSHFS-Win
        ;; can leave a stub drive letter after disconnect so

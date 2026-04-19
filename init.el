@@ -788,6 +788,17 @@ d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
  (defvar *c-tree-sitter-dll* nil "Path to C tree-sitter DLL.")
  (defvar *cpp-tree-sitter-dll* nil "Path to C++ tree-sitter DLL.")
 
+ ;; Remote / VPS
+ (defvar *my-init--vps-ssh-alias* nil
+   "SSH host alias (from `~/.ssh/config') for the primary VPS, or nil.
+When non-nil, `my/open-vps-1' (see `init--network.el') uses it as the
+TRAMP host and as the SSHFS-Win Manager connection name.")
+
+ ;; Personal identity
+ (defvar *my-init--welcome-user-name* nil
+   "First name to insert in the `*init-stats*' welcome line.
+If nil, a generic greeting is used instead.")
+
  (my-init--load-additional-init-file "personal--directories-and-files-and-constants.el")
 
  ;; Auto-detect Linux tools in PATH if not already set by personal file
@@ -859,7 +870,10 @@ v1 as of 2025-09-07; available in occisn/elisp-utils GitHub repository"
 
     (when *my-init--load-sections-p*
       (with-current-buffer (get-buffer-create "*init-stats*")
-        (insert "Welcome back in Emacs, Nicolas! :)\n")
+        (insert (format "Welcome back in Emacs%s! :)\n"
+                        (if *my-init--welcome-user-name*
+                            (concat ", " *my-init--welcome-user-name*)
+                          "")))
 
         (newline)
         (insert "INITIALIZATION STATISTICS\n")
