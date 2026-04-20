@@ -454,7 +454,61 @@ this supports full-screen TUI programs such as `claude', `htop',
             (buf-name (generate-new-buffer-name (format "*bash: %s*" (abbreviate-file-name default-dir)))))
        (let ((default-directory default-dir))
          (shell buf-name)
-         (message "bash started in %s" default-dir)))))
+         (message "bash started in %s" default-dir))))
+
+   (defun my/open-bash-in-emacs--eat ()
+     "Open a bash shell inside an Emacs buffer using `eat' (pure-elisp
+terminal emulator), starting in the current buffer's directory.
+
+Unlike `my/open-bash-in-emacs' (comint-based, dumb terminal), this
+supports full-screen TUI programs such as `claude', `htop', `vim',
+`less', `top', etc.
+
+We launch bash via `/usr/bin/env -u TERMINFO TERM=xterm-256color'
+and with `--login -i' so that:
+ - eat's `TERM=eat-truecolor' (which most `.bashrc' color-prompt
+   case-branches do not recognize) is replaced with the widely-handled
+   `xterm-256color', giving the same colored PS1 as a native WSL
+   terminal;
+ - eat's `TERMINFO' pointing at an Emacs-side terminfo dir is
+   unset (harmless for xterm-256color, which ncurses finds system-wide);
+ - the shell is both login and interactive, so `.bash_profile' and
+   `.bashrc' both run (matching how `wsl.exe' starts bash)."
+     (interactive)
+     (unless (require 'eat nil t)
+       (user-error "Package `eat' is not installed"))
+     (let* ((default-dir (if (or (buffer-file-name) (derived-mode-p 'dired-mode))
+                             (file-name-directory (or (buffer-file-name) default-directory))
+                           (expand-file-name "~")))
+            (buffer (generate-new-buffer "*bash (eat)*")))
+       (with-current-buffer buffer
+         (setq default-directory default-dir)
+         (eat-mode)
+         (eat-exec buffer "bash" "/usr/bin/env" nil
+                   '("-u" "TERMINFO" "TERM=xterm-256color"
+                     "bash" "--login" "-i")))
+       (pop-to-buffer buffer)
+       (message "bash (eat) started in %s" default-dir))))
+
+ ;; === WSL shell functions (from inside WSL)
+
+ (when *my-init--wsl-p*
+   (defun my/open-wsl-shell-external-from-wsl ()
+     "Open an external WSL terminal window in the directory of the current buffer.
+Uses `cmd.exe /C start wsl.exe --cd DIR' so Windows spawns a new console
+and WSL starts inside DIR (accepts Linux or Windows paths)."
+     (interactive)
+     (let* ((dir (if (or (buffer-file-name) (derived-mode-p 'dired-mode))
+                     (file-name-directory (or (buffer-file-name) default-directory))
+                   (expand-file-name "~")))
+            (cmd-exe (or (executable-find "cmd.exe")
+                         "/mnt/c/Windows/System32/cmd.exe")))
+       (unless (file-executable-p cmd-exe)
+         (user-error "Could not find cmd.exe to launch external WSL terminal"))
+       (let ((proc (start-process "wsl-term" nil
+                                  cmd-exe "/C" "start" "wsl.exe" "--cd" dir)))
+         (set-process-query-on-exit-flag proc nil)
+         (message "External WSL terminal opened in %s" dir)))))
 
  ;; === open WSL bashrc
  ;; TIP: when you edited .bashrc from Windows, it saved the file with
@@ -476,9 +530,10 @@ this supports full-screen TUI programs such as `claude', `htop',
 
  ;; === hydra
 
- (if *my-init--windows-p*
-     (defhydra hydra-shells (:exit t :hint nil)
-       "
+ (cond
+  (*my-init--windows-p*
+   (defhydra hydra-shells (:exit t :hint nil)
+     "
 ^Shells hydra:
 ^-------------
 
@@ -489,31 +544,48 @@ msys2 :      [m] external or [y] in buffer
 git bash :   [g] external or [i] in buffer (Windows native equivalents)
 wsl shell :  [w] external, [s] in buffer (comint) or [a] in buffer (eat, supports TUIs)
 "
-       ("a" #'my/open-wsl-shell-in-emacs--eat)
-       ("c" #'my/open-cmd-shell-external)
-       ("d" #'my/open-cmd-shell-in-emacs)
-       ("e" #'eshell)
-       ("i" #'my/open-git-bash-in-emacs)
-       ("g" #'my/open-git-bash-external)
-       ("o" #'my/open-powershell-in-emacs)
-       ("m" #'my/open-msys2-external)
-       ("p" #'my/open-powershell-external)
-       ("s" #'my/open-wsl-shell-in-emacs)
-       ("w" #'my/open-wsl-shell-external)
-       ("y" #'my/open-msys2-in-emacs))
+     ("a" #'my/open-wsl-shell-in-emacs--eat)
+     ("c" #'my/open-cmd-shell-external)
+     ("d" #'my/open-cmd-shell-in-emacs)
+     ("e" #'eshell)
+     ("i" #'my/open-git-bash-in-emacs)
+     ("g" #'my/open-git-bash-external)
+     ("o" #'my/open-powershell-in-emacs)
+     ("m" #'my/open-msys2-external)
+     ("p" #'my/open-powershell-external)
+     ("s" #'my/open-wsl-shell-in-emacs)
+     ("w" #'my/open-wsl-shell-external)
+     ("y" #'my/open-msys2-in-emacs)))
+  (*my-init--wsl-p*
+   (defhydra hydra-shells (:exit t :hint nil)
+     "
+^Shells hydra:
+^-------------
+
+eshell :       [e] in buffer
+bash :         [b] in buffer (comint) or [a] in buffer (eat, supports TUIs)
+WSL terminal : [t] external (via Windows)
+bashrc :       [r] open WSL .bashrc
+"
+     ("a" #'my/open-bash-in-emacs--eat)
+     ("b" #'my/open-bash-in-emacs)
+     ("e" #'eshell)
+     ("r" #'my/open-wsl-bashrc)
+     ("t" #'my/open-wsl-shell-external-from-wsl)))
+  (t
    (defhydra hydra-shells (:exit t :hint nil)
      "
 ^Shells hydra:
 ^-------------
 
 eshell :  [e] in buffer
-bash :    [b] in buffer or [t] external terminal
-bashrc :  [r] open WSL .bashrc
+bash :    [b] in buffer (comint) or [a] in buffer (eat, supports TUIs)
+terminal: [t] external
 "
+     ("a" #'my/open-bash-in-emacs--eat)
      ("b" #'my/open-bash-in-emacs)
      ("e" #'eshell)
-     ("r" #'my/open-wsl-bashrc)
-     ("t" #'my/open-terminal-external)))
+     ("t" #'my/open-terminal-external))))
 
  ) ; end of init section
 
