@@ -254,6 +254,53 @@ and starting in the current buffer's directory (if any)."
          (pop-to-buffer (current-buffer))
          (message "Git Bash started in %s (UTF-8 mode)" default-dir))))) ) ; end of when *my-init--windows-p* for git bash
 
+ ;; === eat (pure-elisp terminal emulator — renders TUIs like claude, htop, vim)
+
+ (use-package eat
+   :commands (eat eat-mode eat-exec)
+   :config (my-init--message-package-loaded "eat"))
+
+ ;; On native Windows Emacs, `eat-exec' fails with "Invalid argument":
+ ;; eat prepends `/usr/bin/env sh -c "stty ..."' to every spawned command
+ ;; (to set pty dimensions before exec'ing the target), and neither
+ ;; `/usr/bin/env' nor `sh' exists on Windows, so `CreateProcess' fails.
+ ;; This around-advice temporarily rebinds `make-process' inside
+ ;; `eat-exec' so that when eat passes its wrapper-prefixed command
+ ;; list, we strip the wrapper and spawn the target command directly.
+ ;; Pty sizing is then handled by eat's `eat--adjust-process-window-size'
+ ;; hook rather than by the bypassed `stty' call.
+ ;;
+ ;; FRAGILE: tied to the exact shape of the :command plist built inside
+ ;; eat-exec (see eat.el, `defun eat-exec').  If upstream eat changes
+ ;; the wrapper prefix, this advice silently becomes a no-op and the
+ ;; "Invalid argument" error will return — re-check against
+ ;; <https://codeberg.org/akib/emacs-eat/src/branch/master/eat.el>.
+ (when *my-init--windows-p*
+   (with-eval-after-load 'eat
+     (defun my--eat-exec-strip-sh-wrapper (orig-fn &rest args)
+       "Around-advice for `eat-exec' on native Windows Emacs.
+Rebind `make-process' within ORIG-FN's dynamic extent so that eat's
+`/usr/bin/env sh -c ...' command-list prefix (with its `..' sentinel)
+is stripped — spawning the target command directly and letting
+`CreateProcess' succeed."
+       (cl-letf* ((real-make-process (symbol-function 'make-process))
+                  ((symbol-function 'make-process)
+                   (lambda (&rest mp-args)
+                     (let ((cmd (plist-get mp-args :command)))
+                       (when (and (listp cmd)
+                                  (>= (length cmd) 5)
+                                  (equal (nth 0 cmd) "/usr/bin/env")
+                                  (equal (nth 1 cmd) "sh")
+                                  (equal (nth 2 cmd) "-c")
+                                  (equal (nth 4 cmd) ".."))
+                         (setq mp-args
+                               (plist-put (copy-sequence mp-args)
+                                          :command (nthcdr 5 cmd))))
+                       (apply real-make-process mp-args)))))
+         (apply orig-fn args)))
+     (advice-add 'eat-exec :around #'my--eat-exec-strip-sh-wrapper)
+     (my-init--message2 "Installed Windows workaround advice on `eat-exec'")))
+
  ;; === wsl bash (Windows only: launching WSL from Windows Emacs)
 
  ;; to install WSL on Windows :
@@ -335,7 +382,56 @@ The prompt is 'fake' and is not updated with successive 'cd'."
            (process-send-string proc "\n")))
        (pop-to-buffer (current-buffer))
        (goto-char (point-max))
-       (message "WSL (comint) started in %s" win-dir)))) ) ; end of when *my-init--windows-p* for wsl
+       (message "WSL (comint) started in %s" win-dir))))
+
+ (defun my/open-wsl-shell-in-emacs--eat ()
+   "Open WSL bash inside an Emacs buffer using `eat' (pure-elisp terminal
+emulator), starting in the current buffer's directory.
+
+Unlike `my/open-wsl-shell-in-emacs' (comint-based, dumb terminal),
+this supports full-screen TUI programs such as `claude', `htop',
+`vim', `less', `top', etc."
+   (interactive)
+   (unless (require 'eat nil t)
+     (user-error "Package `eat' is not installed"))
+   (let* ((win-dir (if (or (buffer-file-name) (derived-mode-p 'dired-mode))
+                       (file-name-directory (or (buffer-file-name) default-directory))
+                     (expand-file-name "~")))
+          (wsl-path (or (executable-find "wsl.exe")
+                        (user-error "Could not find wsl.exe")))
+          (buffer (generate-new-buffer "*WSL (eat)*")))
+     ;; `wsl.exe --cd <win-dir>' starts inside the corresponding Linux
+     ;; path (handles `/mnt/c/...' translation for us).
+     ;;
+     ;; The rest of the command chain exists because wsl.exe, when
+     ;; spawned from `make-process' (i.e. without a real Windows
+     ;; console), does NOT forward Emacs's ConPTY into WSL as a Linux
+     ;; pty — bash inside WSL sees stdin as a pipe, `isatty(0)' is
+     ;; false, readline never activates, and there is no echo or line
+     ;; editing (confirmed: `tty' returns "not a tty" in this mode).
+     ;; To work around that we use `script -qfc CMD /dev/null', which
+     ;; allocates a fresh pty on the Linux side and runs CMD inside it.
+     ;; (`script' is part of util-linux and present on all
+     ;; Debian/Ubuntu WSL distributions by default.  `-q' suppresses
+     ;; "Script started" banners, `-f' flushes output after each write
+     ;; so typing feels live, `/dev/null' discards the typescript file.)
+     ;;
+     ;; Inside the new pty we reset TERMINFO and TERM: eat exports
+     ;; TERM=eat-truecolor and TERMINFO=<Windows-path> into the child's
+     ;; environment, and WSL ncurses cannot read a Windows terminfo
+     ;; directory.  Clearing TERMINFO and forcing TERM=xterm-256color
+     ;; gives readline a terminfo entry it can find, at the cost of a
+     ;; few eat-specific color/cursor extensions.
+     (with-current-buffer buffer
+       (setq default-directory win-dir)
+       (eat-mode)
+       (eat-exec buffer "WSL" wsl-path nil
+                 (list "--cd" win-dir "--"
+                       "script" "-qfc"
+                       "env -u TERMINFO TERM=xterm-256color bash --login -i"
+                       "/dev/null")))
+     (pop-to-buffer buffer)
+     (message "WSL (eat) started in %s" win-dir))) ) ; end of when *my-init--windows-p* for wsl
 
  ;; === Linux shell functions
 
@@ -391,8 +487,9 @@ cmd shell :  [c] external or [d] in buffer
 powershell : [p] external or [o] in buffer
 msys2 :      [m] external or [y] in buffer
 git bash :   [g] external or [i] in buffer (Windows native equivalents)
-wsl shell :  [w] external or [s] in buffer
+wsl shell :  [w] external, [s] in buffer (comint) or [a] in buffer (eat, supports TUIs)
 "
+       ("a" #'my/open-wsl-shell-in-emacs--eat)
        ("c" #'my/open-cmd-shell-external)
        ("d" #'my/open-cmd-shell-in-emacs)
        ("e" #'eshell)

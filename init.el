@@ -1031,7 +1031,8 @@ v1 as of 2025-09-07; available in occisn/elisp-utils GitHub repository"
  (setq package-archives
        '(("melpa" . "https://melpa.org/packages/") ; "http://melpa.milkbox.net/packages/"
          ("melpa-stable" . "https://stable.melpa.org/packages/")
-         ("gnu" . "http://elpa.gnu.org/packages/")
+         ("gnu" . "https://elpa.gnu.org/packages/")
+         ("nongnu" . "https://elpa.nongnu.org/nongnu/")
          ;; ("marmalade" . "http://marmalade-repo.org/packages/")
          ))
 
