@@ -428,8 +428,21 @@ this supports full-screen TUI programs such as `claude', `htop',
        (eat-exec buffer "WSL" wsl-path nil
                  (list "--cd" win-dir "--"
                        "script" "-qfc"
-                       "env -u TERMINFO TERM=xterm-256color bash --login -i"
-                       "/dev/null")))
+                       "env -u TERMINFO TERM=xterm-256color LANG=C.UTF-8 bash --login -i"
+                       "/dev/null"))
+       ;; Force UTF-8 on the *input* side of the child process so chars
+       ;; like `é' go as UTF-8 (0xC3 0xA9), not as a single Latin-1 /
+       ;; CP1252 byte (0xE9).  Leave output coding alone — eat decodes
+       ;; raw bytes itself and would break if we touched it.  The
+       ;; `LANG=C.UTF-8' in the exec line above is the matching fix on
+       ;; the bash side: without a UTF-8 locale, readline renders
+       ;; bytes >= 0x80 as `\NNN' octal escapes regardless of what we
+       ;; send.
+       (when-let* ((proc (get-buffer-process buffer)))
+         (set-process-coding-system
+          proc
+          (car (process-coding-system proc))
+          'utf-8-unix)))
      (pop-to-buffer buffer)
      (message "WSL (eat) started in %s" win-dir))) ) ; end of when *my-init--windows-p* for wsl
 
