@@ -97,6 +97,7 @@ Undo : C-j to cut undo chain?
       ('common-lisp (hydra-dired-cl/body))
       (_ (hydra-dired/body))))
     ((eql major-mode 'doc-view-mode) (hydra-docview/body))
+    ((eql major-mode 'eat-mode) (hydra-eat/body))
     ((eql major-mode 'emacs-lisp-mode) (hydra-emacs-lisp/body))
     ((eql major-mode 'gnuplot-mode) (hydra-gnuplot/body))
     ((eql major-mode 'ielm-mode) (hydra-ielm/body))

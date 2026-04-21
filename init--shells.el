@@ -301,6 +301,44 @@ is stripped — spawning the target command directly and letting
      (advice-add 'eat-exec :around #'my--eat-exec-strip-sh-wrapper)
      (my-init--message2 "Installed Windows workaround advice on `eat-exec'")))
 
+ ;; === eat mode-switch announcement + per-buffer hydra (all platforms)
+
+ (with-eval-after-load 'eat
+   (defun my/eat-emacs-mode-with-hint ()
+     "Switch to `eat-emacs-mode' and announce how to return to terminal input."
+     (interactive)
+     (eat-emacs-mode)
+     (message "eat-emacs-mode: standard Emacs keys; select/copy as usual. Press C-c C-j to return to terminal input."))
+   (defun my/eat-semi-char-mode-with-hint ()
+     "Switch to `eat-semi-char-mode' and announce the new state."
+     (interactive)
+     (eat-semi-char-mode)
+     (message "eat-semi-char-mode: keys forwarded to terminal."))
+   (define-key eat-semi-char-mode-map (kbd "C-c C-e")
+               #'my/eat-emacs-mode-with-hint)
+   ;; `eat-emacs-mode' is a plain function, not `define-minor-mode' —
+   ;; there is no `eat-emacs-mode-map'.  Emacs-mode just deactivates
+   ;; the semi-char/char overlay maps, leaving `eat-mode-map' active.
+   ;; Binding here means the key fires in emacs-mode and is shadowed
+   ;; (harmlessly) by the semi-char overlay in the default mode.
+   (define-key eat-mode-map (kbd "C-c C-j")
+               #'my/eat-semi-char-mode-with-hint)
+   (defhydra hydra-eat (:exit t :hint nil)
+     "
+^eat hydra:
+^----------
+[e] eat-emacs-mode       (also C-c C-e) -- standard Emacs keys for select/copy
+[j] eat-semi-char-mode   (also C-c C-j) -- keys forwarded to terminal (default)
+[c] eat-char-mode                       -- full passthrough (rarely needed)
+[r] rename this buffer
+[k] kill this buffer                    -- ends the shell / Claude session
+"
+     ("e" #'my/eat-emacs-mode-with-hint)
+     ("j" #'my/eat-semi-char-mode-with-hint)
+     ("c" #'eat-char-mode)
+     ("r" #'rename-buffer)
+     ("k" #'kill-current-buffer)))
+
  ;; === wsl bash (Windows only: launching WSL from Windows Emacs)
 
  ;; to install WSL on Windows :
