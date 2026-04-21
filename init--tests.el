@@ -45,7 +45,7 @@
                    (clipboard-kill-region (point-min) (point-max)))))
 
      (insert-string-in-clipboard *my-signature*)
-     (message "IMT Signature available in clipboard")))
+     (message "Signature available in clipboard")))
 
  (defun pro1/open-app1 ()
    "Open APP1, provided that frmservletXXX.jnlp exists in DOWNLOAD directory"
