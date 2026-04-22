@@ -1,5 +1,7 @@
 # emacs-config
 
+Blog entry: [https://www.effectivelambda.org/en/blog/003-my-emacs-config.html](https://www.effectivelambda.org/en/blog/003-my-emacs-config.html)
+
 This is my _actual_ **init.el** file and initialization files, on **Windows** and **Linux** (including WSL).
 
 I use the _same_ configuration file (stored on cloud) on my different computers.
