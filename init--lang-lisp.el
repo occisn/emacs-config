@@ -1194,31 +1194,157 @@ Return NIL if no system found.
            (setq asdf-system-name (file-name-base asd)))))
      asdf-system-name))
 
+ (defun my/asdf-system-name-from-directory (start-dir)
+   "Walk upward from START-DIR to the nearest dir containing a .asd file.
+Return the shortest .asd file's base name in that dir (so e.g. when a
+dir holds both `foo.asd' and `foo-tests.asd', `foo' wins), or nil.
+\(v1 as of 2026-04-23)"
+   (when start-dir
+     (let ((asd-dir (locate-dominating-file
+                     start-dir
+                     (lambda (dir)
+                       (directory-files dir nil "\\.asd\\'")))))
+       (when asd-dir
+         (car
+          (sort
+           (mapcar #'file-name-base
+                   (directory-files asd-dir nil "\\.asd\\'"))
+           (lambda (a b) (< (length a) (length b)))))))))
+
  ;; Alternative:
  (defun my/asdf-system-shortest-name ()
    "Return the ASDF system name with the shortest .asd filename.
 Works from file buffers (using buffer-file-name) and dired buffers
 \(using default-directory)."
    (interactive)
-   (let* ((start-dir (cond
-                      ((derived-mode-p 'dired-mode)
-                       (dired-current-directory))
-                      (buffer-file-name
-                       (file-name-directory buffer-file-name))
-                      (t nil))))
-     (when start-dir
-       (let* ((asd-dir
-               (locate-dominating-file
-                start-dir
-                (lambda (dir)
-                  (directory-files dir nil "\\.asd\\'")))))
-         (when asd-dir
-           (car
-            (sort
-             (mapcar #'file-name-base
-                     (directory-files asd-dir nil "\\.asd\\'"))
-             (lambda (a b)
-               (< (length a) (length b))))))))))
+   (my/asdf-system-name-from-directory
+    (cond ((derived-mode-p 'dired-mode) (dired-current-directory))
+          (buffer-file-name (file-name-directory buffer-file-name))
+          (t nil))))
+
+ ;; --- Plan A: ask the live Lisp where a symbol in the package is defined.
+
+ (defun my/slime-repl--source-path-of-package (pkg-name)
+   "Ask the inferior Lisp for a source-file pathname of any definition in PKG-NAME.
+PKG-NAME is an Emacs Lisp string naming a CL package (e.g. \"CENTAURE\").
+Iterates symbols home to the package and queries
+`sb-introspect:find-definition-sources-by-name' across a few definition
+kinds (function, generic-function, macro, variable, class), returning
+the first source pathname it finds.  Form is evaluated in
+COMMON-LISP-USER so symbol interning does not pollute the REPL package.
+Returns an Emacs Lisp string (the pathname) or nil on failure.
+SBCL-only (uses `sb-introspect').
+\(v1 as of 2026-04-23)"
+   (when (and (fboundp 'slime-connected-p) (slime-connected-p))
+     (condition-case nil
+         (let ((result
+                (slime-eval
+                 `(cl:let ((pkg (cl:find-package ,(upcase pkg-name)))
+                           (result cl:nil))
+                    (cl:when pkg
+                      (cl:do-symbols (s pkg)
+                        (cl:when result (cl:return))
+                        (cl:when (cl:eq (cl:symbol-package s) pkg)
+                          (cl:dolist (kind '(:function :generic-function
+                                             :macro :variable :class))
+                            (cl:when result (cl:return))
+                            (cl:let ((srcs (cl:ignore-errors
+                                            (sb-introspect:find-definition-sources-by-name
+                                             s kind))))
+                              (cl:dolist (d srcs)
+                                (cl:when result (cl:return))
+                                (cl:let ((p (cl:ignore-errors
+                                             (sb-introspect:definition-source-pathname d))))
+                                  (cl:when (cl:and p (cl:pathnamep p))
+                                    (cl:setf result (cl:namestring p))))))))))
+                    result)
+                 "COMMON-LISP-USER")))
+           (when (and (stringp result) (not (string= result "")))
+             result))
+       (error nil))))
+
+ ;; --- Plan B: match the REPL's current package against open lisp-mode buffers.
+
+ (defun my/lisp-buffer--declared-package (buffer)
+   "Return the CL package declared in BUFFER, or nil.
+Looks at the first top-level `(in-package ...)' form via
+`slime-current-package'.  Result is upcased and stripped of any leading
+`:' or `#:' prefix, so e.g. `(in-package :foo)' returns \"FOO\".
+Returns nil if BUFFER is not live, not in `lisp-mode', or has no
+`(in-package ...)' form.
+\(v1 as of 2026-04-23)"
+   (when (buffer-live-p buffer)
+     (with-current-buffer buffer
+       (when (derived-mode-p 'lisp-mode)
+         (let ((raw (save-excursion
+                      (goto-char (point-min))
+                      (ignore-errors (slime-current-package)))))
+           (when (and raw (stringp raw))
+             (let ((cleaned (replace-regexp-in-string "^#?:" "" raw)))
+               (and (not (string= cleaned "")) (upcase cleaned)))))))))
+
+ (defun my/slime-repl--find-lisp-buffer-for-package (target-pkg)
+   "Return an open lisp-mode buffer whose `(in-package ...)' matches TARGET-PKG.
+TARGET-PKG is an already-upcased elisp string like \"CENTAURE\".
+Scans `(buffer-list)' in order (MRU); returns the first match, or nil.
+\(v1 as of 2026-04-23)"
+   (cl-loop for buf in (buffer-list)
+            when (and (buffer-file-name buf)
+                      (let ((pkg (my/lisp-buffer--declared-package buf)))
+                        (and pkg (string= pkg target-pkg))))
+            return buf))
+
+ ;; --- Combined: Plan A, falling back to Plan B.
+
+ (defun my/asdf-system-name-from-repl-package ()
+   "Return the ASDF system name associated with the current SLIME REPL package.
+
+Both strategies first resolve a source pathname corresponding to the
+REPL's current package, then walk upward from that file to the nearest
+`.asd' (via `my/asdf-system-name-from-directory').  The package is used
+purely as a key — the system name is *never* derived textually from it,
+so this works when package and system names differ (e.g. package
+`CENTAURE' lives in system `cl-centaure-9').
+
+Plan A (preferred): query the live Lisp via `sb-introspect' for the
+source pathname of any definition in that package.  Works even when no
+source file is open in Emacs.
+
+Plan B (fallback): find an open lisp-mode buffer whose
+`(in-package ...)' matches.  Used when Plan A returns nil (e.g. the
+package has no introspectable source, introspection errors, or the
+backend is not SBCL).
+
+Returns nil if SLIME is not connected, no REPL package can be read, or
+neither plan can locate a source file leading to a `.asd'.
+\(v5 as of 2026-04-23)"
+   (when (and (fboundp 'slime-connected-p) (slime-connected-p))
+     (let* ((raw (ignore-errors (slime-current-package)))
+            (target (and raw
+                         (not (string= raw ""))
+                         (upcase (replace-regexp-in-string "^#?:" "" raw)))))
+       (when (and target (not (string= target "")))
+         (let ((source-dir
+                (or
+                 ;; Plan A
+                 (when-let ((path (my/slime-repl--source-path-of-package target)))
+                   (file-name-directory path))
+                 ;; Plan B
+                 (when-let ((buf (my/slime-repl--find-lisp-buffer-for-package target)))
+                   (file-name-directory (buffer-file-name buf))))))
+           (when source-dir
+             (my/asdf-system-name-from-directory source-dir)))))))
+
+ (defun my/asdf-current-system-name ()
+   "Return the ASDF system name relevant to the current buffer.
+In `slime-repl-mode', derive it from the current REPL package (see
+`my/asdf-system-name-from-repl-package').  Elsewhere, walk upward to
+the nearest `.asd' file (see `my/asdf-system-shortest-name').
+Return nil if none can be determined.
+\(v1 as of 2026-04-23)"
+   (if (derived-mode-p 'slime-repl-mode)
+       (my/asdf-system-name-from-repl-package)
+     (my/asdf-system-shortest-name)))
 
  (defun my/asdf-force-reload-system-corresponding-to-current-buffer ()
    "Force reload current ASDF system.
@@ -1233,19 +1359,27 @@ Works from file buffers (using buffer-file-name) and dired buffers
 
  ;; Alternative:
  (defun my/slime-force-reload-current-system ()
-   "Force reload the ASDF system associated with the current buffer."
+   "Force reload the ASDF system associated with the current buffer or REPL."
    (interactive)
-   (let ((system (my/asdf-system-shortest-name)))
+   (let ((system (my/asdf-current-system-name)))
      (unless system
-       (error "No ASDF system associated with this buffer"))
+       (error "No ASDF system associated with this buffer%s"
+              (if (derived-mode-p 'slime-repl-mode)
+                  (format " (REPL package = %S)"
+                          (ignore-errors (slime-current-package)))
+                "")))
      (slime-oos system 'load-op :force t)))
 
  (defun my/slime-load-current-system ()
-   "Load the ASDF system associated with the current buffer."
+   "Load the ASDF system associated with the current buffer or REPL."
    (interactive)
-   (let ((system (my/asdf-system-shortest-name)))
+   (let ((system (my/asdf-current-system-name)))
      (unless system
-       (error "No ASDF system associated with this buffer"))
+       (error "No ASDF system associated with this buffer%s"
+              (if (derived-mode-p 'slime-repl-mode)
+                  (format " (REPL package = %S)"
+                          (ignore-errors (slime-current-package)))
+                "")))
      (slime-oos system 'load-op)))
 
  (defun my/slime-load-or-force-reload-current-system (force)
@@ -1280,19 +1414,27 @@ Works from file buffers (using buffer-file-name) and dired buffers
 
  ;; Alternative:
  (defun my/slime-force-test-current-system ()
-   "Force test the ASDF system associated with the current buffer."
+   "Force test the ASDF system associated with the current buffer or REPL."
    (interactive)
-   (let ((system (my/asdf-system-shortest-name)))
+   (let ((system (my/asdf-current-system-name)))
      (unless system
-       (error "No ASDF system associated with this buffer"))
+       (error "No ASDF system associated with this buffer%s"
+              (if (derived-mode-p 'slime-repl-mode)
+                  (format " (REPL package = %S)"
+                          (ignore-errors (slime-current-package)))
+                "")))
      (slime-oos system 'test-op :force t)))
 
  (defun my/slime-test-current-system ()
-   "Test the ASDF system associated with the current buffer."
+   "Test the ASDF system associated with the current buffer or REPL."
    (interactive)
-   (let ((system (my/asdf-system-shortest-name)))
+   (let ((system (my/asdf-current-system-name)))
      (unless system
-       (error "No ASDF system associated with this buffer"))
+       (error "No ASDF system associated with this buffer%s"
+              (if (derived-mode-p 'slime-repl-mode)
+                  (format " (REPL package = %S)"
+                          (ignore-errors (slime-current-package)))
+                "")))
      (slime-oos system 'test-op)))
 
  (defun my/slime-test-or-force-test-current-system (force)
@@ -1305,6 +1447,17 @@ Works from file buffers (using buffer-file-name) and dired buffers
  (with-eval-after-load 'slime
    (define-key slime-mode-map (kbd "C-c C-t")
                #'my/slime-test-or-force-test-current-system))
+
+ ;; Same ASDF/compilation bindings inside the SLIME REPL buffer.
+ ;; System is derived from the current REPL package (see
+ ;; `my/asdf-system-name-from-repl-package').
+ (with-eval-after-load 'slime-repl
+   (define-key slime-repl-mode-map (kbd "C-c C-l")
+               #'my/slime-load-or-force-reload-current-system)
+   (define-key slime-repl-mode-map (kbd "C-c C-t")
+               #'my/slime-test-or-force-test-current-system)
+   (define-key slime-repl-mode-map (kbd "C-c C-n")
+               #'my/jump-to-slime-compilation))
 
  (defun my/slime--extract-defpackage-from-file (filepath)
    "Read FILEPATH and return the package name from its first `defpackage' form.
@@ -1789,9 +1942,16 @@ to come back to last prompt: M-> (with shift), which jumps to the end of buffer
 
 C-c I to inspect a symbol (add ')
 
+ASDF (system resolved from REPL's current (in-package):
+      Plan A: sb-introspect source of a symbol in the package;
+      Plan B: open lisp-mode buffer with matching (in-package ...);
+      then walk upward to nearest .asd):
+   C-c C-l load | C-u C-c C-l force load | C-c C-t test | C-u C-c C-t force test
+   C-c C-n show compilation notes (jump to *slime-compilation*)
+
 (end)"
    ;; ("e" #'a-function)
-   ) 
+   )
 
  ;; === Hydra SLDB
 
