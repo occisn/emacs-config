@@ -405,6 +405,16 @@ Alt-F4 and Alt-TAB
  (unless (my-init--file-exists-p *imagemagick-convert-program*)
    (my-init--warning "!! *imagemagick-convert-program* is nil or does not exist: %s" *imagemagick-convert-program*))
 
+ ;; ImageMagick `identify' for my/dired-image-prepend-exif-date-taken
+ (if *my-init--windows-p*
+     (unless (and (boundp '*imagemagick-identify-program*)
+                  (my-init--file-exists-p *imagemagick-identify-program*))
+       (my-init--warning "!! *imagemagick-identify-program* is nil or does not exist: %s ; my/dired-image-prepend-exif-date-taken will error at runtime"
+                         (and (boundp '*imagemagick-identify-program*)
+                              *imagemagick-identify-program*)))
+   (unless (executable-find "identify")
+     (my-init--warning "!! ImageMagick `identify' not found on PATH ; my/dired-image-prepend-exif-date-taken will error at runtime")))
+
  (unless (my-init--directory-exists-p *tesseract-tessdata-dir*)
    (my-init--warning "!! *tesseract-tessdata-dir* is nil or does not exist: %s" *tesseract-tessdata-dir*))
 

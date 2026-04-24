@@ -296,6 +296,90 @@ Uses ImageMagick.
        
        (insert-string-in-clipboard date2))))
 
+ ;; === (13.5) Prepend EXIF date taken to image filenames
+
+ (defun my/dired-image-prepend-exif-date-taken ()
+   "In Dired, prepend \"YYYY-MM-DD _\" to each marked image file, where the
+date is the EXIF DateTimeOriginal (the moment the photo was taken) --
+NOT the file modification date.
+
+Works on the file at point if nothing is marked, or on all marked files
+otherwise.  Skips (with a message) non-image files, files whose EXIF
+has no DateTimeOriginal, and files already prefixed with YYYY-MM-DD _.
+Requires ImageMagick `identify' (on Windows: via
+`*imagemagick-identify-program*'; on Linux/WSL: via PATH)."
+   (interactive)
+   (unless (string= major-mode "dired-mode")
+     (error "Not in dired-mode."))
+   (if *my-init--windows-p*
+       (unless (and (boundp '*imagemagick-identify-program*)
+                    (my-init--file-exists-p *imagemagick-identify-program*))
+         (error "*imagemagick-identify-program* is not a valid path: %s"
+                (and (boundp '*imagemagick-identify-program*)
+                     *imagemagick-identify-program*)))
+     (unless (executable-find "identify")
+       (error "ImageMagick `identify' not found on PATH.")))
+
+   (cl-labels
+       ((image-extension-p (ext)
+          "Return non-nil if EXT (case-insensitive) is a recognized image extension."
+          (and ext (member (downcase ext)
+                           '("jpg" "jpeg" "heic" "heif" "png"
+                             "tiff" "tif" "cr2" "nef" "arw" "dng"))))
+        (already-prefixed-p (name)
+          "Return non-nil if NAME already starts with YYYY-MM-DD _."
+          (string-match-p "\\`[0-9]\\{4\\}-[0-9]\\{2\\}-[0-9]\\{2\\} _" name))
+        (exif-date-for (file)
+          "Return \"YYYY-MM-DD\" for FILE's EXIF DateTimeOriginal, or nil.
+Uses ImageMagick `identify'.  stderr is discarded so missing-EXIF
+warnings do not pollute the buffer.  Success is detected by regex on
+stdout: `identify' exits 0 even when the tag is absent."
+          (let* ((program (if *my-init--windows-p*
+                              *imagemagick-identify-program*
+                            "identify"))
+                 (args (list "-format" "%[EXIF:DateTimeOriginal]" file)))
+            (with-temp-buffer
+              (apply #'call-process program nil (list t nil) nil args)
+              (let ((out (string-trim (buffer-string))))
+                (when (string-match
+                       "\\`\\([0-9]\\{4\\}\\):\\([0-9]\\{2\\}\\):\\([0-9]\\{2\\}\\) "
+                       out)
+                  (format "%s-%s-%s"
+                          (match-string 1 out)
+                          (match-string 2 out)
+                          (match-string 3 out)))))))
+        (process-one (full-path)
+          "Rename FULL-PATH by prepending YYYY-MM-DD _, or skip with a message.
+Return the new full path on success, nil on skip."
+          (let* ((dir  (file-name-directory full-path))
+                 (name (file-name-nondirectory full-path))
+                 (ext  (file-name-extension full-path)))
+            (cond
+             ((not (image-extension-p ext))
+              (message "Skipping (not an image): %s" name) nil)
+             ((already-prefixed-p name)
+              (message "Skipping (already date-prefixed): %s" name) nil)
+             (t
+              (let ((date (exif-date-for full-path)))
+                (if (null date)
+                    (progn
+                      (message "Skipping (no EXIF DateTimeOriginal): %s" name)
+                      nil)
+                  (let ((new-full (concat dir date " _" name)))
+                    (rename-file full-path new-full)
+                    (message "Renamed: %s -> %s" name
+                             (file-name-nondirectory new-full))
+                    new-full))))))))
+
+     (let* ((files (dired-get-marked-files))
+            (last-new nil))
+       (dolist (f files)
+         (let ((res (process-one f)))
+           (when (stringp res) (setq last-new res))))
+       (revert-buffer)
+       (when last-new (dired-goto-file last-new))
+       (message "Done.  %d file(s) processed." (length files)))))
+
  ;; ===  (14) Mutiple deletions
 
  ;; hack to allow multiple deletions through D D D D X
