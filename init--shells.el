@@ -368,7 +368,7 @@ is stripped — spawning the target command directly and letting
                       "wsl" nil
                       "cmd.exe" "/C" "start" "wsl.exe" "~"
                       "-e" "bash" "-c"
-                      (format "cd '%s' && exec bash" wsl-dir))))
+                      (format "cd '%s' && exec bash --login -i" wsl-dir))))
            (set-process-query-on-exit-flag proc nil)
            (message "Opened WSL shell in %s" wsl-dir))
        (let ((proc (start-process "wsl" nil "cmd.exe" "/C" "start" "wsl.exe")))
