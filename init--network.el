@@ -145,8 +145,10 @@ Message the user with next-step instructions. Signal `user-error'
 if the Manager executable is missing."
    (if (and *my-init--sshfs-win-manager-exe*
             (my-init--file-exists-p *my-init--sshfs-win-manager-exe*))
-       (progn
-         (start-process "sshfs-win-manager" nil *my-init--sshfs-win-manager-exe*)
+       (let ((proc (start-process "sshfs-win-manager" nil
+                                  *my-init--sshfs-win-manager-exe*)))
+         ;; Detached GUI launcher — don't prompt on Emacs exit.
+         (set-process-query-on-exit-flag proc nil)
          (message "VPS not mounted — SSHFS-Win Manager launched. Connect `%s', then re-run `my/open-vps-1'."
                   (or *my-init--vps-ssh-alias* "the VPS")))
      (user-error "VPS not mounted and SSHFS-Win Manager not found at %s"
@@ -250,8 +252,10 @@ Dired over SSHFS was measured at ~36% GC (≈5s out of 14s)."
 Signal `user-error' if the Manager executable is missing."
    (if (and *my-init--sshfs-win-manager-exe*
             (my-init--file-exists-p *my-init--sshfs-win-manager-exe*))
-       (progn
-         (start-process "sshfs-win-manager" nil *my-init--sshfs-win-manager-exe*)
+       (let ((proc (start-process "sshfs-win-manager" nil
+                                  *my-init--sshfs-win-manager-exe*)))
+         ;; Detached GUI launcher — don't prompt on Emacs exit.
+         (set-process-query-on-exit-flag proc nil)
          (message "FTP-1 not mounted — SSHFS-Win Manager launched. Connect `%s', then re-run `my/open-ftp-1'."
                   (or *my-init--ftp-1-ssh-alias* "FTP-1")))
      (user-error "FTP-1 not mounted and SSHFS-Win Manager not found at %s"
