@@ -222,7 +222,25 @@ Dired over SSHFS was measured at ~36% GC (≈5s out of 14s)."
               (my-init--on-remote-p))
      (all-the-icons-dired-mode -1)))
  (with-eval-after-load 'all-the-icons-dired
-   (add-hook 'dired-mode-hook #'my-init--disable-dired-icons-on-remote 90)))
+   (add-hook 'dired-mode-hook #'my-init--disable-dired-icons-on-remote 90))
+
+ ;; Bump `gc-cons-threshold' around `dired-readin' on remote paths.
+ ;; Profiling subdir navigation on the VPS SSHFS mount on Windows: 38%
+ ;; in `directory-files-and-attributes' (one SFTP round-trip per entry —
+ ;; inherent on Windows since ls-lisp is used, no external `ls' to batch;
+ ;; mitigated only at the mount layer via SSHFS cache_timeout) and 22%
+ ;; in automatic GC mid-readin. The GC slice is fixable: ls-lisp
+ ;; allocates heavily formatting the listing, and at the default
+ ;; threshold GC fires inside the call. The bump in `my/open-vps-1'
+ ;; covers only the entry point, not subsequent RET-into-subdir
+ ;; navigation.
+ (defun my-init--dired-readin-bump-gc (orig &rest args)
+   "Bump `gc-cons-threshold' during `dired-readin' on remote paths."
+   (if (my-init--on-remote-p)
+       (let ((gc-cons-threshold (* 100 1024 1024)))
+         (apply orig args))
+     (apply orig args)))
+ (advice-add 'dired-readin :around #'my-init--dired-readin-bump-gc))
 
 
 ;;; ===
