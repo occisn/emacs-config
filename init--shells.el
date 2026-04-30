@@ -375,6 +375,32 @@ is stripped — spawning the target command directly and letting
          (set-process-query-on-exit-flag proc nil)
          (message "Opened WSL shell in home directory.")))))
 
+ (defun my/open-wsl-shell-in-wt-tab ()
+   "Open a WSL bash session as a new tab in Windows Terminal.
+If a `wt' window already exists, the tab is added to the most-recently-used
+one (via `wt -w 0 nt'); otherwise Windows Terminal launches a new window."
+   (interactive)
+   (let* ((dir (if (or (buffer-file-name) (derived-mode-p 'dired-mode))
+                   (file-name-directory (or (buffer-file-name) default-directory))
+                 (expand-file-name "~")))
+          (wsl-dir (string-trim
+                    (shell-command-to-string
+                     (format "wsl wslpath '%s'" dir)))))
+     (if (and wsl-dir (not (string-empty-p wsl-dir)))
+         (let ((proc (start-process
+                      "wt" nil
+                      "cmd.exe" "/C" "start" "wt.exe"
+                      "-w" "0" "nt"
+                      "wsl.exe" "-e" "bash" "-c"
+                      (format "cd '%s' && exec bash --login -i" wsl-dir))))
+           (set-process-query-on-exit-flag proc nil)
+           (message "Opened WSL tab in Windows Terminal at %s" wsl-dir))
+       (let ((proc (start-process
+                    "wt" nil
+                    "cmd.exe" "/C" "start" "wt.exe" "-w" "0" "nt" "wsl.exe")))
+         (set-process-query-on-exit-flag proc nil)
+         (message "Opened WSL tab in Windows Terminal (home).")))))
+
  (defun my--wsl-comint-preoutput-filter (output)
    "Filter to handle WSL output."
    (replace-regexp-in-string "\r" "" output))
@@ -593,7 +619,8 @@ cmd shell :  [c] external or [d] in buffer
 powershell : [p] external or [o] in buffer
 msys2 :      [m] external or [y] in buffer
 git bash :   [g] external or [i] in buffer (Windows native equivalents)
-wsl shell :  [w] external, [s] in buffer (comint) or [a] in buffer (eat, supports TUIs)
+wsl shell :  [w] external, [n] external as Windows Terminal tab,
+             [s] in buffer (comint) or [a] in buffer (eat, supports TUIs)
 "
      ("a" #'my/open-wsl-shell-in-emacs--eat)
      ("c" #'my/open-cmd-shell-external)
@@ -601,6 +628,7 @@ wsl shell :  [w] external, [s] in buffer (comint) or [a] in buffer (eat, support
      ("e" #'eshell)
      ("i" #'my/open-git-bash-in-emacs)
      ("g" #'my/open-git-bash-external)
+     ("n" #'my/open-wsl-shell-in-wt-tab)
      ("o" #'my/open-powershell-in-emacs)
      ("m" #'my/open-msys2-external)
      ("p" #'my/open-powershell-external)
