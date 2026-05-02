@@ -380,6 +380,116 @@ Return the new full path on success, nil on skip."
        (when last-new (dired-goto-file last-new))
        (message "Done.  %d file(s) processed." (length files)))))
 
+ ;; === (13.6) Show file head/tail (line count + first n + last n)
+
+ (defun my/dired-show-file-head-tail (n)
+   "In Dired, display in a buffer the total line count plus the first N
+and last N lines of the file at point.
+
+Designed for huge files: only a small chunk near each end is read to
+extract the head/tail.  The line count reads the whole file but in
+1 MiB chunks without loading it all into memory; when the `wc'
+executable is on PATH it is used instead (much faster on multi-GB
+files)."
+   (interactive (list (read-number "Number of head/tail lines (n): " 10)))
+   (unless (string= major-mode "dired-mode")
+     (error "Not in dired-mode."))
+   (when (< n 0)
+     (error "n must be non-negative."))
+
+   (cl-labels
+       ((read-bytes (file beg end)
+          "Return raw bytes [BEG, END) of FILE as a unibyte string."
+          (with-temp-buffer
+            (set-buffer-multibyte nil)
+            (insert-file-contents-literally file nil beg end)
+            (buffer-substring-no-properties (point-min) (point-max))))
+
+        (drop-trailing-empty (lines)
+          "Drop a trailing empty element in LINES (when text ended with \\n)."
+          (if (and lines (string= "" (car (last lines))))
+              (butlast lines)
+            lines))
+
+        (first-n-from-text (text k)
+          (let ((lines (drop-trailing-empty (split-string text "\n" nil))))
+            (mapconcat #'identity (seq-take lines k) "\n")))
+
+        (last-n-from-text (text k chunk-starts-mid-file)
+          ;; If we started reading mid-file, the first split element is a
+          ;; partial line and must be discarded -- unless we have at most
+          ;; k elements, in which case keeping it would still be wrong.
+          (let* ((lines (drop-trailing-empty (split-string text "\n" nil)))
+                 (lines (if chunk-starts-mid-file (cdr lines) lines))
+                 (count (length lines))
+                 (start (max 0 (- count k))))
+            (mapconcat #'identity (nthcdr start lines) "\n")))
+
+        (count-lines-via-wc (file)
+          (when (executable-find "wc")
+            (with-temp-buffer
+              (let ((status (call-process "wc" file t nil "-l")))
+                (when (and (eq status 0)
+                           (progn (goto-char (point-min))
+                                  (looking-at "[ \t]*\\([0-9]+\\)")))
+                  (string-to-number (match-string 1)))))))
+
+        (count-lines-elisp (file)
+          (let ((size (file-attribute-size (file-attributes file)))
+                (chunk-size (* 1024 1024))
+                (count 0)
+                (pos 0))
+            (with-temp-buffer
+              (set-buffer-multibyte nil)
+              (while (< pos size)
+                (let ((end (min size (+ pos chunk-size))))
+                  (erase-buffer)
+                  (insert-file-contents-literally file nil pos end)
+                  (goto-char (point-min))
+                  (while (search-forward "\n" nil t)
+                    (setq count (1+ count)))
+                  (setq pos end))))
+            count))
+
+        (count-lines-of (file)
+          (or (count-lines-via-wc file) (count-lines-elisp file))))
+
+     (let* ((file (dired-get-file-for-visit))
+            (basename (file-name-nondirectory file)))
+       (when (file-directory-p file)
+         (error "%s is a directory" basename))
+       (let* ((size (file-attribute-size (file-attributes file)))
+              ;; ~4 KiB/line is generous; ensure at least 64 KiB; cap at file size.
+              (chunk (min size (max 65536 (* (max n 1) 4096))))
+              (head-text (read-bytes file 0 chunk))
+              (tail-beg (max 0 (- size chunk)))
+              (tail-text (read-bytes file tail-beg size))
+              (head-block (first-n-from-text head-text n))
+              (tail-block (last-n-from-text tail-text n (> tail-beg 0)))
+              (_ (message "Counting lines in %s ..." basename))
+              (total-lines (count-lines-of file))
+              (buf-name (format "*head-tail: %s*" basename)))
+         (with-current-buffer (get-buffer-create buf-name)
+           (let ((inhibit-read-only t))
+             (erase-buffer)
+             (insert (format "File:        %s\n" file))
+             (insert (format "Size:        %s bytes\n" size))
+             (insert (format "Total lines: %d\n" total-lines))
+             (insert (format "\n=== First %d line(s) ===\n" n))
+             (insert head-block)
+             (unless (or (string= "" head-block)
+                         (string-suffix-p "\n" head-block))
+               (insert "\n"))
+             (insert (format "\n=== Last %d line(s) ===\n" n))
+             (insert tail-block)
+             (unless (or (string= "" tail-block)
+                         (string-suffix-p "\n" tail-block))
+               (insert "\n")))
+           (goto-char (point-min))
+           (special-mode))
+         (pop-to-buffer buf-name)
+         (message "Done. %d total line(s)." total-lines)))))
+
  ;; ===  (14) Mutiple deletions
 
  ;; hack to allow multiple deletions through D D D D X
@@ -519,6 +629,7 @@ Zip: [u]nzip, [z]ip content of current directory;
      [l]ist zip content, my/zip-add-to-archive-present-in-same-directory
 pdf: M-x my/pdf-burst, M-x my/pdf-extract, M-x my/pdf-join
 Files: my/list-big-files-in-current-directory-and-subdirectories, my/list-directories-with-many-files-or-direct-subdirectories (# of files), my/list-directories-of-big-size, my/list-directories-containing-zip-files, my/find-files-with-same-size-in-same-subdirectory
+[n]: show line count + first n / last n lines of file at point (default n=10)
 Attach file to mail: C-c RET C-a (gnus-dired-attach)
 Project: C-c C-l clean/load | C-c C-m make/main | C-c C-r run/restart | C-c C-t test (detects C vs CL)"
    ("a" #'my/dired-clean-build-artifacts)
@@ -528,6 +639,7 @@ Project: C-c C-l clean/load | C-c C-m make/main | C-c C-r run/restart | C-c C-t 
    ("f" #'my/find2)
    ("g" #'my/ag-grep-in-current-dired-directory)
    ("l" #'my/list-zip-content)
+   ("n" #'my/dired-show-file-head-tail)
    ("p" #'my/pt-grep-in-current-dired-directory)
    ("s" #'my/open-with-Sumatra)
    ("u" #'my/unzip)
