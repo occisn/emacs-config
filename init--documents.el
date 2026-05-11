@@ -668,6 +668,52 @@ From here, you can also copy images from the book with the C keyboard shortcut
                (set-face-attribute 'markdown-pre-face nil :foreground "#FF69B4" :weight 'bold)
                (set-face-attribute 'markdown-inline-code-face nil :foreground "#FF69B4" :weight 'bold))))
 
+ (defun my/markdown-copy-inline-code-or-block-or-word ()
+   "Copy inline code, fenced code block content, or word at point in markdown.
+Markdown counterpart of `my/org-copy-link-or-inline-code-or-verbatim-or-block':
+\(1) inline code between backticks, \(2) content of the enclosing ``` block
+\(fences excluded), \(3) fallback to `my/copy-word'."
+   (interactive)
+   (let ((found nil))
+
+     ;; (1) inline code ?
+     (when (markdown-inline-code-at-point-p)
+       (save-match-data
+         (markdown-inline-code-at-point) ; sets match-data; group 2 = content
+         (let ((content (match-string-no-properties 2)))
+           (when (and content (> (length content) 0))
+             (kill-new content)
+             (setq found t)
+             (message "Copied inline code: %s" content)))))
+
+     ;; (2) fenced code block ?
+     (unless found
+       (let ((bounds (markdown-get-enclosing-fenced-block-construct)))
+         (when bounds
+           (let* ((fence-begin (nth 0 bounds))
+                  (fence-end   (nth 1 bounds))
+                  (begin (save-excursion
+                           (goto-char fence-begin)
+                           (line-beginning-position 2))) ; line after opening fence
+                  (end   (save-excursion
+                           (goto-char fence-end)
+                           (line-beginning-position 1))) ; start of closing fence
+                  (content (buffer-substring-no-properties begin end)))
+             (kill-new content)
+             (setq found t)
+             (message "Markdown code block content copied.")))))
+
+     ;; (3) fallback : word
+     (unless found
+       (setq found (my/copy-word)))
+
+     (unless found
+       (message "No word, inline code, or block found at point."))))
+
+ (with-eval-after-load 'markdown-mode
+   (define-key markdown-mode-map (kbd "C-c c")
+               #'my/markdown-copy-inline-code-or-block-or-word))
+
  (defun my/md-convert-region-to-anchor-and-kill ()
    "Convert current '## a b c' headline into #a-b-c anchor ready to be pasted."
    (interactive)
