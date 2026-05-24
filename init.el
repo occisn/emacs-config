@@ -299,6 +299,44 @@ On Linux, returns PATH unchanged since backslashes are not needed."
    :config
    (my-init--message-package-loaded "f"))
 
+ (defun my--file-size-Mo (filename)
+   "Return file size of FILENAME in Mo.
+(v1, available in occisn/emacs-utils GitHub repository)"
+   (round
+    (/ (file-attribute-size (file-attributes filename))
+       1000000)))
+
+ (defun my--add-number-grouping (number &optional separator)
+   "Return a string corresponding to NUMBER, with each 3-digit group separated by SEPARATOR, by default a comma.
+For instance: 123456 as a number --> 123,456 as a string
+(v1, available in occisn/emacs-utils GitHub repository)"
+   (let ((num (number-to-string number))
+         (op (or separator ",")))
+     (while (string-match "\\(.*[0-9]\\)\\([0-9][0-9][0-9].*\\)" num)
+       (setq num (concat
+                  (match-string 1 num) op
+                  (match-string 2 num))))
+     num))
+
+ (defun my--insert-dired-button (action)
+   "Insert a clickable \"DIRED\" text button at point that runs ACTION when clicked.
+ACTION is called with one argument (the button) and typically navigates dired.
+(v1, available in occisn/emacs-utils GitHub repository)"
+   (let ((start (point)))
+     (insert "DIRED")
+     (make-text-button start (point)
+                       'action action
+                       'follow-link t
+                       'face '(:box (:line-width 2 :color "gray50" :style released-button)
+                                    :background "lightgray"
+                                    :foreground "black"
+                                    :weight bold)
+                       'mouse-face '(:box (:line-width 2 :color "gray30" :style pressed-button)
+                                          :background "darkgray"
+                                          :foreground "black"
+                                          :weight bold)
+                       'help-echo "Click this button")))
+
  (defun my/list-big-files-in-current-directory-and-subdirectories ()
    "List big files in current dired directory and its sub-directories.
 The list is printed on a separate buffer.
@@ -307,66 +345,34 @@ Requires 'f' package.
    (interactive)
    (unless (string= major-mode "dired-mode")
      (error "Not in dired-mode."))
-   (cl-labels ((file-size-Mo (filename)
-                 "Return file size of FILENAME in Mo.
-(v1, available in occisn/elisp-utils GitHub repository)"
-                 (round
-                  (/
-                   (file-attribute-size
-                    (file-attributes filename))
-                   1000000)))
-               (add-number-grouping (number &optional separator)
-                 "Return a string corresponding to NUMBER, which each 3-digit group separated by SEPARATOR, by default a comma.
-For instance: 123456 as a number--> 123,456 as a string
-(v1, available in occisn/elisp-utils GitHub repository)"
-                 (let ((num (number-to-string number))
-                       (op (or separator ",")))
-                   (while (string-match "\\(.*[0-9]\\)\\([0-9][0-9][0-9].*\\)" num)
-                     (setq num (concat 
-                                (match-string 1 num) op
-                                (match-string 2 num))))
-                   num))) ; end of function definitions within cl-labels
-     (let ((root default-directory)
-           (size0 (string-to-number (read-string "Minimal size in Mo (default = 50): " "" nil "50")))
-           (results-buffer (generate-new-buffer "*Big files*"))
-           (list1 nil)
-           (list2 nil)
-           (start-time (current-time)))
-       (f-files root
-                (lambda (file)
-                  (when (> (file-size-Mo file) size0)
-                    (push (cons file (file-size-Mo file)) list1))
-                  nil)
-                t)
-       (setq list2 (sort list1 (lambda (a b) (> (cdr a) (cdr b)))))
-       (switch-to-buffer results-buffer)
-       (newline)
-       (insert (format "In %.3f seconds...\n" (float-time (time-since start-time))))
-       (newline)
-       (cond ((> (length list2) 1)
-              (insert (format "%s files found > %s Mo:\n\n" (length list2) size0)))
-             ((= (length list2) 1)
-              (insert (format "1 file found > %s Mo:\n\n" size0)))
-             (t (insert (format "0 file found > %s Mo.\n" size0))))
-       (dolist (x list2)
-         (let ((start (point)))
-           (insert "DIRED")
-           (make-text-button start (point)
-                             'action (lambda (_button)
-                                       (dired (file-name-directory (car x)))
-                                       (dired-goto-file (car x))) 
-                             'follow-link t
-                             'face '(:box (:line-width 2 :color "gray50" :style released-button)
-                                          :background "lightgray"
-                                          :foreground "black"
-                                          :weight bold)
-                             'mouse-face '(:box (:line-width 2 :color "gray30" :style pressed-button)
-                                                :background "darkgray"
-                                                :foreground "black"
-                                                :weight bold)
-                             'help-echo "Click this button")) ; end of let (button)
-         (insert (format " %s Mo = %s\n" (add-number-grouping (cdr x)) (car x))))) ; end of insert
-     (goto-char (point-min)))) ; end of defun
+   (let ((root default-directory)
+         (size0 (string-to-number (read-string "Minimal size in Mo (default = 50): " "" nil "50")))
+         (results-buffer (generate-new-buffer "*Big files*"))
+         (list1 nil)
+         (list2 nil)
+         (start-time (current-time)))
+     (f-files root
+              (lambda (file)
+                (when (> (my--file-size-Mo file) size0)
+                  (push (cons file (my--file-size-Mo file)) list1))
+                nil)
+              t)
+     (setq list2 (sort list1 (lambda (a b) (> (cdr a) (cdr b)))))
+     (switch-to-buffer results-buffer)
+     (newline)
+     (insert (format "In %.3f seconds...\n" (float-time (time-since start-time))))
+     (newline)
+     (cond ((> (length list2) 1)
+            (insert (format "%s files found > %s Mo:\n\n" (length list2) size0)))
+           ((= (length list2) 1)
+            (insert (format "1 file found > %s Mo:\n\n" size0)))
+           (t (insert (format "0 file found > %s Mo.\n" size0))))
+     (dolist (x list2)
+       (my--insert-dired-button (lambda (_button)
+                                  (dired (file-name-directory (car x)))
+                                  (dired-goto-file (car x))))
+       (insert (format " %s Mo = %s\n" (my--add-number-grouping (cdr x)) (car x))))
+     (goto-char (point-min))))
 
  (defun my/list-directories-with-many-files-or-direct-subdirectories ()
    "List directories with many files or direct sub-directories.
@@ -378,19 +384,8 @@ Requires 'f' package.
      (error "Not in dired-mode."))
    (cl-labels ((nb-of-elements-in-directory (folder)
                  "Return number of elements in FOLDER, including sub-folders (no recursive investigation of subdirectories).
-(v1, available in occisn/elisp-utils GitHub repository)"
-                 (- (length (directory-files folder)) 2))
-               (add-number-grouping (number &optional separator)
-                 "Return a string corresponding to NUMBER, which each 3-digit group separated by SEPARATOR, by default a comma.
-For instance: 123456 as a number--> 123,456 as a string
-(v1, available in occisn/elisp-utils GitHub repository)"
-                 (let ((num (number-to-string number))
-                       (op (or separator ",")))
-                   (while (string-match "\\(.*[0-9]\\)\\([0-9][0-9][0-9].*\\)" num)
-                     (setq num (concat 
-                                (match-string 1 num) op
-                                (match-string 2 num))))
-                   num))) ; end of functions definitions within cl-labels
+(v1, available in occisn/emacs-utils GitHub repository)"
+                 (- (length (directory-files folder)) 2)))
      (let ((root default-directory)
            (nb0 (string-to-number (read-string "Minimal number (default = 100): " "" nil "100")))
            (results-buffer (generate-new-buffer "*Folders with many files or direct subdirectories*"))
@@ -414,22 +409,8 @@ For instance: 123456 as a number--> 123,456 as a string
               (insert (format "1 directory found with more than %s files or direct subdirectories:\n\n" nb0)))
              (t (insert (format "0 directory found with more than %s files or direct subdirectories.\n" nb0))))
        (dolist (x list2)
-         (let ((start (point)))
-           (insert "DIRED")
-           (make-text-button start (point)
-                             'action (lambda (_button)
-                                       (dired (car x))) 
-                             'follow-link t
-                             'face '(:box (:line-width 2 :color "gray50" :style released-button)
-                                          :background "lightgray"
-                                          :foreground "black"
-                                          :weight bold)
-                             'mouse-face '(:box (:line-width 2 :color "gray30" :style pressed-button)
-                                                :background "darkgray"
-                                                :foreground "black"
-                                                :weight bold)
-                             'help-echo "Click this button")) ; end of let (button)
-         (insert (format " %s = %s" (add-number-grouping (cdr x)) (car x)))
+         (my--insert-dired-button (lambda (_button) (dired (car x))))
+         (insert (format " %s = %s" (my--add-number-grouping (cdr x)) (car x)))
          (newline))
        (goto-char (point-min)))))
 
@@ -449,7 +430,7 @@ Requires 'f' package.
          (start-time (current-time)))
      (cl-labels ((file-size-o (filename)
                    "Return file size of FILENAME in o.
-(derived from v1, available in occisn/elisp-utils GitHub repository)"
+(derived from v1, available in occisn/emacs-utils GitHub repository)"
                    (file-attribute-size (file-attributes filename)))
                  (list-size-of-directory-and-subdirectories (current-root)
                    "Compute size of CURRENT-ROOT directory by adding size of its files and recursively examining size of subdirectories.
@@ -463,18 +444,7 @@ During this process, each time a directory size exceeds MINIMAL-SIZE (bound in e
                        (setq size (+ size (list-size-of-directory-and-subdirectories subdir1))))
                      (when (> size (* 1000000 minimal-size))
                        (push (cons current-root (round (/ size 1000000))) list1))
-                     size))
-                 (add-number-grouping (number &optional separator)
-                   "Return a string corresponding to NUMBER, which each 3-digit group separated by SEPARATOR, by default a comma.
-For instance: 123456 as a number--> 123,456 as a string
-(v1, available in occisn/elisp-utils GitHub repository)"
-                   (let ((num (number-to-string number))
-                         (op (or separator ",")))
-                     (while (string-match "\\(.*[0-9]\\)\\([0-9][0-9][0-9].*\\)" num)
-                       (setq num (concat 
-                                  (match-string 1 num) op
-                                  (match-string 2 num))))
-                     num))) ; end of functions definition within cl-labels
+                     size)))
        (list-size-of-directory-and-subdirectories root)
        (setq list2 (sort list1 (lambda (a b) (> (cdr a) (cdr b)))))
        (switch-to-buffer results-buffer)
@@ -487,22 +457,8 @@ For instance: 123456 as a number--> 123,456 as a string
               (insert (format "1 directory weighing more than %s Mo:\n\n" minimal-size)))
              (t (insert (format "0 directory weighing more than %s Mo.\n" minimal-size))))
        (dolist (x list2)
-         (let ((start (point)))
-           (insert "DIRED")
-           (make-text-button start (point)
-                             'action (lambda (_button)
-                                       (dired (car x))) 
-                             'follow-link t
-                             'face '(:box (:line-width 2 :color "gray50" :style released-button)
-                                          :background "lightgray"
-                                          :foreground "black"
-                                          :weight bold)
-                             'mouse-face '(:box (:line-width 2 :color "gray30" :style pressed-button)
-                                                :background "darkgray"
-                                                :foreground "black"
-                                                :weight bold)
-                             'help-echo "Click this button"))
-         (insert (format " %s Mo = %s\n" (add-number-grouping (cdr x)) (car x))))
+         (my--insert-dired-button (lambda (_button) (dired (car x))))
+         (insert (format " %s Mo = %s\n" (my--add-number-grouping (cdr x)) (car x))))
        (goto-char (point-min)))))
 
  (defun my/list-directories-containing-zip-files ()
@@ -523,21 +479,14 @@ Requires 'f' package.
      (cl-labels ((string-suffix-p (suffix str &optional ignore-case)
                    "Return t if STR finished by SUFFIX.
 Ignore case.
-(v1, available in occisn/elisp-utils GitHub repository)
-Source: https://stackoverflow.com/questions/22403751/check-if-a-string-ends-with-a-suffix-in-emacs-lisp" 
+(v1, available in occisn/emacs-utils GitHub repository)
+Source: https://stackoverflow.com/questions/22403751/check-if-a-string-ends-with-a-suffix-in-emacs-lisp"
                    (let ((begin2 (- (length str) (length suffix)))
                          (end2 (length str)))
                      (when (< begin2 0) (setq begin2 0))
                      (eq t (compare-strings suffix nil nil
                                             str begin2 end2
-                                            ignore-case))))
-                 (file-size-Mo (filename)
-                   "Return file size of FILENAME in Mo.
-(v1, available in occisn/elisp-utils GitHub repository)"
-                   (round
-                    (/ (file-attribute-size
-                        (file-attributes filename))
-                       1000000)))) ; end of functions definition within cl-labels
+                                            ignore-case)))))
        (f-directories root
                       (lambda (folder)
                         (let ((zip-files-and-sizes nil)
@@ -546,10 +495,10 @@ Source: https://stackoverflow.com/questions/22403751/check-if-a-string-ends-with
                           (f-files folder
                                    (lambda (file)
                                      (when (string-suffix-p ".zip" file)
-                                       (push (cons file (file-size-Mo file)) zip-files-and-sizes))
+                                       (push (cons file (my--file-size-Mo file)) zip-files-and-sizes))
                                      nil)
                                    nil ; not recursive
-                                   ) 
+                                   )
                           (unless (null zip-files-and-sizes)
                             (setq sorted-zip-files-and-sizes (sort zip-files-and-sizes (lambda (a b) (> (cdr a) (cdr b)))))
                             (setq biggest-zip-file-and-size (car sorted-zip-files-and-sizes))
@@ -569,27 +518,14 @@ Source: https://stackoverflow.com/questions/22403751/check-if-a-string-ends-with
              ((= (length sorted-suspect-folders) 1)
               (insert (format "1 directory found with ZIP file(s):\n\n")))
              (t (insert (format "0 directory found with ZIP file(s).\n"))))
-       
+
        (dolist (x sorted-suspect-folders)
          (insert (format "%s Mo zip in %s" (cadr x) (car x)))
          (newline)
          (insert "      ")
-         (let ((start (point)))
-           (insert "DIRED")
-           (make-text-button start (point)
-                             'action (lambda (_button)
-                                       (dired (file-name-directory (caddr x)))
-                                       (dired-goto-file (caddr x))) 
-                             'follow-link t
-                             'face '(:box (:line-width 2 :color "gray50" :style released-button)
-                                          :background "lightgray"
-                                          :foreground "black"
-                                          :weight bold)
-                             'mouse-face '(:box (:line-width 2 :color "gray30" :style pressed-button)
-                                                :background "darkgray"
-                                                :foreground "black"
-                                                :weight bold)
-                             'help-echo "Click this button"))
+         (my--insert-dired-button (lambda (_button)
+                                    (dired (file-name-directory (caddr x)))
+                                    (dired-goto-file (caddr x))))
          (insert (format " %s\n" (file-name-nondirectory (caddr x)))))
        (goto-char (point-min)))))
 
