@@ -331,7 +331,8 @@
  (add-hook 'powerlanguage-mode-hook
            (lambda ()
              (setq outline-regexp "// === ")
-             (outline-minor-mode)))
+             (outline-minor-mode)
+             (display-line-numbers-mode 1)))
 
  (defhydra hydra-powerlanguage (:exit t :hint nil)
    "
