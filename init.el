@@ -1056,6 +1056,14 @@ Shall be used in the 'config' section of each package."
    "Major mode for editing Power BI DAX." t)
  (add-to-list 'auto-mode-alist '("\\.dax\\'" . DAX-mode))
 
+ ;; --- PowerLanguage: autoload + file association ---
+ (autoload 'powerlanguage-mode
+   (file-name-sans-extension
+    (concat (file-name-directory (or load-file-name buffer-file-name))
+            "init--lang-powerlanguage.el"))
+   "Major mode for editing Multicharts PowerLanguage (.pwl) files." t)
+ (add-to-list 'auto-mode-alist '("\\.pwl\\'" . powerlanguage-mode))
+
  ;; --- Org-babel advice (must register at startup; modules load later) ---
  ;; Each function loads its babel language on first C-c C-c, then removes itself.
 

@@ -109,6 +109,7 @@ Undo : C-j to cut undo chain?
     ((eql major-mode 'nov-mode) (hydra-nov/body))
     ((eql major-mode 'org-mode) (hydra-org-mode/body))
     ((eql major-mode 'plain-tex-mode) (hydra-tex/body))
+    ((eql major-mode 'powerlanguage-mode) (hydra-powerlanguage/body))
     ((eql major-mode 'python-mode) (hydra-python/body))
     ((eql major-mode 'sldb-mode) (hydra-sldb/body))
     ((eql major-mode 'slime-repl-mode) (hydra-slime-repl/body))
