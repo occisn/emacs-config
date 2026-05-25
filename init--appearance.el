@@ -312,6 +312,10 @@
  (when nil
    (push '("\\.pbix$" all-the-icons-octicon "graph" :v-adjust 0.0 :face all-the-icons-dblue) all-the-icons-icon-alist)
    (push '("\\.xls[xm]?$"   all-the-icons-fileicon "excel" :face all-the-icons-blue) all-the-icons-icon-alist))
+
+ ;; PowerLanguage (TradeStation) — trading chart icon
+ (with-eval-after-load 'all-the-icons
+   (push '("\\.pwl$" all-the-icons-faicon "line-chart" :face all-the-icons-green) all-the-icons-icon-alist))
  
  ;; fonts shall be installed
  ;; M-x all-the-icons-install-fonts allows downloading theme
