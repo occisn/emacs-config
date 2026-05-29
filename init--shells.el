@@ -351,6 +351,17 @@ is stripped — spawning the target command directly and letting
  ;;   [wsl] sudo apt update && sudo apt full-upgrade
 
  (when *my-init--windows-p*
+ (defun my-init--wslpath (windows-path)
+   "Convert WINDOWS-PATH to its WSL equivalent (e.g. /mnt/c/...).
+Invokes wsl.exe directly via `call-process' (no intermediate cmd.exe)
+so that cmd metacharacters such as `&' or `|' in the path are not
+interpreted by the shell. Returns the trimmed `wslpath' output, or an
+empty string on failure."
+   (with-temp-buffer
+     (if (zerop (call-process "wsl.exe" nil t nil "wslpath" windows-path))
+         (string-trim (buffer-string))
+       "")))
+
  (defun my/open-wsl-shell-external ()
    "Open a visible WSL terminal (bash) window in the directory of the current buffer."
    (interactive)
@@ -358,9 +369,7 @@ is stripped — spawning the target command directly and letting
                    (file-name-directory (or (buffer-file-name) default-directory))
                  (expand-file-name "~")))
           ;; Convert Windows path to WSL path (/mnt/c/Users/...)
-          (wsl-dir (string-trim
-                    (shell-command-to-string
-                     (format "wsl wslpath '%s'" dir)))))
+          (wsl-dir (my-init--wslpath dir)))
      (message "wsl-dir = %s" wsl-dir)
      (if (and wsl-dir (not (string-empty-p wsl-dir)))
          ;; Use `cmd /C start` to open a visible terminal window
@@ -383,9 +392,7 @@ one (via `wt -w 0 nt'); otherwise Windows Terminal launches a new window."
    (let* ((dir (if (or (buffer-file-name) (derived-mode-p 'dired-mode))
                    (file-name-directory (or (buffer-file-name) default-directory))
                  (expand-file-name "~")))
-          (wsl-dir (string-trim
-                    (shell-command-to-string
-                     (format "wsl wslpath '%s'" dir)))))
+          (wsl-dir (my-init--wslpath dir)))
      (if (and wsl-dir (not (string-empty-p wsl-dir)))
          (let ((proc (start-process
                       "wt" nil
@@ -414,9 +421,7 @@ The prompt is 'fake' and is not updated with successive 'cd'."
                        (file-name-directory (or (buffer-file-name) default-directory))
                      (expand-file-name "~")))
           ;; Convert Windows path to WSL path
-          (wsl-dir (string-trim
-                    (shell-command-to-string
-                     (format "wsl wslpath '%s'" (expand-file-name win-dir)))))
+          (wsl-dir (my-init--wslpath (expand-file-name win-dir)))
           (buffer-name (generate-new-buffer-name "*WSL*"))
           (coding-system-for-read 'utf-8-unix)
           (coding-system-for-write 'utf-8-unix)
