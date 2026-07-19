@@ -78,16 +78,15 @@
  "server"
 
  ;; Start Emacs server if not already running
- (when nil
-   (require 'server)
-   (unless (server-running-p)
-     (server-start)))
+ (require 'server)
+ (unless (server-running-p)
+   (server-start)
+   (my-init--message2 "Emacs server started"))
 
- ;; Actually I have not managed to open an .org file from Windows Explorer by double-click.
- ;; Some tricks allows managing spaces in filename, but not accents.
- ;; So server is not really needed.
-
- ;; However, we can open an .org file from Windows Explorer by drag-and-drop into Emacs.
+ ;; Note: I have not managed to open an .org file from Windows Explorer by double-click:
+ ;; some tricks allow managing spaces in filename, but not accents.
+ ;; However, we can open an .org file from Windows Explorer by drag-and-drop into Emacs,
+ ;; and the server allows `emacsclient' to reuse this Emacs instance.
  
  ) ; end of init section
 

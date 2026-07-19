@@ -899,6 +899,12 @@ v1 as of 2025-09-07; available in occisn/elisp-utils GitHub repository"
         (insert (format "Current garbage collector threshold: %s\n" (my/number-to-string-with-comma-as-thousand-separator gc-cons-threshold)))
 
         (newline)
+        (insert (format "Emacs server: %s\n"
+                        (if (and (fboundp 'server-running-p) (server-running-p))
+                            (format "running as '%s'" server-name)
+                          "not running")))
+
+        (newline)
         (insert "Warnings:\n")
         (if (null *my-init--warnings-list*)
             (insert "   (void)\n")
