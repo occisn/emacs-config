@@ -205,7 +205,9 @@ If WITH-DAY-IN-WEEK-P, return 'mardi 25 août 2023' or similar
 
  ;; F3, F4 = Emacs macros
 
- ;; F5 = free
+ ;; F5 = activate 'Commun' directory with projectile (see 'my/activate-Commun-projectile')
+
+ (global-set-key '[(f5)] #'my/activate-Commun-projectile)
 
  ;; F6, F7 = calc (see below)
 

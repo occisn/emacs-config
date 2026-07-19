@@ -48,4 +48,22 @@ Just below: screenshot corresponding to (5): buffer with buttons to switch fonts
 
 ![buffer with buttons to switch fonts](readme-pics/fonts-chooser.png)
 
+## Function keys
+
+| Key | Effect |
+|-----|--------|
+| `F1` | Open the main init file (`init.el`) |
+| `F2` | *(free)* |
+| `F3` / `F4` | Emacs keyboard macros (default bindings) |
+| `F5` | Activate the `Commun` directory with Projectile (`my/activate-Commun-projectile`) |
+| `F6` | Read a Calc macro (`my/calc-read-macro`) |
+| `F7` | Select markdown code block and read Calc macro (`my/calc-select-markdown-code-and-read-calc-macro`) |
+| `F8` | Insert today's date as `YYYY-MM-DD` |
+| `M-F8` | Insert today's date in French |
+| `C-F8` | In org-mode, insert a meeting-notes skeleton (`#+TITLE:`, `#+DATE:`, `Participants:`) |
+| `F9` | Open Dired at the root of the main project |
+| `F10` | Open the `F10` file |
+| `F11` | Toggle full screen (default binding) |
+| `F12` | Open the temporary `F12` file |
+
 (end of README)
