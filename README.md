@@ -63,6 +63,7 @@ Just below: screenshot corresponding to (5): buffer with buttons to switch fonts
 | `C-F8` | In org-mode, insert a meeting-notes skeleton (`#+TITLE:`, `#+DATE:`, `Participants:`) |
 | `F9` | Open Dired at the root of the main project |
 | `F10` | Open the `F10` file |
+| `S-F10` | Open the personal todo file (`F10-file-perso`), whatever the context |
 | `F11` | Toggle full screen (default binding) |
 | `F12` | Open the temporary `F12` file |
 

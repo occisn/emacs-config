@@ -261,7 +261,16 @@ If WITH-DAY-IN-WEEK-P, return 'mardi 25 août 2023' or similar
      (global-set-key '[(f10)] (lambda () (interactive)
                                 (find-file *F10-file*)))
    (my-init--warning "Cannot assign f10 to *F10-file* since its content is not valid: %s" *F10-file*))
- 
+
+ ;; S-F10: personal todo file, whatever the context (perso or pro)
+ ;; (same as [1] in the org-mode hydra)
+ ;; (same as `C-c d 1` from org-mode on professional laptop) 
+
+ (if (my-init--file-exists-p *F10-file-perso*)
+     (global-set-key '[(shift f10)] (lambda () (interactive)
+                                      (find-file *F10-file-perso*)))
+   (my-init--warning "Cannot assign S-f10 to *F10-file-perso* since its content is not valid: %s" *F10-file-perso*))
+
 
  ;; F11 = full screen
 
