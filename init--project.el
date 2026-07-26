@@ -612,6 +612,29 @@ d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
      (load-file *xah-find-file*)
    (my-init--warning "!! *xah-find-file* is nil or does not exist: %s" *xah-find-file*))
 
+ ;; xah-find walks files with `directory-files-recursively' and reads each
+ ;; match, so Emacs lock files (.#foo, a dangling symlink to
+ ;; "user@host.pid:boot-time") are picked up by any regex ending in the real
+ ;; extension, and reading one aborts the whole search with
+ ;; "Opening input file: Invalid argument". Ignore them, plus auto-save files.
+ (when (boundp 'xah-find-dir-ignore-regex-list)
+   (setq xah-find-dir-ignore-regex-list
+         (vconcat xah-find-dir-ignore-regex-list ["/\\.#" "/#[^/]*#$"])))
+
+ (defun my-init--xah-find-unreadable-p (path)
+   "Return non-nil when PATH cannot be read, so xah-find skips it.
+xah-find reads every file it collects and has no error handling, so a
+single unreadable entry aborts the whole search.  This happens with lock
+files written by an Emacs running in the other environment (a WSL symlink
+is an NTFS reparse point that Windows Emacs cannot follow, and reading it
+signals \"Opening input file: Invalid argument\"), and more generally with
+dangling symlinks and permission-denied files."
+   (not (file-readable-p path)))
+
+ (when (fboundp 'xah-find--ignore-dir-p)
+   (advice-add 'xah-find--ignore-dir-p :before-until
+               #'my-init--xah-find-unreadable-p))
+
  (defun xah-grep-in-current-dired-directory ()
    ""
    (interactive)

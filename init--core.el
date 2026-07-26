@@ -402,6 +402,16 @@ M-x list-[c]olors-display
  (setq backup-directory-alist `((".*" . ,temporary-file-directory)))
  (setq auto-save-file-name-transforms `((".*" ,temporary-file-directory t)))
 
+ ;; lock files (.#foo): keep them out of the (Dropbox-synced) source trees.
+ ;; A lock written by the Emacs of one environment is unreadable from the
+ ;; other (a WSL symlink is an NTFS reparse point Windows cannot follow), which
+ ;; breaks tree walkers and syncs junk. Note the trade-off: locks now live in a
+ ;; per-environment temporary directory, so Emacsen of different environments
+ ;; no longer see each other's locks at all.
+ (if (>= emacs-major-version 28)
+     (setq lock-file-name-transforms `((".*" ,temporary-file-directory t)))
+   (my-init--warning "Could not set lock-file-name-transforms since emacs version is not >= 28"))
+
  (if (>= emacs-major-version 28)
      (use-package keycast
        :commands (keycast-mode)
