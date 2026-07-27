@@ -490,6 +490,109 @@ files)."
          (pop-to-buffer buf-name)
          (message "Done. %d total line(s)." total-lines)))))
 
+ ;; === (13.7) Count files in current directory and all its sub-directories
+
+ (defun my/dired-count-files-recursively ()
+   "In Dired, count files in the current directory and all its sub-directories.
+
+Display in a separate buffer the recursive total (number of files,
+number of sub-directories, cumulated size), plus a breakdown per
+direct sub-directory sorted by decreasing number of files.
+
+Hidden files are counted.  Symbolic links are counted as files and are
+never followed, so the walk cannot loop.  Directories that cannot be
+read are skipped and listed at the end of the buffer."
+   (interactive)
+   (unless (string= major-mode "dired-mode")
+     (error "Not in dired-mode."))
+   (let ((root (expand-file-name default-directory))
+         (start-time (current-time))
+         (unreadable nil))
+     (cl-labels
+         ((walk (dir)
+            "Return (FILES SUBDIRS SIZE) found below DIR, recursively."
+            (let ((files 0) (subdirs 0) (size 0))
+              (condition-case nil
+                  (dolist (entry (directory-files-and-attributes dir t nil t))
+                    (let* ((name (car entry))
+                           (attrs (cdr entry))
+                           (type (file-attribute-type attrs)))
+                      (cond
+                       ((member (file-name-nondirectory name) '("." "..")))
+                       ((eq type t)     ; real sub-directory
+                        (let ((sub (walk name)))
+                          (setq subdirs (+ subdirs 1 (nth 1 sub))
+                                files (+ files (nth 0 sub))
+                                size (+ size (nth 2 sub)))))
+                       (t               ; file, or symlink (not followed)
+                        (setq files (1+ files)
+                              size (+ size (or (file-attribute-size attrs) 0)))))))
+                (file-error (push dir unreadable)))
+              (list files subdirs size))))
+
+       (message "Counting files below %s ..." root)
+       (let ((direct-files 0)
+             (direct-size 0)
+             (per-subdir nil))
+         ;; Walk the root itself, keeping one entry per direct sub-directory.
+         (condition-case nil
+             (dolist (entry (directory-files-and-attributes root t nil t))
+               (let* ((name (car entry))
+                      (attrs (cdr entry))
+                      (type (file-attribute-type attrs)))
+                 (cond
+                  ((member (file-name-nondirectory name) '("." "..")))
+                  ((eq type t)
+                   (push (cons name (walk name)) per-subdir))
+                  (t
+                   (setq direct-files (1+ direct-files)
+                         direct-size (+ direct-size (or (file-attribute-size attrs) 0)))))))
+           (file-error (push root unreadable)))
+
+         (let* ((per-subdir (sort per-subdir
+                                  (lambda (a b) (> (nth 1 a) (nth 1 b)))))
+                (total-files (+ direct-files
+                                (apply #'+ (mapcar (lambda (x) (nth 1 x)) per-subdir))))
+                (total-dirs (+ (length per-subdir)
+                               (apply #'+ (mapcar (lambda (x) (nth 2 x)) per-subdir))))
+                (total-size (+ direct-size
+                               (apply #'+ (mapcar (lambda (x) (nth 3 x)) per-subdir))))
+                (results-buffer (generate-new-buffer
+                                 (format "*File count: %s*"
+                                         (directory-file-name root)))))
+           (switch-to-buffer results-buffer)
+           (newline)
+           (insert (format "In %.3f seconds...\n" (float-time (time-since start-time))))
+           (newline)
+           (insert (format "Directory: %s\n\n" root))
+           (insert (format "Total (recursive): %s file(s), %s sub-directory(ies), %s\n"
+                           (my--add-number-grouping total-files)
+                           (my--add-number-grouping total-dirs)
+                           (file-size-human-readable total-size 'iec " ")))
+           (insert (format "Directly in this directory: %s file(s), %s\n"
+                           (my--add-number-grouping direct-files)
+                           (file-size-human-readable direct-size 'iec " ")))
+           (if (null per-subdir)
+               (insert "\nNo sub-directory.\n")
+             (insert "\nPer direct sub-directory (counted recursively):\n\n")
+             (dolist (x per-subdir)
+               (my--insert-dired-button (lambda (_button) (dired (car x))))
+               (insert (format " %10s file(s) %10s  %s\n"
+                               (my--add-number-grouping (nth 1 x))
+                               (file-size-human-readable (nth 3 x) 'iec " ")
+                               (file-name-nondirectory (directory-file-name (car x)))))))
+           (when unreadable
+             (insert (format "\n%s directory(ies) could not be read:\n\n"
+                             (length unreadable)))
+             (dolist (dir (nreverse unreadable))
+               (insert (format "  %s\n" dir))))
+           (goto-char (point-min))
+           (special-mode)
+           (message "Done.  %s file(s) in %s sub-directory(ies), %s."
+                    (my--add-number-grouping total-files)
+                    (my--add-number-grouping total-dirs)
+                    (file-size-human-readable total-size 'iec " ")))))))
+
  ;; ===  (14) Mutiple deletions
 
  ;; hack to allow multiple deletions through D D D D X
@@ -630,8 +733,11 @@ Zip: [u]nzip, [z]ip content of current directory;
 pdf: M-x my/pdf-burst, M-x my/pdf-extract, M-x my/pdf-join
 Files: my/list-big-files-in-current-directory-and-subdirectories, my/list-directories-with-many-files-or-direct-subdirectories (# of files), my/list-directories-of-big-size, my/list-directories-containing-zip-files, my/find-files-with-same-size-in-same-subdirectory
 [n]: show line count + first n / last n lines of file at point (default n=10)
+[#]: count files here and in all sub-directories (M-x my/dired-count-files-recursively)
+     (for a plain count of the current buffer only: t then * N)
 Attach file to mail: C-c RET C-a (gnus-dired-attach)
 Project: C-c C-l clean/load | C-c C-m make/main | C-c C-r run/restart | C-c C-t test (detects C vs CL)"
+   ("#" #'my/dired-count-files-recursively)
    ("a" #'my/dired-clean-build-artifacts)
    ("c" #'my/copy-file-here)
    ("h" #'my/paste-image-from-clipboard-to-here)
