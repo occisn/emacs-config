@@ -899,10 +899,16 @@ v1 as of 2025-09-07; available in occisn/elisp-utils GitHub repository"
         (insert (format "Current garbage collector threshold: %s\n" (my/number-to-string-with-comma-as-thousand-separator gc-cons-threshold)))
 
         (newline)
+        ;; `server-running-p' is unreliable on Windows (stale connection file
+        ;; with a recycled PID -> false positive, see server section in
+        ;; init--tests.el), so report what THIS Emacs actually owns.
         (insert (format "Emacs server: %s\n"
-                        (if (and (fboundp 'server-running-p) (server-running-p))
-                            (format "running as '%s'" server-name)
-                          "not running")))
+                        (cond ((and (boundp 'server-process) server-process
+                                    (eq (process-status server-process) 'listen))
+                               (format "running as '%s'" server-name))
+                              ((and (fboundp 'server-running-p) (server-running-p))
+                               (format "not running here, but connection file '%s' exists (stale, or another Emacs)" server-name))
+                              (t "not running"))))
 
         (newline)
         (insert "Warnings:\n")

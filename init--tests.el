@@ -77,9 +77,36 @@
  t
  "server"
 
- ;; Start Emacs server if not already running
+ ;; Start Emacs server if not already running.
+ ;;
+ ;; Beware: `server-running-p' is NOT a liveness test for *this* Emacs.
+ ;; On Windows `server-use-tcp' is t, so it does not connect to anything: it
+ ;; merely reads the connection file <server-auth-dir>/<server-name>
+ ;; (here C:/portable-programs/emacs-30.2/.emacs.d/server/server), and returns
+ ;; t as soon as *some* process owns the PID recorded in that file -- without
+ ;; ever checking that this process is an Emacs.
+ ;; So when Emacs is killed instead of exiting cleanly, the file survives with
+ ;; a dead PID; Windows recycles PIDs quickly (merely starting WSL spawns
+ ;; wsl.exe / wslhost.exe / wslservice / VM helpers), the PID gets reused, and
+ ;; `server-running-p' then claims a server is running while there is none:
+ ;; `server-start' was skipped and `emacsclient' could not connect.
+ ;; (On GNU/Linux the same function takes the local-socket branch, where it
+ ;; really opens a connection, hence the problem is Windows-only.)
+ ;;
+ ;; Trustworthy checks instead:
+ ;;   - `server-process' + its status : did THIS Emacs start a server?
+ ;;   - `server-eval-at'              : does a real Emacs answer on that file?
  (require 'server)
- (unless (server-running-p)
+ (unless (and server-process
+              (eq (process-status server-process) 'listen))
+   ;; This Emacs has no server. Before starting one, get rid of a possibly
+   ;; stale connection file: if nothing real answers through it, it is a
+   ;; leftover, and `server-start' would otherwise warn and refuse to start.
+   ;; (Caveat: if several Emacs run on Windows under the same HOME, this makes
+   ;; the last one started own the name "server".)
+   (unless (ignore-errors (server-eval-at server-name '(emacs-pid)))
+     (let ((inhibit-message t))          ; silence "No connection file ..."
+       (server-force-delete)))
    (server-start)
    (my-init--message2 "Emacs server started"))
 
