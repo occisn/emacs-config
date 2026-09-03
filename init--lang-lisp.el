@@ -174,18 +174,14 @@
    "Indent Lisp buffer."
    (interactive)
    (save-excursion
-     (let ((nb-tabs (count-matches "\t")))
+     (let ((nb-tabs (count-matches "\t" (point-min) (point-max))))
 
        ;; (1) untabify if necessary:
        (when (> nb-tabs 0)
          (if (= nb-tabs 1)
              (message "1 tab identified... untabifying buffer")
            (message "%d tabs identified... untabifying buffer" nb-tabs))
-         (goto-char (point-min))
-         (push-mark)
-         (goto-char (point-max))
-         (untabify (point) (mark))
-         (pop-mark))
+         (untabify (point-min) (point-max)))
 
        ;; (2) indent:       
        (indent-region (point-min) (point-max))

@@ -718,17 +718,13 @@ Markdown counterpart of `my/org-copy-link-or-inline-code-or-verbatim-or-block':
    "Convert current '## a b c' headline into #a-b-c anchor ready to be pasted."
    (interactive)
    (aprogn
-    (beginning-of-line)
-    (call-interactively 'set-mark-command)
-    (end-of-line)
-    (buffer-substring-no-properties (region-beginning) (region-end))
+    (buffer-substring-no-properties (line-beginning-position) (line-end-position))
     (substring it 3)                    ; delete '## '
     (downcase it)
     (string-replace ":" "" it)
     (string-replace " " "-" it)
-    (concat "#" it) 
+    (concat "#" it)
     (progn
-      (call-interactively 'set-mark-command)
       (kill-new it)
       (message "Ready to be yanked: %s" it))))
 
