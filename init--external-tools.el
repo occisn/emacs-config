@@ -39,7 +39,7 @@ w   to resize cell
    (interactive)
    (unless (my-init--file-exists-p *unzip-program*)
      (error "Unable to use unzip since no program defined: %s" *unzip-program*))
-   (unless (string= major-mode "dired-mode")
+   (unless (derived-mode-p 'dired-mode)
      (error "Trying to unzip when not in dired-mode."))
    (when (> (length (dired-get-marked-files)) 1)
      (error "Trying to unzip several files."))
@@ -77,7 +77,7 @@ For instance: abc/def --> abc\\def. On Linux, returns PATH unchanged."
    (interactive)
    (unless (my-init--file-exists-p *unzip-program*)
      (error "Unable to use unzip since no program defined: %s" *unzip-program*))
-   (unless (string= major-mode "dired-mode")
+   (unless (derived-mode-p 'dired-mode)
      (error "Trying to zip when not in dired-mode."))
    (cl-labels ((replace-linux-slash-with-two-windows-slashes (path)
                  "Return PATH string after having replaced slashes by two backslashes.
@@ -106,7 +106,7 @@ For instance: abc/def --> abc\\def. On Linux, returns PATH unchanged."
    (interactive)
    (unless (my-init--file-exists-p *unzip-program*)
      (error "Unable to list content of zip file since no program defined: %s" *unzip-program*))
-   (unless (string= major-mode "dired-mode")
+   (unless (derived-mode-p 'dired-mode)
      (error "Trying to list content of zip file when not in dired-mode."))
    (when (> (length (dired-get-marked-files)) 1)
      (error "Trying to list the content of several files."))
@@ -133,7 +133,7 @@ Attention: overwrite.
    (interactive)
    (unless (my-init--file-exists-p *unzip-program*)
      (error "Unable to add to zip archive since no program defined: %s" *unzip-program*))
-   (unless (string= major-mode "dired-mode")
+   (unless (derived-mode-p 'dired-mode)
      (error "Trying to add to zip archive when not in dired-mode."))
    (let ((files-to-add (dired-get-marked-files)))
      (message "marked files: %s" files-to-add)
@@ -230,7 +230,7 @@ To be called from dired hydra."
 To be called from hydra."
      (interactive)
 
-     (cond ((string= major-mode "dired-mode")
+     (cond ((derived-mode-p 'dired-mode)
             (let ((proc (start-process "cmd" nil "cmd.exe" "/C" "start" "cmd.exe" "/K" "cd" default-directory)))
               (set-process-query-on-exit-flag proc nil)
               (my-init--message2 "Native cmd window opened in %s directory" default-directory)))
@@ -468,7 +468,7 @@ Uses Imagemagick and Tesseract.
 (v4, available in occisn/emacs-utils GitHub repository)"
    (interactive)
    
-   (unless (string= major-mode "dired-mode")
+   (unless (derived-mode-p 'dired-mode)
      (error "Scanned pdf to txt: not in dired mode."))
    (when (> (length (dired-get-marked-files)) 1)
      (error "Scanned pdf to txt: more than 1 file has been selected."))
@@ -559,7 +559,7 @@ Nothing is renamed unless the date of every marked file could be read.
                        (error "Cannot parse 'Date:' line \"%s\" of file %s" date-line file))
                      (format "%04d-%02d-%02d" year month day))))) ; end of labels definitions
 
-     (unless (string= major-mode "dired-mode")
+     (unless (derived-mode-p 'dired-mode)
        (error "Trying to add dates at the beginning of eml files when not in dired-mode."))
 
      (let ((files-list (dired-get-marked-files))

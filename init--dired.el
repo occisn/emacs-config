@@ -139,7 +139,7 @@
  (defun my/open-current-dired-directory-in-file-manager ()
    "Open current dired directory in the system file manager."
    (interactive)
-   (unless (equal major-mode 'dired-mode)
+   (unless (derived-mode-p 'dired-mode)
      (error "This is not a dired buffer"))
    (let ((dir (expand-file-name default-directory)))
      (cond
@@ -188,7 +188,7 @@
    "Copy file as another file (adding ' (2)' at the end) in same dired folder.
 (v1, available in occisn/emacs-utils GitHub repository)"
    (interactive)
-   (unless (string= major-mode "dired-mode")
+   (unless (derived-mode-p 'dired-mode)
      (error "Trying to copy file when not in dired-mode."))
    (when (> (length (dired-get-marked-files)) 1)
      (error "Trying to copy several files in same folder."))
@@ -212,7 +212,7 @@ Uses ImageMagick.
 (v1, available in occisn/emacs-utils GitHub repository + adaptations)"
    (interactive)
 
-   (unless (string= major-mode "dired-mode")
+   (unless (derived-mode-p 'dired-mode)
      (error "Trying to paste image from clipboard while not in dired-mode"))
 
    (cl-labels ((paste-image-from-clipboard-to-file-with-imagemagick (destination-file-with-path)
@@ -269,7 +269,7 @@ Uses ImageMagick.
    "In Dired, copy the date of last modification of file into clipboard under YYYY-MM-DD format."
    (interactive)
 
-   (unless (string= major-mode "dired-mode")
+   (unless (derived-mode-p 'dired-mode)
      (error "Not in dired-mode."))
    (when (> (length (dired-get-marked-files)) 1)
      (error "Several files marked."))
@@ -309,7 +309,7 @@ has no DateTimeOriginal, and files already prefixed with YYYY-MM-DD _.
 Requires ImageMagick `identify' (on Windows: via
 `*imagemagick-identify-program*'; on Linux/WSL: via PATH)."
    (interactive)
-   (unless (string= major-mode "dired-mode")
+   (unless (derived-mode-p 'dired-mode)
      (error "Not in dired-mode."))
    (if *my-init--windows-p*
        (unless (and (boundp '*imagemagick-identify-program*)
@@ -392,7 +392,7 @@ extract the head/tail.  The line count reads the whole file but in
 executable is on PATH it is used instead (much faster on multi-GB
 files)."
    (interactive (list (read-number "Number of head/tail lines (n): " 10)))
-   (unless (string= major-mode "dired-mode")
+   (unless (derived-mode-p 'dired-mode)
      (error "Not in dired-mode."))
    (when (< n 0)
      (error "n must be non-negative."))
@@ -503,7 +503,7 @@ Hidden files are counted.  Symbolic links are counted as files and are
 never followed, so the walk cannot loop.  Directories that cannot be
 read are skipped and listed at the end of the buffer."
    (interactive)
-   (unless (string= major-mode "dired-mode")
+   (unless (derived-mode-p 'dired-mode)
      (error "Not in dired-mode."))
    (let ((root (expand-file-name default-directory))
          (start-time (current-time))

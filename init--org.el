@@ -107,7 +107,7 @@
    (defun my/paste-image-from-clipboard-as-link ()
      "Paste image from clipboard to the current org-mode buffer as link. The image itself is pasted into the directory of the org file."
      (interactive)
-     (unless (string= major-mode "org-mode")
+     (unless (derived-mode-p 'org-mode)
        (error "Trying to paste image from clipboard while not in org-mode"))
      (cl-labels ((string-remove-surrounding-quotes (s)
                    "Remove quotes at the beginning and at the end of a string.

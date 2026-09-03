@@ -410,7 +410,7 @@ Search & replace:
  (defun my/find1 ()
    "Find in current dired directory with native Emacs tools, output as buffer."
    (interactive)
-   (unless (string= major-mode "dired-mode")
+   (unless (derived-mode-p 'dired-mode)
      (error "Trying to perform a my/find1 when not in dired-mode."))
    
    (cl-labels ((insert-directories-in-file-list (files)
@@ -455,7 +455,7 @@ d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
  (defun my/find2 ()
    "Find in current dired directory with projectile."
    (interactive)
-   (unless (string= major-mode "dired-mode")
+   (unless (derived-mode-p 'dired-mode)
      (error "Trying to perform a my/find2 when not in dired-mode."))
    (let* ((directory default-directory)
           (file (projectile-completing-read
@@ -469,7 +469,7 @@ d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
    "Find in current dired directory with projectile, output as buffer."
    (interactive)
    
-   (unless (string= major-mode "dired-mode")
+   (unless (derived-mode-p 'dired-mode)
      (error "Trying to perform a my/find3 when not in dired-mode."))
 
    (cl-labels ((insert-directories-in-file-list (files)

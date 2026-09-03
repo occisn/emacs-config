@@ -343,7 +343,7 @@ The list is printed on a separate buffer.
 Requires 'f' package.
 (v1, available in occisn/emacs-utils GitHub repository)"
    (interactive)
-   (unless (string= major-mode "dired-mode")
+   (unless (derived-mode-p 'dired-mode)
      (error "Not in dired-mode."))
    (let ((root default-directory)
          (size0 (string-to-number (read-string "Minimal size in Mo (default = 50): " "" nil "50")))
@@ -380,7 +380,7 @@ The list is printed on a separate buffer.
 Requires 'f' package.
 (v1, available in occisn/emacs-utils GitHub repository)"
    (interactive)
-   (unless (string= major-mode "dired-mode")
+   (unless (derived-mode-p 'dired-mode)
      (error "Not in dired-mode."))
    (cl-labels ((nb-of-elements-in-directory (folder)
                  "Return number of elements in FOLDER, including sub-folders (no recursive investigation of subdirectories).
@@ -420,7 +420,7 @@ The list is printed on a separate buffer.
 Requires 'f' package.
 (v1, available in occisn/emacs-utils GitHub repository)"
    (interactive)
-   (unless (string= major-mode "dired-mode")
+   (unless (derived-mode-p 'dired-mode)
      (error "Not in dired-mode."))
    (let ((root default-directory)
          (minimal-size (string-to-number (read-string "Minimal size in Mo (default = 100): " "" nil "100")))
@@ -468,7 +468,7 @@ Directories listed in ALREADY-OK-FOLDERS list are not investigated.
 Requires 'f' package.
 (v1, available in occisn/emacs-utils GitHub repository)"
    (interactive)
-   (unless (string= major-mode "dired-mode")
+   (unless (derived-mode-p 'dired-mode)
      (error "Trying to perform an my/list-directories-containing-zip-files when not in dired-mode."))
    (let ((already-OK-folders nil)
          (root default-directory)
@@ -534,7 +534,7 @@ Source: https://stackoverflow.com/questions/22403751/check-if-a-string-ends-with
 Presents the results as a dired buffer.
 (v2, available in occisn/emacs-utils GitHub repository; v1 as of December 21th, 2021)"
    (interactive)
-   (unless (string= major-mode "dired-mode")
+   (unless (derived-mode-p 'dired-mode)
      (error "Trying to perform my/find-files-with-same-size-in-same-subdirectory when not in dired-mode."))
    (cl-labels ((insert-directories-in-file-list (files)
                  "Take a list of files, and return the same list with directories intertwined.
