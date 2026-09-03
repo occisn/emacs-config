@@ -536,83 +536,59 @@ For instance: abc/def --> abc\\def. On Linux, returns PATH unchanged."
  "Thunderbird and EML files"
 
  (defun eml-add-date-at-beginning-of-eml-file ()
-   "Add date at the beginning of eml file in dired.
-(v2, available in occisn/emacs-utils GitHub repository)"
+   "Add date at the beginning of the eml files marked in dired.
+Each marked file NAME.eml is renamed into \"YYYY-MM-DD _NAME.eml\",
+the date being read from its \"Date:\" header.
+Nothing is renamed unless the date of every marked file could be read.
+(v3, available in occisn/emacs-utils GitHub repository)"
    (interactive)
 
-   (cl-labels ((replace-linux-slash-with-two-windows-slashes (path)
-                 "Return PATH string after having replaced slashes by two backslashes.
-For instance: abc/def --> abc\\def"
-                 (replace-regexp-in-string  "/" "\\\\" path))
-               (english-month-to-number (month)
-                 "Jan --> 1, Dec --> 12"
-                 (cond ((equal "Jan" month) 1)
-                       ((equal "Feb" month) 2)
-                       ((equal "Mar" month) 3)
-                       ((equal "Apr" month) 4)
-                       ((equal "May" month) 5)
-                       ((equal "Jun" month) 6)
-                       ((equal "Jul" month) 7)
-                       ((equal "Aug" month) 8)
-                       ((equal "Sep" month) 9)
-                       ((equal "Oct" month) 10)
-                       ((equal "Nov" month) 11)
-                       ((equal "Dec" month) 12)
-                       (t (error "Month not recognized: %s" month))))) ; end of labels definitions
-     
+   (cl-labels ((eml-date (file)
+                 "Return the date of the \"Date:\" header of FILE, as \"YYYY-MM-DD\"."
+                 (with-temp-buffer
+                   (insert-file-contents file)
+                   (goto-char (point-min))
+                   (unless (re-search-forward "^Date:[ \t]*" nil t)
+                     (error "No 'Date:' line found in file %s" file))
+                   (let* ((date-line (buffer-substring (point) (line-end-position)))
+                          (parsed (parse-time-string date-line))
+                          (day (nth 3 parsed))
+                          (month (nth 4 parsed))
+                          (year (nth 5 parsed)))
+                     (unless (and day month year)
+                       (error "Cannot parse 'Date:' line \"%s\" of file %s" date-line file))
+                     (format "%04d-%02d-%02d" year month day))))) ; end of labels definitions
+
      (unless (string= major-mode "dired-mode")
-       (error "Trying to burst a PDF file when not in dired-mode."))
-     (when (> (length (dired-get-marked-files)) 1)
-       (error "Trying to add dates at the beginning of several files."))
-     
-     (let* ((files-list (dired-get-marked-files))
-            (file-full-name (car files-list))
-            (file-full-name-slash-OK-accents-OK (replace-linux-slash-with-two-windows-slashes file-full-name))
-            (file-directory (file-name-directory file-full-name))
-            (file-name (file-name-nondirectory file-full-name))
-            (file-name-slash-OK-accents-OK (replace-linux-slash-with-two-windows-slashes file-name))
-            ;; (file-name-without-extension (file-name-base file-full-name))
-            (date-line nil))
-       (unless (or (string= (file-name-extension file-full-name) "eml") (string= (file-name-extension file-full-name) "EML") )
-         (error "Trying to extract date from a non-EML fil: %S" file-full-name))
-       (with-temp-buffer
-         (insert-file-contents file-full-name-slash-OK-accents-OK)
-         (goto-char (point-min))
-         (search-forward "Date:")
-         (set-mark-command nil)
-         (end-of-line)
-         (setq date-line (buffer-substring (region-beginning) (region-end))))
-       (when (null date-line)
-         (error "No 'Date:' line found in file %s" file-name-slash-OK-accents-OK))
-       (let ((elements (split-string date-line)))
-         (when (< (length elements) 4)
-           (message "Not enough elements on DATE-LINE: %s" date-line)
-           (message "   New attempt...")
-           (with-temp-buffer
-             (insert-file-contents file-full-name-slash-OK-accents-OK)
-             (goto-char (point-min))
-             (search-forward "Date:")
-             (search-forward "Date:")
-             (set-mark-command nil)
-             (end-of-line)
-             (setq date-line (buffer-substring (region-beginning) (region-end))))
-           (when (null date-line)
-             (error "No *2nd* 'Date:' line found in file %s" file-name-slash-OK-accents-OK))
-           (setq elements (split-string date-line))
-           (when (< (length elements) 4)
-             (error "On 2nd attemp, not enough elements on DATE-LINE: %s" date-line)))
-         (let* ((day (string-to-number (nth 1 elements)))
-                (month (nth 2 elements))                 ; Jan...Dec
-                (month2 (english-month-to-number month)) ; 1...12
-                (year (string-to-number (nth 3 elements)))
-                (yyyy-mm-dd (format "%04d-%02d-%02d" year month2 day))
-                (file1-old-name file-name)
-                (file1-new-name (concat file-directory yyyy-mm-dd " _" file1-old-name)))
-           
-           (rename-file file1-old-name file1-new-name)
-           (message "Date (%s) added at the beginning of file '%s'" yyyy-mm-dd file1-old-name)
-           (revert-buffer)
-           (dired-goto-file file1-new-name)))))) ; end of defun
+       (error "Trying to add dates at the beginning of eml files when not in dired-mode."))
+
+     (let ((files-list (dired-get-marked-files))
+           (renamings nil)) ; list of (OLD-FULL-NAME . NEW-FULL-NAME)
+
+       ;; step 1: read the date of every file before renaming anything
+       (dolist (file-full-name files-list)
+         (unless (member (downcase (or (file-name-extension file-full-name) "")) '("eml"))
+           (error "Trying to extract date from a non-EML file: %S" file-full-name))
+         (let* ((file-directory (file-name-directory file-full-name))
+                (file-name (file-name-nondirectory file-full-name))
+                (yyyy-mm-dd (eml-date file-full-name))
+                (file-new-full-name (concat file-directory yyyy-mm-dd " _" file-name)))
+           (when (file-exists-p file-new-full-name)
+             (error "Cannot rename '%s': file '%s' already exists"
+                    file-name (file-name-nondirectory file-new-full-name)))
+           (push (cons file-full-name file-new-full-name) renamings)))
+       (setq renamings (nreverse renamings))
+
+       ;; step 2: rename
+       (dolist (renaming renamings)
+         (rename-file (car renaming) (cdr renaming))
+         (message "Date added at the beginning of file '%s'"
+                  (file-name-nondirectory (car renaming))))
+
+       (revert-buffer)
+       (when renamings
+         (dired-goto-file (cdr (car (last renamings)))))
+       (message "Date added at the beginning of %d eml file(s)." (length renamings))))) ; end of defun
  
  ) ; end of init section
 
