@@ -809,7 +809,7 @@ If nil, a generic greeting is used instead.")
        (when (file-directory-p dir) (setq *emacs-c-source* dir))))
    ;; Derived variables
    (when *sbcl--common-lisp-program*
-     (unless *sbcl--inferior-lisp-program* (setq *sbcl--inferior-lisp-program* "sbcl"))
+     (unless *sbcl--inferior-lisp-program* (setq *sbcl--inferior-lisp-program* "sbcl --dynamic-space-size 16384"))
      (unless *common-lisp-program*         (setq *common-lisp-program* *sbcl--common-lisp-program*))
      (unless *inferior-lisp-program*       (setq *inferior-lisp-program* *sbcl--inferior-lisp-program*))))
 
