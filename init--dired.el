@@ -182,6 +182,72 @@
      (define-key dired-mode-map (kbd "<M-return>") #'my/dired-wsl-open-file-externally)
      (define-key dired-mode-map (kbd "<C-return>") #'my/dired-wsl-open-in-explorer)))
 
+ ;; === (8.5) Copy the alternate (Windows <--> WSL) path to clipboard
+
+ (defun my-init--alternate-path (path)
+   "Return PATH as spelled on the other side of the Windows/WSL boundary.
+On Windows, PATH (e.g. \"c:/Users/foo/bar\") is returned in its WSL
+form (\"/mnt/c/Users/foo/bar\").  On WSL, PATH (e.g. \"/mnt/c/Users/foo\")
+is returned in its Windows form (\"C:\\Users\\foo\").  The conversion is
+delegated to `wslpath', with a purely textual fallback on Windows when
+WSL is not reachable.  Signal an error on a Linux machine which is not
+WSL, since there is no alternate path there."
+   (cond
+    (*my-init--windows-p*
+     ;; `my-init--wslpath' is defined in init--shells.el (Windows only)
+     (let ((converted (my-init--wslpath path)))
+       (if (not (string-empty-p converted))
+           converted
+         ;; wslpath unreachable: turn "c:/foo/bar" into "/mnt/c/foo/bar" by hand
+         (let ((unix-path (replace-regexp-in-string "\\\\" "/" path)))
+           (if (string-match "\\`\\([a-zA-Z]\\):/" unix-path)
+               (concat "/mnt/" (downcase (match-string 1 unix-path)) "/"
+                       (substring unix-path (match-end 0)))
+             (error "Cannot convert into a WSL path: %s" path))))))
+    (*my-init--wsl-p*
+     (with-temp-buffer
+       (if (zerop (call-process "wslpath" nil t nil "-w" path))
+           (string-trim (buffer-string))
+         (error "Cannot convert into a Windows path: %s" path))))
+    (t
+     (error "No alternate path outside of Windows and WSL"))))
+
+ (defun my/dired-copy-filename-as-kill (&optional arg)
+   "Copy the names of the marked files into the kill ring, hence the clipboard.
+Same as `dired-copy-filename-as-kill', except with a `C-u' prefix
+argument: ARG being a `C-u' then copies the *alternate* absolute path of
+each file, that is the path as the other operating system spells it --
+the WSL path (/mnt/c/...) when Emacs runs on Windows, the Windows
+path (C:\\...) when Emacs runs on WSL.  See `my-init--alternate-path'.
+
+On a subdir header line -- in particular the first line of the buffer,
+which names the directory being visited -- the directory itself is used,
+as `dired-copy-filename-as-kill' does.
+
+This shadows the plain `C-u' behaviour of `dired-copy-filename-as-kill'
+\(names relative to `default-directory'); `C-u 0 w' still gives the
+absolute names, and `C-u 2 w' still gives the next 2 names."
+   (interactive "P" dired-mode)
+   (if (not (consp arg))
+       (dired-copy-filename-as-kill arg)
+     (let* ((files (or (ensure-list (dired-get-subdir))
+                       (dired-get-marked-files)))
+            (paths (mapcar #'my-init--alternate-path files))
+            (string (if (length= paths 1)
+                        (car paths)
+                      (mapconcat (lambda (path)
+                                   (if (string-match-p "[ \"']" path)
+                                       (format "%S" path)
+                                     path))
+                                 paths
+                                 " "))))
+       (unless (string= string "")
+         (kill-new string)
+         (message "%s" string)))))
+
+ (with-eval-after-load 'dired
+   (define-key dired-mode-map (kbd "w") #'my/dired-copy-filename-as-kill))
+
  ;; === (9) Copy file here
 
  (defun my/copy-file-here ()
