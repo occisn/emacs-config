@@ -440,8 +440,65 @@ Uses Tesseract and ImageMagick.
                    ;; Linux: use xclip to get image from clipboard
                    (let ((cmd (concat "xclip -selection clipboard -t image/png -o > " (shell-quote-argument destination-file-with-path))))
                      (message "Pasting image from clipboard to %s with xclip." destination-file-with-path)
-                     (call-process-shell-command cmd nil 0))))) ; end of labels function definitions
+                     (call-process-shell-command cmd nil 0))))
 
+               (invert-image-if-dark-background (image-file)
+                 "Invert IMAGE-FILE in place when it has light text on a dark background.
+This guards against a Tesseract 4 defect, and is a no-op on Tesseract 5.
+
+Tesseract 4 binarises assuming dark text on light paper, so a snapshot taken from
+a dark-themed editor, terminal or PDF viewer does not fail — it returns confident
+garbage (\"TO CEE CCC CEE CCI CEE\"), with the occasional line coming out correct,
+which is what makes the failure easy to miss. Measured on French text under
+tesseract 4.1.1: 65.9% character error rate before inverting, 0.0% after.
+
+Tesseract 5 handles light-on-dark natively: the same two captures measured 0.0%
+either way under 5.0.0-alpha. So on a Windows install pointing at Tesseract 5
+this function changes nothing but the cost of one ImageMagick call. It is kept
+for the Linux/xclip branch and for older Tesseract builds; drop it if every
+machine sharing this config is on 5.
+
+Mean luminance separates the two cases with a wide margin — 0.17-0.18 on dark
+captures against 0.72-0.96 on light ones, including a light capture containing a
+large dark figure. The threshold is 0.4 rather than the midpoint because the two
+errors are not symmetric: under Tesseract 4 inverting a light capture wrecks it
+(0% -> 47.6%), whereas failing to invert a dark one is merely the previous
+behaviour. A capture on mid-grey (mean 0.56) is correctly left alone."
+                 (let* ((mean-cmd (format "\"%s\" \"%s\" -colorspace gray -format \"%%[fx:mean]\" info:"
+                                          *imagemagick-convert-program* image-file))
+                        (output (shell-command-to-string mean-cmd))
+                        ;; ImageMagick warnings share this stream, so read the last
+                        ;; line only, and demand a bare number: a failed measurement
+                        ;; must never be mistaken for "very dark" and trigger an
+                        ;; inversion. Anything unparseable leaves the image as it is.
+                        (last-line (string-trim (or (car (last (split-string output "\n" t))) ""))))
+                   (if (not (string-match-p "\\`[0-9]*\\.?[0-9]+\\'" last-line))
+                       (message "OCR: could not measure luminance (%s), OCR-ing image as-is" last-line)
+                     (when (< (string-to-number last-line) 0.4)
+                       (message "OCR: dark-background capture (luminance %s), inverting before OCR" last-line)
+                       (call-process-shell-command
+                        (format "\"%s\" \"%s\" -negate \"%s\""
+                                *imagemagick-convert-program* image-file image-file)
+                        nil nil))))))  ; end of labels function definitions
+
+     ;; Tesseract parameters here are tuned for SCREEN CAPTURES, not scans, and
+     ;; the tuning consists mostly of leaving them alone. A clipboard snapshot is
+     ;; a crisp rasterisation: no skew, no paper grain, glyphs already sharp. So
+     ;; `-l fra' is the only flag that earns its place (without it Tesseract
+     ;; assumes English and drops accents wholesale), and the default page
+     ;; segmentation mode 3 is right.
+     ;;
+     ;; Do NOT copy the `--psm 11' / 300 dpi settings used for scanned documents
+     ;; (see askdir/ocr_pass.py): measured on French text at screen size they are
+     ;; worse here, not better. Sparse-text mode loses reading order, which costs
+     ;; nothing on a scanned form and a great deal on a screenshot — 8.9% CER
+     ;; against 0.3% for psm 3 on 11px text. Upsampling the image gains nothing
+     ;; either, and the right-aligned figures column that defeats psm 3 on scans
+     ;; is read perfectly here at every psm.
+     ;;
+     ;; The one input on which these defaults collapse — and only under Tesseract
+     ;; 4 — is a dark-themed window; see `invert-image-if-dark-background' above.
+     ;; A scan never has that problem, and Tesseract 5 no longer has it either.
      (let* ((tmp-file-1 (make-temp-file (concat *temp-directory* "ocr-")))
             (tmp-file-2 (concat (format "%s" tmp-file-1) ".png"))
             (tmp-file-3 (make-temp-file (concat *temp-directory* "ocr-output-")))
@@ -451,6 +508,7 @@ Uses Tesseract and ImageMagick.
        (paste-image-from-clipboard-to-file-with-imagemagick tmp-file-2)
        (unless (file-exists-p tmp-file-2) (sleep-for 0.5))
        (unless (file-exists-p tmp-file-2) (error "File with pasted image does not exist, even after 0.5 s sleep: %s" tmp-file-2))
+       (invert-image-if-dark-background tmp-file-2)
        (call-process-shell-command cmd nil t)
        (if (file-exists-p tmp-file-4)
            (insert-file-contents tmp-file-4)
@@ -489,9 +547,28 @@ For instance: abc/def --> abc\\def. On Linux, returns PATH unchanged."
             (cmd1 (concat "\"" *imagemagick-convert-program* "\" " "-density 300x300 " "\"" file-full-name-slash-OK-accents-OK "\"" " " *temp-directory* "zabcd-%03d.jpg"))
             )
 
+       ;; Unlike `my/insert-ocr-clipboard', this function really does read scans,
+       ;; so the scanned-document settings apply: `-density 300x300' above already
+       ;; matches the 300 dpi that askdir/ocr_pass.py settled on for 10-12pt
+       ;; scanned text. The one flag not carried over is `--psm 11', which on
+       ;; degraded scans of forms and quotes recovered figures in narrow
+       ;; right-aligned columns that the default psm 3 missed. Worth trying here,
+       ;; but only against real scans of your own: it has not been measured on
+       ;; this code path, and on clean input it is a regression.
+
+       ;; Stale pages from a previous run would otherwise be globbed in below and
+       ;; silently appended to this document: the JPEGs are named by page number
+       ;; only, so a shorter PDF inherits the tail of the longer one before it.
+       (dolist (stale (file-expand-wildcards (concat *temp-directory* "zabcd-*.jpg")))
+         (delete-file stale))
+
        ;; step 1: convert pdf to jpg with ImageMagick
        (message "Scanned pdf to txt STEP 1: convert pdf to jpg with ImageMagick")
-       (call-process-shell-command cmd1 nil 0)
+       ;; Synchronous (DESTINATION nil, not 0). With 0 the conversion is detached
+       ;; and the wildcard expansion below runs against a directory ImageMagick is
+       ;; still filling, yielding a truncated document — or an empty one — with no
+       ;; error raised.
+       (call-process-shell-command cmd1 nil nil)
 
        ;; step 2: convert jpg to txt with Tesseract
        (message "Scanned pdf to txt STEP 2: convert jpg to txt with Tesseract")
@@ -499,6 +576,12 @@ For instance: abc/def --> abc\\def. On Linux, returns PATH unchanged."
        (let* ((txt-buffer (generate-new-buffer (format "*Text content of scanned pdf file %s (my/scanned-pdf-to-txt x)*" file-name)))
               (image-files (file-expand-wildcards (concat *temp-directory* "zabcd-*.jpg")))
               (page-count 0))
+
+         ;; No pages means ImageMagick failed (a missing Ghostscript delegate for
+         ;; PDF is the usual cause). Say so, rather than opening an empty buffer
+         ;; that looks like a PDF with no readable text.
+         (unless image-files
+           (error "my/scanned-pdf-to-txt: ImageMagick produced no page image from %s" file-name))
 
          (switch-to-buffer txt-buffer)
          
