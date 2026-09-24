@@ -21,12 +21,16 @@
  (when *my-init--windows-p*
    (defun my-init--dired-toggle-read-only-without-writable-check ()
      "Same as `dired-toggle-read-only' (Emacs 30), minus the writability check.
-Avoids its spurious \"Directory isn't writable\" prompt on Windows."
+Avoids its spurious \"Directory isn't writable\" prompt on Windows.
+Instead, a message tells when that prompt would have been shown."
      (interactive nil dired-mode)
      (unless (file-exists-p default-directory)
        (user-error "The current directory no longer exists"))
      (if (derived-mode-p 'dired-mode)
-         (wdired-change-to-wdired-mode)
+         (let ((flagged-read-only (not (file-writable-p default-directory))))
+           (wdired-change-to-wdired-mode)
+           (when flagged-read-only
+             (message "Directory flagged read-only by Windows; editing anyway (C-c C-c to finish, C-c ESC to abort)")))
        (read-only-mode 'toggle)))
    (advice-add 'dired-toggle-read-only :override #'my-init--dired-toggle-read-only-without-writable-check))
 
