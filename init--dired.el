@@ -9,14 +9,26 @@
  t
  "Dired"
 
- ;; === Change permissions on Downloads
+ ;; === C-x C-q without "Directory isn't writable; edit anyway?"
 
- ;; change permissions on Downloads to 777 so that C-x C-q do not trigger a "make editable?" question 
- (if (my-init--directory-exists-p *downloads-directory*)
-     (unless (file-writable-p *downloads-directory*)
-       (chmod *downloads-directory* #o777)
-       (message "Changing permissions on Downloads directory (%s) so that C-x C-q do not trigger a 'make editable?' question ; now writable = %s" *downloads-directory* (file-writable-p *downloads-directory*)))
-   (message "ERROR: *downloads-directory* is nil or does not exist: %s" *downloads-directory*))
+ ;; On Windows, `file-writable-p' on a directory only looks at the
+ ;; read-only attribute, which Windows sets on shell folders (home,
+ ;; Desktop, Documents, Dropbox, OneDrive...) to mark them as customized
+ ;; and otherwise ignores for directories. `dired-toggle-read-only'
+ ;; therefore asks for confirmation in perfectly writable folders.
+ ;; (Rebinding `file-writable-p' with `cl-letf' does not work: dired.el
+ ;; is natively compiled and calls the primitive directly.)
+ (when *my-init--windows-p*
+   (defun my-init--dired-toggle-read-only-without-writable-check ()
+     "Same as `dired-toggle-read-only' (Emacs 30), minus the writability check.
+Avoids its spurious \"Directory isn't writable\" prompt on Windows."
+     (interactive nil dired-mode)
+     (unless (file-exists-p default-directory)
+       (user-error "The current directory no longer exists"))
+     (if (derived-mode-p 'dired-mode)
+         (wdired-change-to-wdired-mode)
+       (read-only-mode 'toggle)))
+   (advice-add 'dired-toggle-read-only :override #'my-init--dired-toggle-read-only-without-writable-check))
 
  ;; === (1) Dired package
 
