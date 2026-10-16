@@ -299,6 +299,66 @@ If WITH-DAY-IN-WEEK-P, return 'mardi 25 août 2023' or similar
 
 
 ;;; ===
+;;; ====================
+;;; ===== EXIT LOG =====
+;;; ====================
+
+;; Diagnostic for a rare freeze when quitting Emacs on Windows (the last
+;; message shown is "Wrote .../places", from `save-place-kill-emacs-hook').
+;; Each function of `kill-emacs-hook' is logged when it starts and ends, then
+;; a final line once all hooks are done. After a freeze, the last line of
+;; `*exit-log-file*' tells where it stopped:
+;;   - "start X" without "end X"  : hook X hangs
+;;   - "all hooks done"           : the hang is in the C shutdown (child
+;;                                  processes, clipboard handover, ...)
+
+(my-init--with-duration-measured-section
+ t
+ "Exit log"
+
+ (defvar *exit-log-file* (expand-file-name "exit-log.txt" user-emacs-directory)
+   "File where the steps of Emacs shutdown are logged, to locate rare exit freezes.")
+
+ (defun my-init--exit-log (format-string &rest args)
+   "Append a timestamped line made of FORMAT-STRING and ARGS to `*exit-log-file*'.
+Writes silently (no \"Wrote ...\" message) and never signals an error."
+   (ignore-errors
+     (write-region (concat (format-time-string "%Y-%m-%d %H:%M:%S.%3N ")
+                           (apply #'format format-string args)
+                           "\n")
+                   nil *exit-log-file* 'append 'silent)))
+
+ (defun my-init--exit-log-before-kill-emacs (&rest _)
+   "Log the state of Emacs, then wrap each `kill-emacs-hook' function in log lines.
+Used as :before advice on `kill-emacs', so it runs once quitting is confirmed
+and before any hook. Wrapping happens here rather than at init time so that
+hooks added later (org-persist, projectile...) are covered too."
+   (ignore-errors
+     (when (> (or (file-attribute-size (file-attributes *exit-log-file*)) 0) 200000)
+       (delete-file *exit-log-file*))
+     (my-init--exit-log "=== kill-emacs (pid %d) ===" (emacs-pid))
+     (my-init--exit-log "processes: %S"
+                        (mapcar (lambda (p) (list (process-name p) (process-status p)))
+                                (process-list)))
+     (my-init--exit-log "server clients: %d"
+                        (if (boundp 'server-clients) (length server-clients) 0))
+     (setq kill-emacs-hook
+           (mapcar (lambda (fn)
+                     (lambda ()
+                       (my-init--exit-log "start %S" fn)
+                       (unwind-protect (funcall fn)
+                         (my-init--exit-log "end   %S" fn))))
+                   (remq t (default-value 'kill-emacs-hook))))
+     (add-hook 'kill-emacs-hook
+               (lambda () (my-init--exit-log "all hooks done; C shutdown follows"))
+               100)))
+
+ (advice-add 'kill-emacs :before #'my-init--exit-log-before-kill-emacs)
+
+ ) ; end of init section
+
+
+;;; ===
 ;;; ==================================
 ;;; ===== HELP AND DOCUMENTATION =====
 ;;; ==================================
