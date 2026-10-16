@@ -294,6 +294,22 @@ This means the base name.  It does not include the `.'."
   :group 'diredfl)
 (defvar my-init--diredfl-file-name 'my-init--diredfl-file-name)
 
+(defun my-init--dired-extensions-regexp (extensions)
+  "Return a regexp matching any of EXTENSIONS, ignoring letter case.
+Each letter becomes a two-case bracket (\".jpg\" matches \".JPG\", \".Jpg\"...).
+Font-lock keywords here run with case-fold off, because the permission
+column needs it (s/S, t/T), so case-insensitivity is put in the regexp."
+  (concat "\\(?:"
+          (mapconcat
+           (lambda (ext)
+             (mapconcat (lambda (c)
+                          (if (/= (downcase c) (upcase c))
+                              (string ?\[ (downcase c) (upcase c) ?\])
+                            (regexp-quote (char-to-string c))))
+                        ext ""))
+           extensions "\\|")
+          "\\)"))
+
 ;;; Others
 ;;; (setq my-init--others-extensions '(".ses" ".c" ".zip" ".tex" ".tar"))
 ;;; (defface my-init--others-filename-face
@@ -537,13 +553,13 @@ This means the base name.  It does not include the `.'."
    `(,dired-move-to-filename-regexp
      (7 diredfl-date-time t t) ; Date/time, locale (western or eastern)
      (2 diredfl-date-time t t) ; Date/time, ISO
-     (,(concat "\\(.+\\)\\(" (concat (funcall #'regexp-opt my-init--word-extensions)
+     (,(concat "\\(.+\\)\\(" (concat (my-init--dired-extensions-regexp my-init--word-extensions)
                                      "\\)[*]?$"))
       nil nil (0 my-init--word-face keep t)))
    diredfl-font-lock-keywords-1
    ))
 (push
- (list (concat "\\(" (concat (funcall #'regexp-opt my-init--word-extensions) "\\)[*]?$"))
+ (list (concat "\\(" (concat (my-init--dired-extensions-regexp my-init--word-extensions) "\\)[*]?$"))
        1 my-init--word-face t)
  diredfl-font-lock-keywords-1)
 
@@ -553,12 +569,12 @@ This means the base name.  It does not include the `.'."
    `(,dired-move-to-filename-regexp
      (7 diredfl-date-time t t) ; Date/time, locale (western or eastern)
      (2 diredfl-date-time t t) ; Date/time, ISO
-     (,(concat "\\(.+\\)\\(" (concat (funcall #'regexp-opt my-init--excel-extensions)
+     (,(concat "\\(.+\\)\\(" (concat (my-init--dired-extensions-regexp my-init--excel-extensions)
                                      "\\)[*]?$"))
       nil nil (0 my-init--excel-face keep t)))
    diredfl-font-lock-keywords-1)) 
 (push
- (list (concat "\\(" (concat (funcall #'regexp-opt my-init--excel-extensions) "\\)[*]?$"))
+ (list (concat "\\(" (concat (my-init--dired-extensions-regexp my-init--excel-extensions) "\\)[*]?$"))
        1 my-init--excel-face t)
  diredfl-font-lock-keywords-1)
 
@@ -568,12 +584,12 @@ This means the base name.  It does not include the `.'."
    `(,dired-move-to-filename-regexp
      (7 diredfl-date-time t t) ; Date/time, locale (western or eastern)
      (2 diredfl-date-time t t) ; Date/time, ISO
-     (,(concat "\\(.+\\)\\(" (concat (funcall #'regexp-opt my-init--powerpoint-extensions)
+     (,(concat "\\(.+\\)\\(" (concat (my-init--dired-extensions-regexp my-init--powerpoint-extensions)
                                      "\\)[*]?$"))
       nil nil (0 my-init--powerpoint-face keep t)))
    diredfl-font-lock-keywords-1))
 (push
- (list (concat "\\(" (concat (funcall #'regexp-opt my-init--powerpoint-extensions) "\\)[*]?$"))
+ (list (concat "\\(" (concat (my-init--dired-extensions-regexp my-init--powerpoint-extensions) "\\)[*]?$"))
        1 my-init--powerpoint-face t)
  diredfl-font-lock-keywords-1)
 
@@ -583,12 +599,12 @@ This means the base name.  It does not include the `.'."
    `(,dired-move-to-filename-regexp
      (7 diredfl-date-time t t) ; Date/time, locale (western or eastern)
      (2 diredfl-date-time t t) ; Date/time, ISO
-     (,(concat "\\(.+\\)\\(" (concat (funcall #'regexp-opt my-init--eml-extensions)
+     (,(concat "\\(.+\\)\\(" (concat (my-init--dired-extensions-regexp my-init--eml-extensions)
                                      "\\)[*]?$"))
       nil nil (0 my-init--eml-face keep t)))
    diredfl-font-lock-keywords-1))
 (push
- (list (concat "\\(" (concat (funcall #'regexp-opt my-init--eml-extensions) "\\)[*]?$"))
+ (list (concat "\\(" (concat (my-init--dired-extensions-regexp my-init--eml-extensions) "\\)[*]?$"))
        1 my-init--eml-face t)
  diredfl-font-lock-keywords-1)
 
@@ -598,12 +614,12 @@ This means the base name.  It does not include the `.'."
    `(,dired-move-to-filename-regexp
      (7 diredfl-date-time t t) ; Date/time, locale (western or eastern)
      (2 diredfl-date-time t t) ; Date/time, ISO
-     (,(concat "\\(.+\\)\\(" (concat (funcall #'regexp-opt my-init--pdf-extensions)
+     (,(concat "\\(.+\\)\\(" (concat (my-init--dired-extensions-regexp my-init--pdf-extensions)
                                      "\\)[*]?$"))
       nil nil (0 my-init--pdf-face keep t)))
    diredfl-font-lock-keywords-1))
 (push
- (list (concat "\\(" (concat (funcall #'regexp-opt my-init--pdf-extensions) "\\)[*]?$"))
+ (list (concat "\\(" (concat (my-init--dired-extensions-regexp my-init--pdf-extensions) "\\)[*]?$"))
        1 my-init--pdf-face t)
  diredfl-font-lock-keywords-1)
 
@@ -613,12 +629,12 @@ This means the base name.  It does not include the `.'."
    `(,dired-move-to-filename-regexp
      (7 diredfl-date-time t t) ; Date/time, locale (western or eastern)
      (2 diredfl-date-time t t) ; Date/time, ISO
-     (,(concat "\\(.+\\)\\(" (concat (funcall #'regexp-opt my-init--exe-extensions)
+     (,(concat "\\(.+\\)\\(" (concat (my-init--dired-extensions-regexp my-init--exe-extensions)
                                      "\\)[*]?$"))
       nil nil (0 my-init--exe-face keep t)))
    diredfl-font-lock-keywords-1))
 (push
- (list (concat "\\(" (concat (funcall #'regexp-opt my-init--exe-extensions) "\\)[*]?$"))
+ (list (concat "\\(" (concat (my-init--dired-extensions-regexp my-init--exe-extensions) "\\)[*]?$"))
        1 my-init--exe-face t)
  diredfl-font-lock-keywords-1)
 
@@ -628,12 +644,12 @@ This means the base name.  It does not include the `.'."
    `(,dired-move-to-filename-regexp
      (7 diredfl-date-time t t) ; Date/time, locale (western or eastern)
      (2 diredfl-date-time t t) ; Date/time, ISO
-     (,(concat "\\(.+\\)\\(" (concat (funcall #'regexp-opt my-init--org-extensions)
+     (,(concat "\\(.+\\)\\(" (concat (my-init--dired-extensions-regexp my-init--org-extensions)
                                      "\\)[*]?$"))
       nil nil (0 my-init--org-face keep t)))
    diredfl-font-lock-keywords-1))
 (push
- (list (concat "\\(" (concat (funcall #'regexp-opt my-init--org-extensions) "\\)[*]?$"))
+ (list (concat "\\(" (concat (my-init--dired-extensions-regexp my-init--org-extensions) "\\)[*]?$"))
        1 my-init--org-face t)
  diredfl-font-lock-keywords-1)
 
@@ -643,12 +659,12 @@ This means the base name.  It does not include the `.'."
    `(,dired-move-to-filename-regexp
      (7 diredfl-date-time t t) ; Date/time, locale (western or eastern)
      (2 diredfl-date-time t t) ; Date/time, ISO
-     (,(concat "\\(.+\\)\\(" (concat (funcall #'regexp-opt my-init--lisp-extensions)
+     (,(concat "\\(.+\\)\\(" (concat (my-init--dired-extensions-regexp my-init--lisp-extensions)
                                      "\\)[*]?$"))
       nil nil (0 my-init--lisp-face keep t)))
    diredfl-font-lock-keywords-1))
 (push
- (list (concat "\\(" (concat (funcall #'regexp-opt my-init--lisp-extensions) "\\)[*]?$"))
+ (list (concat "\\(" (concat (my-init--dired-extensions-regexp my-init--lisp-extensions) "\\)[*]?$"))
        1 my-init--lisp-face t)
  diredfl-font-lock-keywords-1)
 
@@ -658,12 +674,12 @@ This means the base name.  It does not include the `.'."
    `(,dired-move-to-filename-regexp
      (7 diredfl-date-time t t) ; Date/time, locale (western or eastern)
      (2 diredfl-date-time t t) ; Date/time, ISO
-     (,(concat "\\(.+\\)\\(" (concat (funcall #'regexp-opt my-init--image-extensions)
+     (,(concat "\\(.+\\)\\(" (concat (my-init--dired-extensions-regexp my-init--image-extensions)
                                      "\\)[*]?$"))
       nil nil (0 my-init--image-face keep t)))
    diredfl-font-lock-keywords-1))
 (push
- (list (concat "\\(" (concat (funcall #'regexp-opt my-init--image-extensions) "\\)[*]?$"))
+ (list (concat "\\(" (concat (my-init--dired-extensions-regexp my-init--image-extensions) "\\)[*]?$"))
        1 my-init--image-face t)
  diredfl-font-lock-keywords-1)
 
@@ -672,12 +688,12 @@ This means the base name.  It does not include the `.'."
  `(,dired-move-to-filename-regexp
    (7 diredfl-date-time t t) ; Date/time, locale (western or eastern)
    (2 diredfl-date-time t t) ; Date/time, ISO
-   (,(concat "\\(.+\\)\\(" (concat (funcall #'regexp-opt my-init--old-extensions)
+   (,(concat "\\(.+\\)\\(" (concat (my-init--dired-extensions-regexp my-init--old-extensions)
                                    "\\)[*]?$"))
     nil nil (0 my-init--old-face keep t)))
  diredfl-font-lock-keywords-1)
 (push
- (list (concat "\\(" (concat (funcall #'regexp-opt my-init--old-extensions) "\\)[*]?$"))
+ (list (concat "\\(" (concat (my-init--dired-extensions-regexp my-init--old-extensions) "\\)[*]?$"))
        1 my-init--old-face t)
  diredfl-font-lock-keywords-1)
 
