@@ -326,8 +326,8 @@ column needs it (s/S, t/T), so case-insensitivity is put in the regexp."
 ;;; Word
 (setq my-init--word-extensions '(".doc" ".docx" ".odt"))
 (defface my-init--word-face
-  '((((background dark)) (:foreground "Blue"))
-    (t                   (:foreground "Blue")))
+  '((((background dark)) (:foreground "DodgerBlue"))
+    (t                   (:foreground "DodgerBlue")))
   "")
 (defvar my-init--word-face 'my-init--word-face)
 
