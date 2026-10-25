@@ -214,7 +214,7 @@
          "Lowest" "LowestBar"
          "Summation"
          "XAverage"
-         "StdDev" "Variance" "Correlation" "Median"
+         "StdDev" "Variance" "Correlation" "Median" "PercentRank"
          "LinearRegValue" "LinearRegSlope" "LinearRegAngle"
          "RateOfChange" "MidPoint"
          "TrueHigh" "TrueLow" "TrueRange" "AvgTrueRange"
