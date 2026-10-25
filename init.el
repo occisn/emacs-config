@@ -1075,6 +1075,9 @@ Shall be used in the 'config' section of each package."
             "init--lang-powerlanguage.el"))
    "Major mode for editing Multicharts PowerLanguage (.pwl) files." t)
  (add-to-list 'auto-mode-alist '("\\.pwl\\'" . powerlanguage-mode))
+ ;; org src blocks: #+BEGIN_SRC easylanguage uses powerlanguage-mode
+ (with-eval-after-load 'org-src
+   (add-to-list 'org-src-lang-modes '("easylanguage" . powerlanguage)))
 
  ;; --- Org-babel advice (must register at startup; modules load later) ---
  ;; Each function loads its babel language on first C-c C-c, then removes itself.
