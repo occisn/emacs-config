@@ -137,6 +137,7 @@
          ;; strategy performance tracking
          "NetProfit"
          "OpenPositionProfit"
+         "MaxPositionProfit"
          "GrossProfit"
          "GrossLoss"
          "NumWinTrades"
