@@ -9,9 +9,9 @@
  t
  "shells"
 
- ;; === Display line number in shell scripts
+ ;; === Display line number in shell scripts (incl. Windows .bat/.cmd/.ps1)
 
- (dolist (mode '(sh-mode-hook bash-ts-mode-hook))
+ (dolist (mode '(sh-mode-hook bash-ts-mode-hook bat-mode-hook powershell-mode-hook))
    (add-hook mode (lambda () (display-line-numbers-mode 1))))
 
  ;; === eshell
