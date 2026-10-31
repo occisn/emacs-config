@@ -675,6 +675,59 @@ read are skipped and listed at the end of the buffer."
                     (my--add-number-grouping total-dirs)
                     (file-size-human-readable total-size 'iec " ")))))))
 
+ ;; === (13.8) Size of the directory at point
+
+ (defun my/dired-directory-size-at-point ()
+   "In Dired, print in the echo area the recursive size of the directory at point.
+
+Also print the number of files and sub-directories below it.  Same
+counting rules as `my/dired-count-files-recursively': hidden files are
+counted, symbolic links are counted as files and never followed, and
+unreadable directories are skipped (their number is reported).
+
+If point is on a plain file, print its size instead."
+   (interactive)
+   (unless (derived-mode-p 'dired-mode)
+     (error "Not in dired-mode."))
+   (let* ((target (or (dired-get-filename nil t)
+                      (error "No file or directory at point")))
+          (type (file-attribute-type (file-attributes target)))
+          (name (file-name-nondirectory (directory-file-name target))))
+     (if (not (eq type t))
+         (message "%s: %s (%s)"
+                  name
+                  (file-size-human-readable
+                   (or (file-attribute-size (file-attributes target)) 0) 'iec " ")
+                  (if (stringp type) "symbolic link, not followed" "file"))
+       (let ((files 0) (subdirs 0) (size 0) (unreadable 0)
+             (start-time (current-time)))
+         (cl-labels
+             ((walk (dir)
+                (condition-case nil
+                    (dolist (entry (directory-files-and-attributes dir t nil t))
+                      (let* ((entry-name (car entry))
+                             (attrs (cdr entry)))
+                        (cond
+                         ((member (file-name-nondirectory entry-name) '("." "..")))
+                         ((eq (file-attribute-type attrs) t) ; real sub-directory
+                          (setq subdirs (1+ subdirs))
+                          (walk entry-name))
+                         (t             ; file, or symlink (not followed)
+                          (setq files (1+ files)
+                                size (+ size (or (file-attribute-size attrs) 0)))))))
+                  (file-error (setq unreadable (1+ unreadable))))))
+           (message "Computing size of %s ..." name)
+           (walk target))
+         (message "%s/: %s  —  %s file(s), %s sub-directory(ies)%s  [%.2f s]"
+                  name
+                  (file-size-human-readable size 'iec " ")
+                  (my--add-number-grouping files)
+                  (my--add-number-grouping subdirs)
+                  (if (> unreadable 0)
+                      (format ", %d unreadable" unreadable)
+                    "")
+                  (float-time (time-since start-time)))))))
+
  ;; ===  (14) Mutiple deletions
 
  ;; hack to allow multiple deletions through D D D D X
@@ -817,9 +870,11 @@ Files: my/list-big-files-in-current-directory-and-subdirectories, my/list-direct
 [n]: show line count + first n / last n lines of file at point (default n=10)
 [#]: count files here and in all sub-directories (M-x my/dired-count-files-recursively)
      (for a plain count of the current buffer only: t then * N)
+[$]: size of the directory at point, in echo area (M-x my/dired-directory-size-at-point)
 Attach file to mail: C-c RET C-a (gnus-dired-attach)
 Project: C-c C-l clean/load | C-c C-m make/main | C-c C-r run/restart | C-c C-t test (detects C vs CL)"
    ("#" #'my/dired-count-files-recursively)
+   ("$" #'my/dired-directory-size-at-point)
    ("a" #'my/dired-clean-build-artifacts)
    ("c" #'my/copy-file-here)
    ("h" #'my/paste-image-from-clipboard-to-here)
