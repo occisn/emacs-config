@@ -714,6 +714,7 @@ d1/ d1/a.org d1/b.org d2/ d2/c.org d3/ d3/d.org
  (defvar *teams-path* nil "Path to Microsoft Teams executable.")
  (defvar *firefox-path* nil "Path to Firefox executable.")
  (defvar *thunderbird-executable* nil "Path to Thunderbird executable.")
+ (defvar *outlook-executable* nil "Path to Outlook classic executable.")
  (defvar *chrome-executable* nil "Path to Chrome executable.")
 
  ;; Compilers

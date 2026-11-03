@@ -133,6 +133,27 @@ Instead, a message tells when that prompt would have been shown."
      :config
      (my-init--message-package-loaded "w32-browser")))
 
+ (when *my-init--windows-p*
+   (when (and *outlook-executable* (not (my-init--file-exists-p *outlook-executable*)))
+     (my-init--warning "!! *outlook-executable* does not exist: %s" *outlook-executable*))
+
+   (defun my-init--w32-browser-open-msg-in-outlook (orig-fun file)
+     "Around advice on `w32-browser': open a .msg FILE in Outlook classic.
+The Windows association of .msg cannot be relied upon, as it may point to
+another application.  Other files, or all files when `*outlook-executable*'
+is nil, go through ORIG-FUN, hence through the Windows association."
+     (if (and *outlook-executable*
+              (string= (downcase (or (file-name-extension file) "")) "msg"))
+         (progn
+           (unless (my-init--file-exists-p *outlook-executable*)
+             (error "*outlook-executable* does not exist: %s" *outlook-executable*))
+           (w32-shell-execute "open" *outlook-executable*
+                              ;; parameters must be in the ANSI code page, or accents break
+                              (encode-coding-string (format "/f \"%s\"" file)
+                                                    (intern (format "cp%d" w32-ansi-code-page)))))
+       (funcall orig-fun file)))
+   (advice-add 'w32-browser :around #'my-init--w32-browser-open-msg-in-outlook))
+
  ;; Quote of documentaton:
  ;; (‘M-RET’) You can use Windows file associations to act on a file or folder. For example, if you have the application Adobe Acrobat associated with *.pdf files, then clicking ‘mouse-2’ on a *.pdf file in Dired will open the file in Adobe Acrobat.
  ;; (‘C-RET’) You can open Windows Explorer on a file or folder. If a file, its containing folder is opened and the file is selected (in Windows Explorer).
