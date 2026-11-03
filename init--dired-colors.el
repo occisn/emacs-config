@@ -348,7 +348,7 @@ column needs it (s/S, t/T), so case-insensitivity is put in the regexp."
 (defvar my-init--powerpoint-face 'my-init--powerpoint-face)
 
 ;;; eml
-(setq my-init--eml-extensions '(".eml"))
+(setq my-init--eml-extensions '(".eml" ".msg"))
 (defface my-init--eml-face 
   '((((background dark)) (:foreground "#7474FFFFFFFF")) ; ~ cyan
     (t                   (:foreground "#7474FFFFFFFF")))
