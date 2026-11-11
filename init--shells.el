@@ -408,6 +408,33 @@ one (via `wt -w 0 nt'); otherwise Windows Terminal launches a new window."
          (set-process-query-on-exit-flag proc nil)
          (message "Opened WSL tab in Windows Terminal (home).")))))
 
+ (defun my/open-wsl-claude-in-wt-tab ()
+   "Open a WSL bash session as a new Windows Terminal tab and launch `claude' in it.
+The tab starts in the directory of the current buffer (or of the dired
+buffer), like `my/open-wsl-shell-in-wt-tab'.  Bash is login+interactive
+so that ~/.local/bin (where `claude' lives) is on PATH.  When `claude'
+exits, the tab falls back to an interactive bash instead of closing."
+   (interactive)
+   (let* ((dir (if (or (buffer-file-name) (derived-mode-p 'dired-mode))
+                   (file-name-directory (or (buffer-file-name) default-directory))
+                 (expand-file-name "~")))
+          (wsl-dir (my-init--wslpath dir)))
+     (when (string-empty-p wsl-dir)
+       (user-error "Could not convert %s into a WSL path" dir))
+     (let ((proc (start-process
+                  "wt" nil
+                  "cmd.exe" "/C" "start" "wt.exe"
+                  "-w" "0" "nt"
+                  "wsl.exe" "-e" "bash" "--login" "-i" "-c"
+                  ;; No `;' here: wt.exe treats it as its own subcommand
+                  ;; separator (even inside a quoted argument) and would open
+                  ;; a second, broken tab.  `|| true &&' chains instead.
+                  ;; POSIX single-quoting: ' inside the path becomes '\''
+                  (format "cd '%s' && claude || true && exec bash --login -i"
+                          (replace-regexp-in-string "'" "'\\\\''" wsl-dir)))))
+       (set-process-query-on-exit-flag proc nil)
+       (message "Opened WSL tab with claude in Windows Terminal at %s" wsl-dir))))
+
  (defun my--wsl-comint-preoutput-filter (output)
    "Filter to handle WSL output."
    (replace-regexp-in-string "\r" "" output))
@@ -626,12 +653,14 @@ msys2 :      [m] external or [y] in buffer
 git bash :   [g] external or [i] in buffer (Windows native equivalents)
 wsl shell :  [w] external, [n] external as Windows Terminal tab,
              [s] in buffer (comint) or [a] in buffer (eat, supports TUIs)
+claude :     [l] WSL Windows Terminal tab running claude
 "
      ("a" #'my/open-wsl-shell-in-emacs--eat)
      ("c" #'my/open-cmd-shell-external)
      ("d" #'my/open-cmd-shell-in-emacs)
      ("e" #'eshell)
      ("i" #'my/open-git-bash-in-emacs)
+     ("l" #'my/open-wsl-claude-in-wt-tab)
      ("g" #'my/open-git-bash-external)
      ("n" #'my/open-wsl-shell-in-wt-tab)
      ("o" #'my/open-powershell-in-emacs)
