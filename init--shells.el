@@ -617,7 +617,34 @@ and WSL starts inside DIR (accepts Linux or Windows paths)."
        (let ((proc (start-process "wsl-term" nil
                                   cmd-exe "/C" "start" "wsl.exe" "--cd" dir)))
          (set-process-query-on-exit-flag proc nil)
-         (message "External WSL terminal opened in %s" dir)))))
+         (message "External WSL terminal opened in %s" dir))))
+
+   (defun my/open-wsl-claude-in-wt-tab-from-wsl ()
+     "Open a new Windows Terminal tab running WSL bash and launch `claude' in it.
+WSL counterpart of `my/open-wsl-claude-in-wt-tab' (Windows Emacs).  The tab
+starts in the directory of the current buffer (or of the dired buffer),
+passed to `wsl.exe --cd' as a Linux path, so no path conversion is needed.
+`wt.exe' is called directly through WSL interop (no cmd.exe, which would
+complain about a UNC current directory).  When `claude' exits, the tab
+falls back to an interactive bash instead of closing."
+     (interactive)
+     (let* ((dir (expand-file-name
+                  (if (or (buffer-file-name) (derived-mode-p 'dired-mode))
+                      (file-name-directory (or (buffer-file-name) default-directory))
+                    "~")))
+            (wt-exe (or (executable-find "wt.exe")
+                        (user-error "Could not find wt.exe (Windows Terminal) on PATH"))))
+       (let ((proc (start-process
+                    "wt" nil
+                    wt-exe "-w" "0" "nt"
+                    "wsl.exe" "--cd" dir
+                    "-e" "bash" "--login" "-i" "-c"
+                    ;; No `;' here: wt.exe treats it as its own subcommand
+                    ;; separator (even inside a quoted argument) and would
+                    ;; open a second, broken tab.
+                    "claude || true && exec bash --login -i")))
+         (set-process-query-on-exit-flag proc nil)
+         (message "Opened WSL tab with claude in Windows Terminal at %s" dir)))))
 
  ;; === open WSL bashrc
  ;; TIP: when you edited .bashrc from Windows, it saved the file with
@@ -678,11 +705,13 @@ claude :     [l] WSL Windows Terminal tab running claude
 eshell :       [e] in buffer
 bash :         [b] in buffer (comint) or [a] in buffer (eat, supports TUIs)
 WSL terminal : [t] external (via Windows)
+claude :       [l] Windows Terminal tab running claude
 bashrc :       [r] open WSL .bashrc
 "
      ("a" #'my/open-bash-in-emacs--eat)
      ("b" #'my/open-bash-in-emacs)
      ("e" #'eshell)
+     ("l" #'my/open-wsl-claude-in-wt-tab-from-wsl)
      ("r" #'my/open-wsl-bashrc)
      ("t" #'my/open-wsl-shell-external-from-wsl)))
   (t
