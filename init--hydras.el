@@ -32,6 +32,7 @@ Buffers: [f]: (from) open dired buffer corresponding to Windows path copied to c
          my/kill-all-file-buffers ; my/kill-all-buffers-except-stars
 Find and grep --> dired hydra or Project hydra
 Mini-buffer : C-q C-j to go to a new line | ivy : C-M-j to force
+Print: [o]: print buffer (or region) on default printer, rendered (org, md) | [O]: same as raw text | C-u o/O: choose printer or PDF preview
 Text: [k]: show kill ring (xah-show-kill-ring) | To search and insert Unicode: C-x 8 RET or M-x counsel-unicode-char
       M-LEFT et M-RIGHT to move by word (except in org-mode : C-LEFT et C-RIGHT) | C-DEL (M-d) et C-BACKSPACE (M-DEL) to delete words
       C-c C-SPACE ace jump         | M-< ou M-> [shift] to go to beginning/end of buffer
@@ -52,6 +53,8 @@ Undo : C-j to cut undo chain?
    ("k" #'xah-show-kill-ring)
    ("l" #'my/open-local-repos-directory-in-dired)
    ("m" #'ielm)
+   ("o" #'my/print-buffer)
+   ("O" #'my/print-buffer-as-raw-text)
    ("p" #'package-list-packages) 
    ;; ("r" #'my/ready-to-move-from-downloads)
    ("s" #'pro1/open-app1)

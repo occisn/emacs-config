@@ -367,6 +367,223 @@ Alt-F4 and Alt-TAB
 
 
 ;;; ===
+;;; ====================
+;;; ===== PRINTING =====
+;;; ====================
+
+(my-init--with-duration-measured-section
+ t
+ "Printing"
+
+ ;; Windows Emacs: buffer -> (pandoc for org/markdown) HTML -> Chrome headless PDF
+ ;; -> SumatraPDF silent print, so formatting (bold, headings, tables) is rendered.
+ ;; WSL Emacs: raw plain text through PowerShell `Out-Printer'.
+ ;; Printer names are never stored here: default printer, or chosen at run time.
+
+ (defun my-init--powershell-quote (string)
+   "Return STRING as a single-quoted PowerShell literal."
+   (concat "'" (replace-regexp-in-string "'" "''" string t t) "'"))
+
+ (defun my-init--windows-printers ()
+   "Return the list of Windows printer names (via PowerShell)."
+   (unless (or *my-init--windows-p* *my-init--wsl-p*)
+     (error "Windows printers are only reachable from Windows or WSL"))
+   (let ((coding-system-for-read 'utf-8))
+     (with-temp-buffer
+       (unless (zerop (call-process "powershell.exe" nil t nil
+                                    "-NoProfile" "-NonInteractive" "-Command"
+                                    "[Console]::OutputEncoding=[Text.Encoding]::UTF8; Get-Printer | ForEach-Object Name"))
+         (error "Could not list printers: %s" (buffer-string)))
+       (split-string (buffer-string) "[\r\n]+" t "[ \t]+"))))
+
+ (when *my-init--windows-p*
+   (unless (my-init--file-exists-p *chrome-executable*)
+     (my-init--warning "!! *chrome-executable* is nil or does not exist (needed by my/print-buffer): %s" *chrome-executable*))
+   (unless (my-init--file-exists-p *sumatra-program*)
+     (my-init--warning "!! *sumatra-program* is nil or does not exist (needed by my/print-buffer): %s" *sumatra-program*)))
+
+ (defconst *my-init--print-pdf-preview* "[PDF preview in Sumatra, no printing]"
+   "Pseudo-printer name offered by `my/print-buffer' to only preview the PDF.")
+
+ (defconst *my-init--print-plain-css*
+   "body { margin: 0; } pre { font-family: Consolas, 'Courier New', monospace; font-size: 10pt; white-space: pre-wrap; overflow-wrap: anywhere; }"
+   "CSS used when printing a plain-text buffer.")
+
+ (defun my-init--print-run-steps (steps on-success)
+   "Run STEPS sequentially and asynchronously, then call ON-SUCCESS.
+Each step is (DESCRIPTION . COMMAND-LIST) for an external process (success =
+exit code 0), or (DESCRIPTION . FUNCTION) for a check (success = non-nil).
+Stop with a message on failure."
+   (let ((step (car steps)))
+     (cond
+      ((null steps)
+       (funcall on-success))
+      ((functionp (cdr step))
+       (if (funcall (cdr step))
+           (my-init--print-run-steps (cdr steps) on-success)
+         (message "Printing failed at step '%s' (see buffer \" *my-print*\")" (car step))))
+      (t
+       (make-process
+        :name "my-print"
+        :buffer (get-buffer-create " *my-print*")
+        :command (cdr step)
+        :noquery t
+        :sentinel (lambda (proc _event)
+                    (unless (process-live-p proc)
+                      (if (zerop (process-exit-status proc))
+                          (my-init--print-run-steps (cdr steps) on-success)
+                        (message "Printing failed at step '%s' (see buffer \" *my-print*\")"
+                                 (car step))))))))))
+
+ (defun my-init--print-write-plain-html (text title html-file)
+   "Write TEXT as a preformatted HTML page titled TITLE into HTML-FILE."
+   (with-temp-buffer
+     (insert text)
+     (dolist (pair '(("&" . "&amp;") ("<" . "&lt;") (">" . "&gt;")))
+       (goto-char (point-min))
+       (while (search-forward (car pair) nil t)
+         (replace-match (cdr pair) t t)))
+     (goto-char (point-min))
+     (insert "<!DOCTYPE html>\n<html><head><meta charset=\"utf-8\"><title>"
+             title "</title><style>" *my-init--print-plain-css* "</style></head><body><pre>")
+     (goto-char (point-max))
+     (insert "</pre></body></html>\n")
+     (let ((coding-system-for-write 'utf-8))
+       (write-region (point-min) (point-max) html-file nil 'silent))))
+
+ (defun my/print-buffer (&optional choose-printer)
+   "Print the current buffer on a printer (the region only if active).
+Without prefix argument, print on the Windows default printer.
+With prefix argument CHOOSE-PRINTER (C-u), choose the printer from the
+list of Windows printers, or choose a PDF preview (nothing printed).
+
+On Windows Emacs, the buffer is rendered first: Org and Markdown buffers
+through pandoc (bold, italic, headings, tables...), other buffers as
+monospace text; then Chrome (headless) makes a PDF, which SumatraPDF
+prints silently.
+
+On WSL Emacs, the buffer is printed as raw plain text (no rendering)
+through PowerShell `Out-Printer'."
+   (interactive "P")
+   (if *my-init--windows-p*
+       (my-init--print-buffer-rendered choose-printer nil)
+     (my-init--print-buffer-plain-text choose-printer)))
+
+ (defun my/print-buffer-as-raw-text (&optional choose-printer)
+   "Like `my/print-buffer', but never render Org or Markdown markup.
+The buffer (or region) is printed as it is written, in monospace, like a
+.txt file.  Prefix argument CHOOSE-PRINTER as in `my/print-buffer'."
+   (interactive "P")
+   (if *my-init--windows-p*
+       (my-init--print-buffer-rendered choose-printer t)
+     (my-init--print-buffer-plain-text choose-printer)))
+
+ (defun my-init--print-buffer-rendered (choose-printer raw)
+   "Windows: render buffer to PDF and print it.  See `my/print-buffer'.
+If RAW is non-nil, do not render Org/Markdown markup (print as monospace text)."
+   (unless (my-init--file-exists-p *chrome-executable*)
+     (error "Chrome not found (*chrome-executable*): %s" *chrome-executable*))
+   (unless (my-init--file-exists-p *sumatra-program*)
+     (error "SumatraPDF not found (*sumatra-program*): %s" *sumatra-program*))
+   (let* ((printer (when choose-printer
+                     (completing-read "Printer: "
+                                      (cons *my-init--print-pdf-preview* (my-init--windows-printers))
+                                      nil t)))
+          (preview-p (equal printer *my-init--print-pdf-preview*))
+          (input-format (cond (raw nil)
+                              ((derived-mode-p 'org-mode) "org")
+                              ((derived-mode-p 'markdown-mode) "markdown")
+                              (t nil)))
+          (region-p (use-region-p))
+          (text (if region-p
+                    (buffer-substring-no-properties (region-beginning) (region-end))
+                  (buffer-substring-no-properties (point-min) (point-max))))
+          (what (format "%s%s" (if region-p "region of " "") (buffer-name)))
+          (dir (file-name-as-directory (make-temp-file "emacs-print-" t)))
+          (source-file (concat dir "source." (if (equal input-format "org") "org" "md")))
+          (html-file (concat dir "page.html"))
+          (pdf-file (concat dir (replace-regexp-in-string "[^[:alnum:]._-]" "_" (file-name-sans-extension (buffer-name))) ".pdf"))
+          (profile-dir (concat dir "chrome-profile")) ; per run: a shared profile makes concurrent runs silently produce nothing
+          (win (lambda (path) (subst-char-in-string ?/ ?\\ path)))
+          (steps nil))
+     (when input-format
+       (unless (and *pandoc-executable-name* (executable-find *pandoc-executable-name*))
+         (error "pandoc not found (*pandoc-executable-name*): %s" *pandoc-executable-name*))
+       (let ((coding-system-for-write 'utf-8))
+         (write-region text nil source-file nil 'silent))
+       (push (list "pandoc" (executable-find *pandoc-executable-name*)
+                   "-f" input-format "-t" "html5" "-s"
+                   "--metadata" (concat "pagetitle=" (buffer-name))
+                   "-o" html-file source-file)
+             steps))
+     (unless input-format
+       (my-init--print-write-plain-html text (buffer-name) html-file))
+     (push (list "Chrome PDF" *chrome-executable*
+                 "--headless" "--disable-gpu" "--no-pdf-header-footer"
+                 (concat "--user-data-dir=" (funcall win profile-dir))
+                 (concat "--print-to-pdf=" (funcall win pdf-file))
+                 (concat "file:///" html-file))
+           steps)
+     ;; Chrome may exit 0 without writing the PDF: check before going on
+     (push (cons "PDF check" (lambda () (file-exists-p pdf-file))) steps)
+     (unless preview-p
+       (push (append (list "Sumatra print" *sumatra-program*)
+                     (if printer (list "-print-to" printer) (list "-print-to-default"))
+                     (list "-silent" (funcall win pdf-file)))
+             steps))
+     (with-current-buffer (get-buffer-create " *my-print*") (erase-buffer))
+     (message "%s %s%s..." (if preview-p "Rendering" "Printing") what
+              (if preview-p "" (concat " on " (or printer "default printer"))))
+     (my-init--print-run-steps
+      (nreverse steps)
+      (lambda ()
+        (ignore-errors (delete-directory profile-dir t))
+        (if preview-p
+            (progn
+              (start-process "my-print-preview" nil *sumatra-program* "-reuse-instance" pdf-file)
+              (message "PDF preview of %s: %s" what pdf-file))
+          (ignore-errors (delete-directory dir t))
+          (message "Printed %s on %s" what (or printer "default printer")))))))
+
+ (defun my-init--print-buffer-plain-text (choose-printer)
+   "Print buffer as raw plain text via PowerShell `Out-Printer' (Windows or WSL).
+With CHOOSE-PRINTER non-nil, choose the printer.  See `my/print-buffer'."
+   (unless (or *my-init--windows-p* *my-init--wsl-p*)
+     (error "Printing is only implemented on Windows and WSL"))
+   (let* ((printer (when choose-printer
+                     (completing-read "Printer: " (my-init--windows-printers) nil t)))
+          (region-p (use-region-p))
+          (beg (if region-p (region-beginning) (point-min)))
+          (end (if region-p (region-end) (point-max)))
+          (what (format "%s%s" (if region-p "region of " "") (buffer-name)))
+          (temp-file (make-temp-file "emacs-print-" nil ".txt"))
+          (windows-file (if *my-init--windows-p*
+                            (convert-standard-filename temp-file)
+                          (string-trim (shell-command-to-string
+                                        (format "wslpath -w %s" (shell-quote-argument temp-file))))))
+          (ps-command (format "Get-Content -LiteralPath %s -Encoding UTF8 | Out-Printer%s"
+                              (my-init--powershell-quote windows-file)
+                              (if printer
+                                  (concat " -Name " (my-init--powershell-quote printer))
+                                ""))))
+     (let ((coding-system-for-write 'utf-8-with-signature))
+       (write-region beg end temp-file nil 'silent))
+     (message "Printing %s on %s..." what (or printer "default printer"))
+     (make-process
+      :name "my-print"
+      :buffer (get-buffer-create " *my-print*")
+      :command (list "powershell.exe" "-NoProfile" "-NonInteractive" "-Command" ps-command)
+      :sentinel (lambda (proc _event)
+                  (unless (process-live-p proc)
+                    (ignore-errors (delete-file temp-file))
+                    (if (zerop (process-exit-status proc))
+                        (message "Printed %s on %s" what (or printer "default printer"))
+                      (message "Printing %s failed (see buffer \" *my-print*\")" what)))))))
+
+ ) ; end of init section
+
+
+;;; ===
 ;;; =================
 ;;; ===== PUTTY =====
 ;;; =================
