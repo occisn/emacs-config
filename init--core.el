@@ -311,6 +311,29 @@ If WITH-DAY-IN-WEEK-P, return 'mardi 25 août 2023' or similar
 ;;   - "start X" without "end X"  : hook X hangs
 ;;   - "all hooks done"           : the hang is in the C shutdown (child
 ;;                                  processes, clipboard handover, ...)
+;;
+;; Findings (2026-11-18): 33 exits logged since 2026-10-16, ALL reached
+;; "all hooks done" (whole hook run ~0.4 s; only process = server listen,
+;; 0 server clients). So the freeze is NOT in a hook but in the C shutdown;
+;; "Wrote .../places" merely stays on screen because nothing after it prints.
+;; Note: a clean exit and a frozen one leave the same log, so note the time of
+;; each freeze to match it to an entry.
+;;
+;; Leading hypothesis (unconfirmed): clipboard handover. Emacs on Windows only
+;; promises the clipboard text (delayed rendering); at exit it must open the
+;; clipboard to hand the real text to Windows. If another program holds the
+;; clipboard open at that moment (Win+V clipboard history / cloud sync,
+;; Office, remote desktop, clipboard manager), Emacs can wait forever.
+;; To confirm:
+;;   - during a freeze, before killing Emacs: press Win+V or copy something in
+;;     another app; if Emacs then exits by itself, the clipboard is the cause;
+;;   - as a workaround test: copy a short text in Notepad just before quitting
+;;     (Emacs then no longer owns the clipboard); if freezes stop, confirmed.
+;; Do not probe the clipboard from this log: there is no Lisp test for CLIPBOARD
+;; ownership (`w32--selection-owner-p' ignores it), and reading the clipboard
+;; at exit could hang at the same place.
+;; If confirmed, fix: a last `kill-emacs-hook' function that hands the clipboard
+;; over to Windows before the C shutdown.
 
 (my-init--with-duration-measured-section
  t
