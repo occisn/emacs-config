@@ -307,6 +307,82 @@ absolute names, and `C-u 2 w' still gives the next 2 names."
      (dired-goto-file new-path-and-name) ; cursor on new file
      ))
 
+ ;; === (9b) Create new Word / Excel file
+
+ (defconst my-init--office-new-file-parts
+   '((docx
+      ("[Content_Types].xml" . "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>
+<Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\"><Default Extension=\"rels\" ContentType=\"application/vnd.openxmlformats-package.relationships+xml\"/><Default Extension=\"xml\" ContentType=\"application/xml\"/><Override PartName=\"/word/document.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml\"/></Types>")
+      ("_rels/.rels" . "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>
+<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"><Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument\" Target=\"word/document.xml\"/></Relationships>")
+      ("word/document.xml" . "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>
+<w:document xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\"><w:body><w:p/></w:body></w:document>"))
+     (xlsx
+      ("[Content_Types].xml" . "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>
+<Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\"><Default Extension=\"rels\" ContentType=\"application/vnd.openxmlformats-package.relationships+xml\"/><Default Extension=\"xml\" ContentType=\"application/xml\"/><Override PartName=\"/xl/workbook.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml\"/><Override PartName=\"/xl/worksheets/sheet1.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml\"/></Types>")
+      ("_rels/.rels" . "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>
+<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"><Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument\" Target=\"xl/workbook.xml\"/></Relationships>")
+      ("xl/workbook.xml" . "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>
+<workbook xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\"><sheets><sheet name=\"Sheet1\" sheetId=\"1\" r:id=\"rId1\"/></sheets></workbook>")
+      ("xl/_rels/workbook.xml.rels" . "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>
+<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"><Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet\" Target=\"worksheets/sheet1.xml\"/></Relationships>")
+      ("xl/worksheets/sheet1.xml" . "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>
+<worksheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><sheetData/></worksheet>")))
+   "Minimal Office Open XML parts for an empty .docx / .xlsx file.
+Alist: TYPE -> list of (ARCHIVE-PATH . CONTENT).")
+
+ (defun my-init--create-new-office-file (type default-name)
+   "Create an empty Office file of TYPE (`docx' or `xlsx') and open it.
+The name is prompted (DEFAULT-NAME suggested), the file is created in the
+current dired directory (or `default-directory'), zipped with
+`*unzip-program*' (7-Zip), then opened with its associated application."
+   (unless (my-init--file-exists-p *unzip-program*)
+     (error "Unable to create .%s file since *unzip-program* (7-Zip) is not valid: %s" type *unzip-program*))
+   (let* ((ext (symbol-name type))
+          (dir (file-name-as-directory (expand-file-name default-directory)))
+          (name (read-string (format "New .%s file name (without extension): " ext) default-name))
+          (target (expand-file-name (concat name "." ext) dir))
+          (tmp-dir (if (file-exists-p target)
+                       (error "File already exists: %s" target)
+                     (file-name-as-directory (make-temp-file "emacs-new-office-" t)))))
+     (unwind-protect
+         (progn
+           ;; write the XML parts
+           (dolist (part (cdr (assq type my-init--office-new-file-parts)))
+             (let ((file (expand-file-name (car part) tmp-dir))
+                   (coding-system-for-write 'utf-8-unix))
+               (make-directory (file-name-directory file) t)
+               (with-temp-file file (insert (cdr part)))))
+           ;; zip them, listing the parts explicitly so that no directory
+           ;; entries end up in the package
+           (let* ((default-directory tmp-dir)
+                  (zip-file (expand-file-name (concat "new." ext) tmp-dir))
+                  (status (apply #'call-process *unzip-program* nil nil nil
+                                 "a" "-tzip" zip-file
+                                 (mapcar #'car (cdr (assq type my-init--office-new-file-parts))))))
+             (unless (and (eql status 0) (file-exists-p zip-file))
+               (error "7-Zip failed to create .%s file (exit status %s)" ext status))
+             (copy-file zip-file target)))
+       (delete-directory tmp-dir t))
+     (my-init--message2 "Created %s" target)
+     (when (derived-mode-p 'dired-mode)
+       (revert-buffer)
+       (dired-goto-file target))
+     (if *my-init--windows-p*
+         (w32-shell-execute "open" (convert-standard-filename target))
+       (let ((proc (start-process "xdg-open" nil "xdg-open" target)))
+         (set-process-query-on-exit-flag proc nil)))))
+
+ (defun my/create-new-word-file ()
+   "Create an empty Word (.docx) file in the current directory and open it."
+   (interactive)
+   (my-init--create-new-office-file 'docx "document"))
+
+ (defun my/create-new-excel-file ()
+   "Create an empty Excel (.xlsx) file in the current directory and open it."
+   (interactive)
+   (my-init--create-new-office-file 'xlsx "classeur"))
+
  ;; === (10) Paste image from clipboard to here
 
  (defun my/paste-image-from-clipboard-to-here ()
@@ -866,6 +942,7 @@ M-w, C-w and C-y to copy/paste files (dired-ranger)
 i to include content of subdirectory (C-u k to remove display) | o to open file or subdirectory in other window
 [c]: copy file here (M-x my/copy-file-here)
 [h]: paste image from clipboard to here (M-x my/paste-image-from-clipboard-to-here)
+New Office file here: [W]ord .docx (M-x my/create-new-word-file), [E]xcel .xlsx (M-x my/create-new-excel-file)
 / and g to narrow | P and q to peep-dired (M-x doc-view-dired-cache, M-x doc-view-clear-cache)
 
 Open with:
@@ -898,6 +975,7 @@ Project: C-c C-l clean/load | C-c C-m make/main | C-c C-r run/restart | C-c C-t 
    ("$" #'my/dired-directory-size-at-point)
    ("a" #'my/dired-clean-build-artifacts)
    ("c" #'my/copy-file-here)
+   ("E" #'my/create-new-excel-file)
    ("h" #'my/paste-image-from-clipboard-to-here)
    ("i" #'my/open-with-Irfan)
    ("f" #'my/find2)
@@ -908,6 +986,7 @@ Project: C-c C-l clean/load | C-c C-m make/main | C-c C-r run/restart | C-c C-t 
    ("s" #'my/open-with-Sumatra)
    ("u" #'my/unzip)
    ("w" #'my/open-current-dired-directory-in-file-manager)
+   ("W" #'my/create-new-word-file)
    ("x" #'xah-grep-in-current-dired-directory)
    ("z" #'my/zip-content-of-current-directory)) ; end of hydra
 
