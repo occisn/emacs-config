@@ -339,6 +339,23 @@ is stripped — spawning the target command directly and letting
      ("r" #'rename-buffer)
      ("k" #'kill-current-buffer)))
 
+ ;; === claude in a Windows Terminal tab (shared by Windows and WSL Emacs)
+
+ (defun my-init--claude-command-with-optional-name ()
+   "Ask for an optional Claude session name and return the `claude' command line.
+An empty answer gives plain \"claude\"; otherwise \"claude --name '<name>'\",
+with the name POSIX single-quoted for bash.  The result is meant to be
+embedded in a `bash -c' string passed through wt.exe, which treats `;' as
+its own subcommand separator (even inside quotes) and mangles double
+quotes, so names containing either are refused."
+   (let ((name (string-trim (read-string "Claude session name (empty for none): "))))
+     (cond
+      ((string-empty-p name) "claude")
+      ((string-match-p "[;\"]" name)
+       (user-error "Session name must not contain `;' or `\"' (Windows Terminal would mangle it)"))
+      (t (format "claude --name '%s'"
+                 (replace-regexp-in-string "'" "'\\\\''" name))))))
+
  ;; === wsl bash (Windows only: launching WSL from Windows Emacs)
 
  ;; to install WSL on Windows :
@@ -413,11 +430,13 @@ one (via `wt -w 0 nt'); otherwise Windows Terminal launches a new window."
 The tab starts in the directory of the current buffer (or of the dired
 buffer), like `my/open-wsl-shell-in-wt-tab'.  Bash is login+interactive
 so that ~/.local/bin (where `claude' lives) is on PATH.  When `claude'
-exits, the tab falls back to an interactive bash instead of closing."
+exits, the tab falls back to an interactive bash instead of closing.
+Prompts for an optional session name, passed as `claude --name'."
    (interactive)
    (let* ((dir (if (or (buffer-file-name) (derived-mode-p 'dired-mode))
                    (file-name-directory (or (buffer-file-name) default-directory))
                  (expand-file-name "~")))
+          (claude-cmd (my-init--claude-command-with-optional-name))
           (wsl-dir (my-init--wslpath dir)))
      (when (string-empty-p wsl-dir)
        (user-error "Could not convert %s into a WSL path" dir))
@@ -430,8 +449,9 @@ exits, the tab falls back to an interactive bash instead of closing."
                   ;; separator (even inside a quoted argument) and would open
                   ;; a second, broken tab.  `|| true &&' chains instead.
                   ;; POSIX single-quoting: ' inside the path becomes '\''
-                  (format "cd '%s' && claude || true && exec bash --login -i"
-                          (replace-regexp-in-string "'" "'\\\\''" wsl-dir)))))
+                  (format "cd '%s' && %s || true && exec bash --login -i"
+                          (replace-regexp-in-string "'" "'\\\\''" wsl-dir)
+                          claude-cmd))))
        (set-process-query-on-exit-flag proc nil)
        (message "Opened WSL tab with claude in Windows Terminal at %s" wsl-dir))))
 
@@ -626,12 +646,14 @@ starts in the directory of the current buffer (or of the dired buffer),
 passed to `wsl.exe --cd' as a Linux path, so no path conversion is needed.
 `wt.exe' is called directly through WSL interop (no cmd.exe, which would
 complain about a UNC current directory).  When `claude' exits, the tab
-falls back to an interactive bash instead of closing."
+falls back to an interactive bash instead of closing.
+Prompts for an optional session name, passed as `claude --name'."
      (interactive)
      (let* ((dir (expand-file-name
                   (if (or (buffer-file-name) (derived-mode-p 'dired-mode))
                       (file-name-directory (or (buffer-file-name) default-directory))
                     "~")))
+            (claude-cmd (my-init--claude-command-with-optional-name))
             (wt-exe (or (executable-find "wt.exe")
                         (user-error "Could not find wt.exe (Windows Terminal) on PATH"))))
        (let ((proc (start-process
@@ -642,7 +664,7 @@ falls back to an interactive bash instead of closing."
                     ;; No `;' here: wt.exe treats it as its own subcommand
                     ;; separator (even inside a quoted argument) and would
                     ;; open a second, broken tab.
-                    "claude || true && exec bash --login -i")))
+                    (concat claude-cmd " || true && exec bash --login -i"))))
          (set-process-query-on-exit-flag proc nil)
          (message "Opened WSL tab with claude in Windows Terminal at %s" dir)))))
 
