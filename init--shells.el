@@ -341,14 +341,38 @@ is stripped — spawning the target command directly and letting
 
  ;; === claude in a Windows Terminal tab (shared by Windows and WSL Emacs)
 
- (defun my-init--claude-command-with-optional-name ()
+ (defun my-init--claude-default-session-name (dir)
+   "Return the default Claude session name proposed for DIR, or nil.
+Looks in DIR and its parents for the nearest directory holding a file named
+`.claude_session_default_name.<anything>' (e.g. at a repo root), and returns
+the first non-blank line of that file, trimmed.  If several such files sit in
+the same directory, the first one in alphabetical order wins."
+   (let* ((regexp "\\`\\.claude_session_default_name\\..+\\'")
+          (root (locate-dominating-file
+                 dir
+                 (lambda (d)
+                   (and (file-directory-p d)
+                        (directory-files d nil regexp t))))))
+     (when root
+       (let ((file (expand-file-name (car (directory-files root nil regexp)) root)))
+         (with-temp-buffer
+           (insert-file-contents file)
+           (goto-char (point-min))
+           (when (re-search-forward "^[ \t]*\\([^ \t\n].*?\\)[ \t]*$" nil t)
+             (match-string 1)))))))
+
+ (defun my-init--claude-command-with-optional-name (dir)
    "Ask for an optional Claude session name and return the `claude' command line.
+The prompt is pre-filled with `my-init--claude-default-session-name' for DIR,
+when such a default exists; clear it to get no name.
 An empty answer gives plain \"claude\"; otherwise \"claude --name '<name>'\",
 with the name POSIX single-quoted for bash.  The result is meant to be
 embedded in a `bash -c' string passed through wt.exe, which treats `;' as
 its own subcommand separator (even inside quotes) and mangles double
 quotes, so names containing either are refused."
-   (let ((name (string-trim (read-string "Claude session name (empty for none): "))))
+   (let ((name (string-trim
+                (read-string "Claude session name (empty for none): "
+                             (my-init--claude-default-session-name dir)))))
      (cond
       ((string-empty-p name) "claude")
       ((string-match-p "[;\"]" name)
@@ -436,7 +460,7 @@ Prompts for an optional session name, passed as `claude --name'."
    (let* ((dir (if (or (buffer-file-name) (derived-mode-p 'dired-mode))
                    (file-name-directory (or (buffer-file-name) default-directory))
                  (expand-file-name "~")))
-          (claude-cmd (my-init--claude-command-with-optional-name))
+          (claude-cmd (my-init--claude-command-with-optional-name dir))
           (wsl-dir (my-init--wslpath dir)))
      (when (string-empty-p wsl-dir)
        (user-error "Could not convert %s into a WSL path" dir))
@@ -653,7 +677,7 @@ Prompts for an optional session name, passed as `claude --name'."
                   (if (or (buffer-file-name) (derived-mode-p 'dired-mode))
                       (file-name-directory (or (buffer-file-name) default-directory))
                     "~")))
-            (claude-cmd (my-init--claude-command-with-optional-name))
+            (claude-cmd (my-init--claude-command-with-optional-name dir))
             (wt-exe (or (executable-find "wt.exe")
                         (user-error "Could not find wt.exe (Windows Terminal) on PATH"))))
        (let ((proc (start-process
